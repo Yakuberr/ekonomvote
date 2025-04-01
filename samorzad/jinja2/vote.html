@@ -5,44 +5,119 @@
     <meta charset="UTF-8">
     <title>Title</title>
     <link rel="stylesheet" href="{{ static('css/custom-boostrap.min.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <style>
+        /* Style for navbar toggler (existing) */
         .navbar-toggler,
         .navbar-toggler:focus,
         .navbar-toggler:active,
         .navbar-toggler-icon:focus {
             outline-color: var(--bs-eco-light-cyan);
         }
+
+        /* --- NEW CSS --- */
+        /* Make figures behave like buttons visually */
+        figure.figure {
+            cursor: pointer;
+            transition: border-color 0.15s ease-in-out;
+        }
+
+        /* Define the highlight border class */
+        .border-eco-light-cyan {
+            border-color: var(--bs-eco-light-cyan) !important;
+        }
+
+        /* Style for the toggle button */
+        .toggle-info-btn {
+            width: 100%;
+            margin-top: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        /* Candidate info container */
+        .candidate-info-container {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            background-color: rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+
+        /* Submit button styles */
+        .submit-btn {
+            width: 100%;
+            margin-top: 2rem;
+            padding: 1rem;
+            font-size: 1.2rem;
+        }
+
+        /* Form container */
+        .form-container {
+            width: 100%;
+            text-align: center;
+        }
+        /* --- END NEW CSS --- */
     </style>
 </head>
 <body>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-    {% for message in get_messages(request) %}
-    <div class="alert alert-danger fixed-top alert-dismissible" role="alert" id="alertMessage">
-        {{ message }}
+    {% set messages = get_messages(request) %}
+    {% if messages %}
+    <div class="fixed-top" style="top: 56px; z-index: 1050;">
+        {% for message in messages %}
+        <div class="alert alert-danger alert-dismissible fade show m-3" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
     </div>
-    {% endfor %}
+    {% endif %}
     {{ render_navbar() }}
     <main class="container my-5">
-        <div class="d-flex justify-content-center align-items-center flex-column gap-5">
-            <div class="h-50 w-75 p-1"><h1>Kandydaci</h1></div>
-            {% for c in candidates %}
-            <div class="h-50 w-75 p-1">
-                <img src="{{ c.image.url }}" class="img-thumbnail w-100" height="700px" width="700px" alt="">
-                <h5 class="my-3">{{c.first_name}} {{c.last_name}}</h5>
-                  <button class="btn btn-outline-eco-light-cyan w-100 mb-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ loop.index }}" aria-expanded="false" aria-controls="collapse{{ loop.index }}">
-                      Pokaż postulaty
-                  </button>
-                <div class="collapse" id="collapse{{ loop.index }}">
-                  <div class="card card-body border border-eco-light-cyan">
-                    {{ c.info }}
-                  </div>
+        <div class="d-flex justify-content-center align-items-center flex-column">
+            <div class="h-50 w-75 p-1 mb-3"><h1>Wybierz swojego kandydata</h1></div>
+            <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4">
+                {% for c in candidates %}
+                    <div class="col">
+                        <figure class="figure w-100 border border-2 rounded-2 p-1" value="{{ c.pk }}" data-name="{{ c.first_name }} {{ c.last_name }}">
+                          <img src="{{ c.image.url }}" class="figure-img img-fluid rounded w-100" alt="Zdjęcie kandydata {{ c.first_name }} {{c.last_name}}">
+                          <figcaption class="figure-caption text-center fs-5">{{ c.first_name }} {{c.last_name}}</figcaption>
+                        </figure>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <!-- Toggle button and info container -->
+            <button class="btn btn-outline-eco-light-cyan toggle-info-btn" type="button" data-bs-toggle="collapse" data-bs-target="#candidateInfoCollapse" aria-expanded="false" aria-controls="candidateInfoCollapse" id="infoToggleBtn">
+                Wybierz kandydata, aby zobaczyć informacje
+            </button>
+
+            <div class="collapse w-100" id="candidateInfoCollapse">
+                <div class="candidate-info-container">
+                    {% for c in candidates %}
+                    <div class="candidate-info" id="info-{{ c.pk }}">
+                        <h3>{{ c.first_name }} {{ c.last_name }}</h3>
+                        <div>{{ c.info }}</div>
+                    </div>
+                    {% endfor %}
                 </div>
-                <form action="{{ url('samorzad:post_vote') }}" method="post" class="my-4">
-                    {{csrf_input}}
-                    <button class="btn btn-eco-light-cyan {% if voted%} disabled {% endif %}" value="{{ c.pk }}" name="candidate_id">Zagłosuj</button>
+            </div>
+
+            <!-- Submit form at the bottom of the page -->
+            <div class="form-container">
+                <form method="post" action="{{ url('samorzad:post_vote') }}" class="w-100">
+                    {{ csrf_input }}
+                    <input type="hidden" id="candidate_id" name="candidate_id" value="">
+                    {% if voted %}
+                    <button type="button" class="btn btn-eco-light-cyan submit-btn" id="submitBtn" disabled>
+                        <i class="fa-solid fa-check-to-slot"></i> Już oddałeś głos na: {{posted_vote.first_name}} {{posted_vote.last_name}} <i class="fa-solid fa-check-to-slot"></i>
+                    </button>
+                    {% else %}
+                    <button type="submit" class="btn btn-eco-light-cyan submit-btn disabled" id="submitBtn" disabled>
+                        <i class="fa-solid fa-check-to-slot"></i> Oddaj głos na: <span id="selectedCandidateName">...</span> <i class="fa-solid fa-check-to-slot"></i>
+                    </button>
+                    {% endif %}
                 </form>
             </div>
-            {% endfor %}
         </div>
     </main>
     <script>
@@ -54,6 +129,85 @@
             bsAlert.close();
           }
         }, 3000);
+
+        const figures = document.querySelectorAll('figure.figure');
+        const highlightClass = 'border-eco-light-cyan';
+        const candidateIdInput = document.getElementById('candidate_id');
+        const submitBtn = document.getElementById('submitBtn');
+        const infoToggleBtn = document.getElementById('infoToggleBtn');
+        const selectedCandidateNameSpan = document.getElementById('selectedCandidateName');
+        let selectedCandidatePk = null;
+
+        // Check if user has already voted
+        const alreadyVoted = {{ 'true' if voted else 'false' }};
+
+        figures.forEach(figure => {
+          figure.addEventListener('click', function() {
+            // Remove highlight from all figures
+            figures.forEach(f => f.classList.remove(highlightClass));
+
+            // Add highlight to clicked figure
+            this.classList.add(highlightClass);
+
+            // Store selected candidate PK and name
+            selectedCandidatePk = this.getAttribute('value');
+            const candidateName = this.getAttribute('data-name');
+
+            // Update info toggle button
+            infoToggleBtn.disabled = false;
+            infoToggleBtn.textContent = 'Pokaż informacje o kandydacie';
+
+            // Hide all candidate info
+            document.querySelectorAll('.candidate-info').forEach(info => {
+                info.style.display = 'none';
+            });
+
+            // Show selected candidate info if collapse is open
+            const collapse = new bootstrap.Collapse(document.getElementById('candidateInfoCollapse'), {
+              toggle: false
+            });
+
+            if (document.getElementById('candidateInfoCollapse').classList.contains('show')) {
+              const infoElement = document.getElementById(`info-${selectedCandidatePk}`);
+              if (infoElement) {
+                  infoElement.style.display = 'block';
+              }
+            }
+
+            // Only update form if not voted
+            if (!alreadyVoted) {
+                candidateIdInput.value = selectedCandidatePk;
+                if (selectedCandidateNameSpan) {
+                    selectedCandidateNameSpan.textContent = candidateName;
+                }
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.classList.remove('disabled');
+                }
+            }
+          });
+        });
+
+        // Update button text when collapse is shown/hidden
+        const collapseElement = document.getElementById('candidateInfoCollapse');
+
+        collapseElement.addEventListener('show.bs.collapse', function () {
+            if (selectedCandidatePk) {
+                infoToggleBtn.textContent = 'Ukryj informacje o kandydacie';
+                document.getElementById(`info-${selectedCandidatePk}`).style.display = 'block';
+            }
+        });
+
+        collapseElement.addEventListener('hide.bs.collapse', function () {
+            if (selectedCandidatePk) {
+                infoToggleBtn.textContent = 'Pokaż informacje o kandydacie';
+            }
+        });
+
+        // Initialize first candidate info if needed
+        if (figures.length > 0 && !alreadyVoted) {
+            figures[0].click();
+        }
       });
     </script>
 </body>
