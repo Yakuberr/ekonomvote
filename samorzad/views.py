@@ -28,16 +28,19 @@ def post_vote(request:HttpRequest):
     if request.method == 'GET':
         voted = Vote.objects.filter(azure_user_id=request.session.get('microsoft_user_id'), voting__pk=fresh_voting_pk).exists()
         form = VotingForm()
-        return render(request, 'vote.html', context={'fresh_voting_pk':fresh_voting_pk, 'candidates':candidates, 'form':form, 'voted':voted})
+        posted_vote = None
+        if voted:
+            posted_vote = Vote.objects.filter(azure_user_id=request.session.get('microsoft_user_id'), voting=Voting.objects.filter(pk=fresh_voting_pk).first()).first().candidate
+        return render(request, 'vote.html', context={'fresh_voting_pk':fresh_voting_pk, 'candidates':candidates, 'form':form, 'voted':voted, 'posted_vote':posted_vote})
     if request.method == 'POST':
         form = VotingForm(request.POST)
         if form.is_valid():
             candidate_id = form.cleaned_data.get('candidate_id')
             if candidate_id is None:
-                messages.error('Nieprawidłowy kandydat')
+                messages.error(request, 'Nieprawidłowy kandydat')
                 return redirect(reverse('samorzad:post_vote'))
             if fresh_voting_pk is None:
-                messages.error('Nieprawidłowy kandydat')
+                messages.error(request, 'Nieprawidłowy kandydat')
                 return redirect(reverse('samorzad:post_vote'))
             try:
                 Vote.objects.create(
@@ -46,8 +49,12 @@ def post_vote(request:HttpRequest):
                     voting=Voting.objects.filter(pk=fresh_voting_pk).first()
                 )
             except ValidationError:
+               messages.error(request, 'Nie można więcej głosów w tym głosowaniu')
                return redirect(reverse('samorzad:post_vote'))
             return redirect(reverse('samorzad:index'))
+        else:
+            messages.error(request, 'Dane wysłane do formularza są nieprawidłowe')
+            return redirect(reverse('samorzad:post_vote'))
         # TODO: Obsłużyć błąd walidacji
 
 
