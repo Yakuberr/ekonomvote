@@ -1,0 +1,11 @@
+@import "../bootstrap-5.3.3/scss/_functions";
+@import "../bootstrap-5.3.3/scss/_variables";
+
+$custom-theme-colors: (
+  "eco-dark-cyan":#2997aa,
+  "eco-light-cyan":#04b4ad
+);
+
+$theme-colors: map-merge($custom-theme-colors, $theme-colors);
+
+@import "../bootstrap-5.3.3/scss/bootstrap";

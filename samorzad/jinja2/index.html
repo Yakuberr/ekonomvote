@@ -1,0 +1,102 @@
+{% from 'macros.html' import render_navbar %}
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" href="{{ static('css/custom-boostrap.min.css') }}">
+    <style>
+        .navbar-toggler,
+        .navbar-toggler:focus,
+        .navbar-toggler:active,
+        .navbar-toggler-icon:focus {
+            outline-color: var(--bs-eco-light-cyan);
+        }
+    </style>
+</head>
+<body>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    {{ render_navbar() }}
+    <main class="container mt-5">
+        {% if fresh_voting != None %}
+        <div class="container d-flex justify-content-center">
+            <div class="card" style="width: 35rem;">
+              <div class="card-body">
+                <h5 class="card-title ps-2">Najbliższe głosowanie</h5>
+                <h6 class="card-subtitle mb-2 text-body-secondary ps-2">Wybór przewodniczącej/przewodniczącego samorządu uczniowskiego</h6>
+                  <ul class="list-group list-group-flush">
+                    <li class="list-group-item"><span class="fw-medium">Rozpoczęcie głosowania:</span> {{fresh_voting.parse_planned_start()}}</li>
+                    <li class="list-group-item"><span class="fw-medium">Zakończenie głosowania:</span> {{fresh_voting.parse_planned_end()}}</li>
+                  </ul>
+                <a href="{{ url('samorzad:post_vote') }}" class="card-link btn btn-eco-light-cyan mt-3 ">Zagłosuj</a>
+              </div>
+            </div>
+        </div>
+        <hr class="my-4">
+        {% endif %}
+        <h4 class="mb-4">Stare głosowania</h4>
+        <div class="d-flex justify-content-evenly align-items-center flex-row flex-wrap g-5">
+            <div class="card mb-4" style="width: 25rem;">
+              <div class="card-body">
+                <h6 class="card-subtitle mb-2 text-body-secondary ps-2">Wybór przewodniczącej/przewodniczącego samorządu uczniowskiego</h6>
+                  <ul class="list-group list-group-flush">
+                    <li class="list-group-item"><span class="fw-medium">Rozpoczęcie głosowania:</span> 2025.05.21 13:44:00</li>
+                    <li class="list-group-item"><span class="fw-medium">Zakończenie głosowania:</span> 2025.05.23 13:44:00</li>
+                  </ul>
+                <a href="#" class="card-link btn btn-eco-light-cyan mt-3">Wyniki</a>
+              </div>
+            </div>
+            <div class="card mb-4" style="width: 25rem;">
+              <div class="card-body">
+                <h6 class="card-subtitle mb-2 text-body-secondary ps-2">Wybór przewodniczącej/przewodniczącego samorządu uczniowskiego</h6>
+                  <ul class="list-group list-group-flush">
+                    <li class="list-group-item"><span class="fw-medium">Rozpoczęcie głosowania:</span> 2025.05.21 13:44:00</li>
+                    <li class="list-group-item"><span class="fw-medium">Zakończenie głosowania:</span> 2025.05.23 13:44:00</li>
+                  </ul>
+                <a href="#" class="card-link btn btn-eco-light-cyan mt-3">Wyniki</a>
+              </div>
+            </div>
+            <div class="card mb-4" style="width: 25rem;">
+              <div class="card-body">
+                <h6 class="card-subtitle mb-2 text-body-secondary ps-2">Wybór przewodniczącej/przewodniczącego samorządu uczniowskiego</h6>
+                  <ul class="list-group list-group-flush">
+                    <li class="list-group-item"><span class="fw-medium">Rozpoczęcie głosowania:</span> 2025.05.21 13:44:00</li>
+                    <li class="list-group-item"><span class="fw-medium">Zakończenie głosowania:</span> 2025.05.23 13:44:00</li>
+                  </ul>
+                <a href="#" class="card-link btn btn-eco-light-cyan mt-3">Wyniki</a>
+              </div>
+            </div>
+            <div class="card mb-4" style="width: 25rem;">
+              <div class="card-body">
+                <h6 class="card-subtitle mb-2 text-body-secondary ps-2">Wybór przewodniczącej/przewodniczącego samorządu uczniowskiego</h6>
+                  <ul class="list-group list-group-flush">
+                    <li class="list-group-item"><span class="fw-medium">Rozpoczęcie głosowania:</span> 2025.05.21 13:44:00</li>
+                    <li class="list-group-item"><span class="fw-medium">Zakończenie głosowania:</span> 2025.05.23 13:44:00</li>
+                  </ul>
+                <a href="#" class="card-link btn btn-eco-light-cyan mt-3">Wyniki</a>
+              </div>
+            </div>
+            <div class="card mb-4" style="width: 25rem;">
+              <div class="card-body">
+                <h6 class="card-subtitle mb-2 text-body-secondary ps-2">Wybór przewodniczącej/przewodniczącego samorządu uczniowskiego</h6>
+                  <ul class="list-group list-group-flush">
+                    <li class="list-group-item"><span class="fw-medium">Rozpoczęcie głosowania:</span> 2025.05.21 13:44:00</li>
+                    <li class="list-group-item"><span class="fw-medium">Zakończenie głosowania:</span> 2025.05.23 13:44:00</li>
+                  </ul>
+                <a href="#" class="card-link btn btn-eco-light-cyan mt-3">Wyniki</a>
+              </div>
+            </div><div class="card mb-4" style="width: 25rem;">
+              <div class="card-body">
+                <h6 class="card-subtitle mb-2 text-body-secondary ps-2">Wybór przewodniczącej/przewodniczącego samorządu uczniowskiego</h6>
+                  <ul class="list-group list-group-flush">
+                    <li class="list-group-item"><span class="fw-medium">Rozpoczęcie głosowania:</span> 2025.05.21 13:44:00</li>
+                    <li class="list-group-item"><span class="fw-medium">Zakończenie głosowania:</span> 2025.05.23 13:44:00</li>
+                  </ul>
+                <a href="#" class="card-link btn btn-eco-light-cyan mt-3">Wyniki</a>
+              </div>
+            </div>
+
+        </div>
+    </main>
+</body>
+</html>
