@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Voting, Vote, Candidate
+from .models import Voting, Vote, Candidate, ElectoralProgram
 from django.utils import timezone
 import pytz
 # Register your models here.
@@ -54,5 +54,6 @@ import pytz
 admin.site.register(Voting)
 admin.site.register(Vote)
 admin.site.register(Candidate)
+admin.site.register(ElectoralProgram)
 
 
