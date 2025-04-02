@@ -34,13 +34,27 @@ class Candidate(models.Model):
     second_name = models.CharField(null=True, blank=True, max_length=150)
     last_name = models.CharField(null=False, max_length=150)
     image = models.ImageField(upload_to='uploads/samorzad/', null=False, unique=True)
-    info = models.TextField(null=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     is_eligible = models.BooleanField(default=False)
 
     def __str__(self):
         return f'Candiate(first_name={self.first_name}, last_name={self.last_name})'
+
+class ElectoralProgram(models.Model):
+    candidate = models.ForeignKey(Candidate, on_delete=models.CASCADE, related_name='electoral_programs', null=False)
+    voting = models.ForeignKey(Voting, on_delete=models.CASCADE, related_name='electoral_programs', null=False)
+    info = models.TextField(null=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['candidate', 'voting'], name='unique_program_per_voting_per_candidate')
+        ]
+
+    def __str__(self):
+        return f'ElectoralProgram(candidate={self.candidate.pk}, voting={self.voting.pk})'
 
 class Vote(models.Model):
     voting = models.ForeignKey(Voting, on_delete=models.CASCADE, related_name='votes', null=False)
