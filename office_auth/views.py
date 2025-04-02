@@ -34,7 +34,7 @@ def microsoft_callback(request:HttpRequest):
         print(user_info)
         request.session['microsoft_user_id'] = user_info['id']
         request.session['is_authenticated'] = True
-        return redirect('office_auth:home')
+        return redirect('samorzad:index')
     except Exception as e:
         return redirect('office_auth:microsoft_login')
 
