@@ -3,11 +3,10 @@
 <html lang="en" data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>Wybierz kandydata</title>
     <link rel="stylesheet" href="{{ static('css/custom-boostrap.min.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
     <style>
-        /* Style for navbar toggler (existing) */
         .navbar-toggler,
         .navbar-toggler:focus,
         .navbar-toggler:active,
@@ -15,26 +14,24 @@
             outline-color: var(--bs-eco-light-cyan);
         }
 
-        /* --- NEW CSS --- */
-        /* Make figures behave like buttons visually */
         figure.figure {
             cursor: pointer;
             transition: border-color 0.15s ease-in-out;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
         }
 
-        /* Define the highlight border class */
         .border-eco-light-cyan {
             border-color: var(--bs-eco-light-cyan) !important;
         }
 
-        /* Style for the toggle button */
         .toggle-info-btn {
             width: 100%;
             margin-top: 1rem;
             margin-bottom: 1rem;
         }
 
-        /* Candidate info container */
         .candidate-info-container {
             padding: 1rem;
             border-radius: 0.5rem;
@@ -42,7 +39,6 @@
             margin-bottom: 2rem;
         }
 
-        /* Submit button styles */
         .submit-btn {
             width: 100%;
             margin-top: 2rem;
@@ -50,44 +46,100 @@
             font-size: 1.2rem;
         }
 
-        /* Form container */
         .form-container {
             width: 100%;
             text-align: center;
         }
-        /* --- END NEW CSS --- */
+
+        .image-container {
+            height: 300px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .candidate-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
     </style>
 </head>
 <body>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     {% set messages = get_messages(request) %}
     {% if messages %}
     <div class="fixed-top" style="top: 56px; z-index: 1050;">
         {% for message in messages %}
-        <div class="alert alert-danger alert-dismissible fade show m-3" role="alert">
+        <div class="alert
+             {% if message.tags == 'error' %}alert-danger
+             {% elif message.tags == 'warning' %}alert-warning
+             {% elif message.tags == 'info' %}alert-info
+             {% else %}alert-success{% endif %}
+             alert-dismissible fade show m-3"
+             role="alert"
+             data-auto-dismiss="2500">
             {{ message }}
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
         {% endfor %}
     </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Pobierz wszystkie alerty z atrybutem data-auto-dismiss
+        const alerts = document.querySelectorAll('[data-auto-dismiss]');
+
+        alerts.forEach(alert => {
+            const delay = parseInt(alert.getAttribute('data-auto-dismiss'));
+
+            // Ustaw timeout dla każdego alertu
+            setTimeout(() => {
+                // Dodaj klasę fade-out (możesz dostosować czas trwania animacji)
+                alert.style.transition = 'opacity 0.5s ease-out';
+                alert.style.opacity = '0';
+
+                // Po zakończeniu animacji usuń element
+                setTimeout(() => {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                }, 500); // Dopasuj do czasu trwania animacji
+            }, delay);
+        });
+    });
+    </script>
+
+    <style>
+        /* Opcjonalne dodatkowe style dla płynniejszej animacji */
+        .alert {
+            transition: opacity 0.5s ease-out;
+        }
+    </style>
     {% endif %}
     {{ render_navbar() }}
     <main class="container my-5">
         <div class="d-flex justify-content-center align-items-center flex-column">
-            <div class="h-50 w-75 p-1 mb-3"><h1>Wybierz swojego kandydata</h1></div>
+            <div class="h-50 w-75 p-1 mb-3 align-self-start"><h2>Wybierz swojego kandydata</h2></div>
             <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4">
                 {% for c in candidates %}
                     <div class="col">
-                        <figure class="figure w-100 border border-2 rounded-2 p-1" value="{{ c.pk }}" data-name="{{ c.first_name }} {{ c.last_name }}">
-                          <img src="{{ c.image.url }}" class="figure-img img-fluid rounded w-100" alt="Zdjęcie kandydata {{ c.first_name }} {{c.last_name}}">
-                          <figcaption class="figure-caption text-center fs-5">{{ c.first_name }} {{c.last_name}}</figcaption>
+                        <figure class="figure w-100 h-100 border border-2 rounded-2 p-1"
+                                value="{{ c.pk }}"
+                                data-registration-id="{{ c.registration_pk }}"
+                                data-name="{{ c.first_name }} {{ c.last_name }}">
+                          <div class="image-container">
+                            <img src="{{ c.image.url }}" class="candidate-image rounded" alt="Zdjęcie kandydata {{ c.first_name }} {{ c.last_name }}">
+                          </div>
+                          <figcaption class="figure-caption text-center fs-5 mt-2">{{ c.first_name }} {{ c.last_name }}</figcaption>
                         </figure>
                     </div>
                 {% endfor %}
             </div>
 
-            <!-- Toggle button and info container -->
-            <button class="btn btn-outline-eco-light-cyan toggle-info-btn" type="button" data-bs-toggle="collapse" data-bs-target="#candidateInfoCollapse" aria-expanded="false" aria-controls="candidateInfoCollapse" id="infoToggleBtn">
+            <button class="btn btn-outline-eco-light-cyan toggle-info-btn" type="button"
+                    data-bs-toggle="collapse" data-bs-target="#candidateInfoCollapse"
+                    aria-expanded="false" aria-controls="candidateInfoCollapse" id="infoToggleBtn" disabled>
                 Wybierz kandydata, aby zobaczyć informacje
             </button>
 
@@ -96,20 +148,19 @@
                     {% for c in candidates %}
                     <div class="candidate-info" id="info-{{ c.pk }}">
                         <h3>{{ c.first_name }} {{ c.last_name }}</h3>
-                        <div>{{ c.info }}</div>
+                        <div>{{ c.program_info }}</div>
                     </div>
                     {% endfor %}
                 </div>
             </div>
 
-            <!-- Submit form at the bottom of the page -->
             <div class="form-container">
                 <form method="post" action="{{ url('samorzad:post_vote') }}" class="w-100">
                     {{ csrf_input }}
-                    <input type="hidden" id="candidate_id" name="candidate_id" value="">
+                    <input type="hidden" id="registration_id" name="registration_id" value="">
                     {% if voted %}
                     <button type="button" class="btn btn-eco-light-cyan submit-btn" id="submitBtn" disabled>
-                        <i class="fa-solid fa-check-to-slot"></i> Już oddałeś głos na: {{posted_vote.first_name}} {{posted_vote.last_name}} <i class="fa-solid fa-check-to-slot"></i>
+                        <i class="fa-solid fa-check-to-slot"></i> Już oddałeś głos na: {{ posted_vote.first_name }} {{ posted_vote.last_name }} <i class="fa-solid fa-check-to-slot"></i>
                     </button>
                     {% else %}
                     <button type="submit" class="btn btn-eco-light-cyan submit-btn disabled" id="submitBtn" disabled>
@@ -132,37 +183,30 @@
 
         const figures = document.querySelectorAll('figure.figure');
         const highlightClass = 'border-eco-light-cyan';
-        const candidateIdInput = document.getElementById('candidate_id');
+        const registrationIdInput = document.getElementById('registration_id');
         const submitBtn = document.getElementById('submitBtn');
         const infoToggleBtn = document.getElementById('infoToggleBtn');
         const selectedCandidateNameSpan = document.getElementById('selectedCandidateName');
         let selectedCandidatePk = null;
 
-        // Check if user has already voted
         const alreadyVoted = {{ 'true' if voted else 'false' }};
 
         figures.forEach(figure => {
           figure.addEventListener('click', function() {
-            // Remove highlight from all figures
             figures.forEach(f => f.classList.remove(highlightClass));
-
-            // Add highlight to clicked figure
             this.classList.add(highlightClass);
 
-            // Store selected candidate PK and name
             selectedCandidatePk = this.getAttribute('value');
             const candidateName = this.getAttribute('data-name');
+            const registrationId = this.getAttribute('data-registration-id');
 
-            // Update info toggle button
             infoToggleBtn.disabled = false;
             infoToggleBtn.textContent = 'Pokaż informacje o kandydacie';
 
-            // Hide all candidate info
             document.querySelectorAll('.candidate-info').forEach(info => {
                 info.style.display = 'none';
             });
 
-            // Show selected candidate info if collapse is open
             const collapse = new bootstrap.Collapse(document.getElementById('candidateInfoCollapse'), {
               toggle: false
             });
@@ -174,9 +218,8 @@
               }
             }
 
-            // Only update form if not voted
             if (!alreadyVoted) {
-                candidateIdInput.value = selectedCandidatePk;
+                registrationIdInput.value = registrationId;
                 if (selectedCandidateNameSpan) {
                     selectedCandidateNameSpan.textContent = candidateName;
                 }
@@ -188,9 +231,7 @@
           });
         });
 
-        // Update button text when collapse is shown/hidden
         const collapseElement = document.getElementById('candidateInfoCollapse');
-
         collapseElement.addEventListener('show.bs.collapse', function () {
             if (selectedCandidatePk) {
                 infoToggleBtn.textContent = 'Ukryj informacje o kandydacie';
@@ -204,7 +245,6 @@
             }
         });
 
-        // Initialize first candidate info if needed
         if (figures.length > 0 && !alreadyVoted) {
             figures[0].click();
         }

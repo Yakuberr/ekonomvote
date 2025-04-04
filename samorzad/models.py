@@ -16,9 +16,8 @@ class Voting(models.Model):
         return self.planned_end.astimezone(tz=pytz.timezone('Europe/Warsaw')).strftime('%Y.%m.%d %H:%M:%S')
 
     def clean(self):
-        # na czas testowania zakomentowane
-        # if self.planned_start <= timezone.now():
-        #     raise ValidationError("planned_start musi być większe niż obecna data i godzina.")
+        if self.planned_start <= timezone.now():
+            raise ValidationError("planned_start musi być większe niż obecna data i godzina.")
         if self.planned_start >= self.planned_end:
             raise ValidationError("planned_start musi być mniejsze niż planned_end.")
 
@@ -56,6 +55,7 @@ class ElectoralProgram(models.Model):
     def __str__(self):
         return f'ElectoralProgram(candidate={self.candidate.pk}, voting={self.voting.pk})'
 
+
 class CandidateRegistration(models.Model):
     candidate = models.ForeignKey(Candidate, on_delete=models.CASCADE, related_name='registrations')
     voting = models.ForeignKey(Voting, on_delete=models.CASCADE, related_name='candidate_registrations')
@@ -70,22 +70,35 @@ class CandidateRegistration(models.Model):
     def __str__(self):
         return f'CandidateRegistration(candidate={self.candidate.pk}, voting={self.voting.pk})'
 
+
 class Vote(models.Model):
     candidate_registration = models.ForeignKey(CandidateRegistration, on_delete=models.CASCADE, related_name='votes')
     azure_user_id = models.CharField(null=False, max_length=50)
     created_at = models.DateTimeField(auto_now_add=True)
 
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(fields=['candidate_registration__voting', 'azure_user_id'],
-                                   name='unique_user_vote_per_voting')
-        ]
+    def parse_planned_end(self):
+        return self.created_at.astimezone(tz=pytz.timezone('Europe/Warsaw')).strftime('%Y.%m.%d %H:%M:%S')
 
     def clean(self):
         voting = self.candidate_registration.voting
-        if timezone.now() < voting.planned_start:
-            raise ValidationError("Nie można głosować przed rozpoczęciem głosowania")
-        if timezone.now() > voting.planned_end:
-            raise ValidationError("Nie można głosować po zakończeniu głosowania")
+        # if timezone.now() < voting.planned_start:
+        #     raise ValidationError("Nie można głosować przed rozpoczęciem głosowania")
+        # if timezone.now() > voting.planned_end:
+        #     raise ValidationError("Nie można głosować po zakończeniu głosowania")
         if not self.candidate_registration.is_eligible:
             raise ValidationError("Nie można oddać głosu na kandydata, który nie został dopuszczony do wyborów.")
+
+    def save(self, *args, **kwargs):
+        # Sprawdzamy unikalność głosu dla danego użytkownika w danym głosowaniu
+        voting = self.candidate_registration.voting
+        if Vote.objects.filter(
+                candidate_registration__voting=voting,
+                azure_user_id=self.azure_user_id
+        ).exists():
+            raise ValidationError("Użytkownik już oddał głos w tym głosowaniu")
+
+        if self.pk:
+            raise ValidationError("Edytowanie modelu Vote jest zabronione!")
+
+        self.full_clean()
+        super().save(*args, **kwargs)
