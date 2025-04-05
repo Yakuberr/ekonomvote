@@ -1,4 +1,4 @@
-{% from 'macros.html' import render_navbar %}
+{% from 'macros.html' import render_navbar, render_messages %}
 <!DOCTYPE html>
 <html lang="en" data-bs-theme="dark">
 <head>
@@ -68,55 +68,7 @@
 </head>
 <body>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    {% set messages = get_messages(request) %}
-    {% if messages %}
-    <div class="fixed-top" style="top: 56px; z-index: 1050;">
-        {% for message in messages %}
-        <div class="alert
-             {% if message.tags == 'error' %}alert-danger
-             {% elif message.tags == 'warning' %}alert-warning
-             {% elif message.tags == 'info' %}alert-info
-             {% else %}alert-success{% endif %}
-             alert-dismissible fade show m-3"
-             role="alert"
-             data-auto-dismiss="2500">
-            {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-        {% endfor %}
-    </div>
-
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Pobierz wszystkie alerty z atrybutem data-auto-dismiss
-        const alerts = document.querySelectorAll('[data-auto-dismiss]');
-
-        alerts.forEach(alert => {
-            const delay = parseInt(alert.getAttribute('data-auto-dismiss'));
-
-            // Ustaw timeout dla każdego alertu
-            setTimeout(() => {
-                // Dodaj klasę fade-out (możesz dostosować czas trwania animacji)
-                alert.style.transition = 'opacity 0.5s ease-out';
-                alert.style.opacity = '0';
-
-                // Po zakończeniu animacji usuń element
-                setTimeout(() => {
-                    const bsAlert = new bootstrap.Alert(alert);
-                    bsAlert.close();
-                }, 500); // Dopasuj do czasu trwania animacji
-            }, delay);
-        });
-    });
-    </script>
-
-    <style>
-        /* Opcjonalne dodatkowe style dla płynniejszej animacji */
-        .alert {
-            transition: opacity 0.5s ease-out;
-        }
-    </style>
-    {% endif %}
+    {{ render_messages(request) }}
     {{ render_navbar() }}
     <main class="container my-5">
         <div class="d-flex justify-content-center align-items-center flex-column">

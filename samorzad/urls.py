@@ -1,6 +1,6 @@
 from django.urls import path
 from . import views
-from .api.views import VotingResultsChartAPIView, VotingTimelineChartAPI
+from .api.views import VotingResultsChartAPIView, VotingTimelineChartAPI, TokenObtainView, TokenRefreshView
 
 app_name="samorzad"
 
@@ -11,4 +11,6 @@ urlpatterns = [
     # API urls
     path('votings/<int:voting_id>/results/', VotingResultsChartAPIView.as_view(), name='voting-results'),
     path('votings/<int:voting_id>/timeline/', VotingTimelineChartAPI.as_view(), name='voting-timeline'),
+    path('token/', TokenObtainView.as_view(), name='token_obtain'),
+    path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 ]

@@ -4,6 +4,7 @@ from django.utils import timezone, dateparse
 from django.contrib import messages
 from django.db.models import Count
 from django.core.exceptions import ValidationError
+from django.db.models import F
 from office_auth.views import azure_login_required
 from .models import Voting, Candidate, Vote, ElectoralProgram, CandidateRegistration
 from .forms import VotingForm
@@ -42,13 +43,24 @@ def get_voting_details(request: HttpRequest, id: int):
         .order_by('-count') \
         .values_list('candidate_registration__candidate_id', flat=True) \
         .first()
+    q = Vote.objects.filter(candidate_registration__voting_id=id) \
+    .values('candidate_registration__candidate') \
+    .annotate(
+        count=Count('id'),
+        first_name=F('candidate_registration__candidate__first_name'),
+        last_name=F('candidate_registration__candidate__last_name'),
+        program=F('candidate_registration__candidate__electoral_programs__info'),
+        image_url=F('candidate_registration__candidate__image')
+    ) \
+    .filter(candidate_registration__candidate__electoral_programs__voting_id=id) \
+    .order_by('-count')
     voting = voting.annotate(votes_count=Count('candidate_registrations__votes', distinct=True)).first()
     if voting.votes_count == 0 and top_candidate_id is None:
         messages.error(request, f'Głosowanie rozpoczęte {voting.parse_planned_start()} nie zostało poprawnie przeprowadzone')
         return redirect(reverse('samorzad:index'))
     return render(request, 'voting_details.html', {
         'voting': voting,
-        'winner':Candidate.objects.filter(id=top_candidate_id).first()
+        'candidates':q
     })
 
 

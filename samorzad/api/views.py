@@ -1,8 +1,10 @@
-# api/views.py
 from django.http import HttpRequest
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.views import TokenRefreshView
 from django.db.models import Count, F
 from django.utils import timezone
 from datetime import timedelta
@@ -12,7 +14,27 @@ from collections import defaultdict
 import json
 import pytz
 
+
+class TokenObtainView(APIView):
+    """
+    Zwraca tokeny JWT dla zalogowanego użytkownika Azure
+    """
+    def post(self, request):
+        user_id = request.session.get('microsoft_user_id')
+        if not user_id:
+            return Response(
+                {"detail": "Użytkownik nie jest zalogowany"},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        token = RefreshToken()
+        token['user_id'] = user_id
+        return Response({
+            'refresh': str(token),
+            'access': str(token.access_token),
+        })
+
 class VotingResultsChartAPIView(APIView):
+    permission_classes = [IsAuthenticated]
     def get(self, request, voting_id):
         try:
             voting = Voting.objects.get(pk=voting_id)
@@ -47,6 +69,7 @@ class VotingResultsChartAPIView(APIView):
 
 
 class VotingTimelineChartAPI(APIView):
+    permission_classes = [IsAuthenticated]
     def get(self, request, voting_id):
         try:
             voting = Voting.objects.get(pk=voting_id)

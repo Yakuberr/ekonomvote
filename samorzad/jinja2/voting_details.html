@@ -1,4 +1,4 @@
-{% from 'macros.html' import render_navbar %}
+{% from 'macros.html' import render_navbar, render_messages %}
 <!DOCTYPE html>
 <html lang="pl" data-bs-theme="dark">
 <head>
@@ -21,73 +21,37 @@
         #carouselExampleIndicators{
             overflow: hidden;
         }
+
+        .carousel-item img {
+        width: 100%;        /* Wypełnij szerokość kontenera */
+        height: 25rem;      /* Ustaw stałą wysokość dla wszystkich obrazków */ 
+        object-fit: cover;  /* Skaluj obrazek, zachowując proporcje, aby wypełnić kontener. Przytnij, jeśli trzeba. */
+        object-position: center; /* Opcjonalnie: centruj obrazek w pionie i poziomie podczas przycinania */
+        display: block;     /* Usuwa ewentualne dodatkowe miejsce pod obrazkiem */
+        }
     </style>
 </head>
 <body>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    {% set messages = get_messages(request) %}
-    {% if messages %}
-    <div class="fixed-top" style="top: 56px; z-index: 1050;">
-        {% for message in messages %}
-        <div class="alert
-             {% if message.tags == 'error' %}alert-danger
-             {% elif message.tags == 'warning' %}alert-warning
-             {% elif message.tags == 'info' %}alert-info
-             {% else %}alert-success{% endif %}
-             alert-dismissible fade show m-3"
-             role="alert"
-             data-auto-dismiss="2500">
-            {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-        {% endfor %}
-    </div>
-
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const alerts = document.querySelectorAll('[data-auto-dismiss]');
-        alerts.forEach(alert => {
-            const delay = parseInt(alert.getAttribute('data-auto-dismiss'));
-            setTimeout(() => {
-                alert.style.transition = 'opacity 0.5s ease-out';
-                alert.style.opacity = '0';
-                setTimeout(() => {
-                    const bsAlert = new bootstrap.Alert(alert);
-                    bsAlert.close();
-                }, 500);
-            }, delay);
-        });
-    });
-    </script>
-    <style>
-        .alert {
-            transition: opacity 0.5s ease-out;
-        }
-    </style>
-    {% endif %}
+    {{ render_messages(request) }}
     {{ render_navbar() }}
     <div class="container my-5">
             <div class="d-flex justify-content-start flex-column align-items-center">
         <h2 class="mb-3 p-1">Wyniki głosowania</h2>
             <div class="d-flex justify-content-center mb-3">
             <div class="card" style="width: 35rem;">
-                <!-- <img src="{{winner.image.url}}" alt="" class="card-img-top"> -->
                 <div id="carouselExampleIndicators" class="carousel slide card-img-top">
                       <div class="carousel-indicators">
-                        <button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
-                        <button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="1" aria-label="Slide 2"></button>
-                        <button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="2" aria-label="Slide 3"></button>
+                        {% for c in candidates %}
+                        <button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="{{ loop.index0 }}" {% if loop.first %} class="active" aria-current="true" {% endif %}  aria-label="Slide {{ loop.index }}"></button>
+                        {% endfor %}
                       </div>
-                      <div class="carousel-inner">
-                        <div class="carousel-item active">
-                          <img src="{{winner.image.url}}" class="d-block w-100" alt="...">
+                        <div class="carousel-inner">
+                        {% for c in candidates %}
+                        <div class="image-container carousel-item{% if loop.first %} active {% endif %}" candidate-id="{{ loop.index0 }}">
+                          <img src="{{ media_url }}{{ c['image_url'] }}" class="d-block candidate-image" alt="{{ c['first_name'] }} {{ c['last_name'] }}">
                         </div>
-                        <div class="carousel-item">
-                          <img src="{{winner.image.url}}" class="d-block w-100" alt="...">
-                        </div>
-                        <div class="carousel-item">
-                          <img src="{{winner.image.url}}" class="d-block w-100" alt="...">
-                        </div>
+                        {% endfor %}
                       </div>
                       <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide="prev">
                         <span class="carousel-control-prev-icon" aria-hidden="true"></span>
@@ -99,12 +63,7 @@
                       </button>
                 </div>
               <div class="card-body">
-                  {% if now() < voting.planned_end %}
-                  <h5 class="card-title ps-2">Prowadzi</h5>
-                  {% else %}
-                  <h5 class="card-title ps-2">Zwycięzca</h5>
-                  {% endif %}
-                <h6 class="card-subtitle mb-2 text-body-secondary ps-2">{{winner.first_name}}  {{winner.last_name}}</h6>
+                  <h5 class="card-title ps-2" id="candidateName">{{ candidates[0]['first_name'] }} {{ candidates[0]['last_name'] }}</h5>
                   <ul class="list-group list-group-flush">
                     <li class="list-group-item"><span class="fw-medium">Rozpoczęcie:</span> {{ voting.parse_planned_start() }}</li>
                     <li class="list-group-item"><span class="fw-medium">Zakończenie:</span> {{ voting.parse_planned_end() }}</li>
@@ -112,9 +71,17 @@
                         <span class="fw-medium">Zarejestrowani kandydaci:</span> {{ voting.candidate_registrations.count() }}
                     </li>
                     <li class="list-group-item voting-stats">
-                        <span class="fw-medium">Oddane głosy:</span> {{ voting.votes_count }}
+                        <span class="fw-medium">Łącznie oddane głosy:</span> {{ voting.votes_count }}
                     </li>
                   </ul>
+                  <button class="btn btn-outline-eco-light-cyan w-100" data-bs-toggle="collapse" data-bs-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample">Wyświetl program</button>
+                  <div class="collapse" id="collapseExample">
+                    <div class="p-1 mt-2">
+                      {% for c in candidates %}
+                        <div class="candidate-program" candidate-id="{{ loop.index0 }}" {% if not loop.first %} style="display: none;" {% endif %} >{{ c['program'] }}</div>
+                      {% endfor %}
+                    </div>
+                  </div>
               </div>
             </div>
         </div>
@@ -130,221 +97,319 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const votingId = {{ voting.pk }};
-        const ctx = document.getElementById('resultsChart').getContext('2d');
-        const chartColor = getComputedStyle(document.documentElement)
-            .getPropertyValue('--chart-color').trim();
-        const chartTextColor = getComputedStyle(document.body).getPropertyValue('--bs-heading-color');
-        console.log(chartTextColor)
-        const getColorWithOpacity = (baseColor, opacity) => {
-            return baseColor + opacity;
-        };
-        fetch(`/samorzad/votings/${votingId}/results/`)
-          .then(response => response.json())
-          .then(data => {
-            const labels = data.map(item =>
-                `${item.candidate.first_name} ${item.candidate.last_name}`
-            );
-            Chart.defaults.color = '#ffffff';
-            Chart.defaults.borderColor = 'rgba(255, 255, 255, 0.1)';
-            new Chart(ctx, {
-              type: 'bar',
-              data: {
-                labels: labels,
-                datasets: [
-                  {
-                    label: 'Liczba Głosów',
-                    data: data.map(item => item.votes_count),
-                    backgroundColor: data.map(() => chartColor),
-                    borderColor: 'transparent',
-                    borderWidth: 0
-                  }
-                ]
-              },
-              options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                let label = context.dataset.label || '';
-                                if (label) {
-                                    label += ': ';
-                                }
-                                const votes = context.raw;
-                                const percentage = data[context.dataIndex].percentage;
-                                return `${label}${votes} głosów (${percentage.toFixed(1)}%)`;
-                            }
-                        },
-                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                        titleColor: '#ffffff',
-                        bodyColor: '#ffffff',
-                    },
-                    legend: {
-                        labels: {
-                            color: '#fff',
-                            usePointStyle: false,
-                            boxWidth: 15,
-                            boxHeight: 15,
-                        }
-                    }
-                },
-                scales: {
-                  x: {
-                    ticks: {
-                        color: '#ffffff',
-                        font:{
-                            size:15
-                        }
-                    },
-                    grid: {
-                        color: 'rgba(255, 255, 255, 0.1)'
-                    },
-                    title: {
-                        display: true,
-                        text: 'Kandydaci',
-                        color: '#ffffff',
-                        font:{
-                            size:25
-                        }
-                    }
-                  },
-                  y: {
-                    beginAtZero: true,
-                    ticks: {
-                        color: '#ffffff',
-                        font:{
-                            size:15
-                        }
-                    },
-                    grid: {
-                        color: 'rgba(255, 255, 255, 0.1)'
-                    },
-                    title: {
-                        display: true,
-                        text: 'Liczba głosów',
-                        color: '#ffffff',
-                        font:{
-                            size:25
-                        }
-                    }
-                  }
+        async function getToken() {
+            try {
+                const storedToken = localStorage.getItem('access_token');
+                const expiry = localStorage.getItem('token_expiry');
+                const refreshToken = localStorage.getItem('refresh_token');
+                if (storedToken && expiry && new Date().getTime() < parseInt(expiry)) {
+                    return storedToken;
                 }
-              }
-            });
-          })
-          .catch(error => {
-              console.error('Error fetching data:', error);
-          });
-    });
+                if (refreshToken) {
+                    try {
+                        const refreshResponse = await fetch('/samorzad/token/refresh/', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ refresh: refreshToken })
+                        });
+
+                        if (refreshResponse.ok) {
+                            const refreshData = await refreshResponse.json();
+                            localStorage.setItem('access_token', refreshData.access);
+                            const newExpiryTime = new Date().getTime() + (55 * 60 * 1000);
+                            localStorage.setItem('token_expiry', newExpiryTime.toString());
+
+                            return refreshData.access;
+                        }
+                    } catch (refreshError) {
+                        console.warn('Nie udało się odświeżyć tokenu:', refreshError);
+                        localStorage.removeItem('access_token');
+                        localStorage.removeItem('refresh_token');
+                        localStorage.removeItem('token_expiry');
+                    }
+                }
+                const response = await fetch('/samorzad/token/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'same-origin' // Ważne dla uwierzytelnienia sesji
+                });
+
+                if (!response.ok) {
+                    throw new Error('Błąd uwierzytelniania');
+                }
+
+                const data = await response.json();
+                // Zapisz tokeny w localStorage
+                localStorage.setItem('access_token', data.access);
+                localStorage.setItem('refresh_token', data.refresh);
+                const expiryTime = new Date().getTime() + (55 * 60 * 1000);
+                localStorage.setItem('token_expiry', expiryTime.toString());
+
+                return data.access;
+            } catch (error) {
+                console.error('Błąd podczas pobierania tokenu:', error);
+                return null;
+            }
+        }
     </script>
     <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const votingId2 = {{ voting.pk }};
-    const ctx2 = document.getElementById('timelineChart').getContext('2d');
-
-    fetch(`/samorzad/votings/${votingId2}/timeline/`)
-        .then(response => response.json())
-        .then(data => {
-            const colors = [
-                '#4BC0C0', '#FF6384', '#36A2EB', '#FFCE56', '#9966FF',
-                '#FF9F40', '#8AC249', '#EA5F89', '#00BFFF', '#A0522D'
-            ];
-
-            // Przygotuj dane dla ChartJS
-            const datasets = [];
-            let colorIndex = 0;
-
-            for (const [candidateId, candidateData] of Object.entries(data.candidates)) {
-                console.log(candidateData)
-                datasets.push({
-                    label: candidateData.name,
-                    data: candidateData.votes,
-                    borderColor: colors[colorIndex % colors.length],
-                    backgroundColor: colors[colorIndex % colors.length],
-                    tension: 0.0,
-                    fill: false,
-                    pointRadius: 2,
-                    pointHoverRadius: 5,
-                });
-                colorIndex++;
+            // Pierwszy skrypt (wyniki głosowania)
+        document.addEventListener('DOMContentLoaded', async function() {
+            const votingId = {{ voting.pk }};
+            const ctx = document.getElementById('resultsChart').getContext('2d');
+            const chartColor = getComputedStyle(document.documentElement)
+                .getPropertyValue('--chart-color').trim();
+            const chartTextColor = getComputedStyle(document.body).getPropertyValue('--bs-heading-color');
+            const token = await getToken();            
+            if (!token) {
+                console.error('Nie udało się pobrać tokenu autoryzacyjnego');
+                return;
             }
-
-            new Chart(ctx2, {
-                type: 'line',
-                data: {
-                    labels: data.timeline,
-                    datasets: datasets
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                            labels: {
-                                color: '#ffffff',
+            const getColorWithOpacity = (baseColor, opacity) => {
+                return baseColor + opacity;
+            };
+            try {
+                const response = await fetch(`/samorzad/votings/${votingId}/results/`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                if (!response.ok) {
+                    throw new Error(`Błąd HTTP: ${response.status}`);
+                }
+                const data = await response.json();
+                const labels = data.map(item =>
+                    `${item.candidate.first_name} ${item.candidate.last_name}`
+                );
+                Chart.defaults.color = '#ffffff';
+                Chart.defaults.borderColor = 'rgba(255, 255, 255, 0.1)';
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: 'Liczba Głosów',
+                                data: data.map(item => item.votes_count),
+                                backgroundColor: data.map(() => chartColor),
+                                borderColor: 'transparent',
+                                borderWidth: 0
                             }
-                        },
-                        tooltip: {
-                            mode: 'index',
-                            intersect: false,
-                            callbacks: {
-                                label: function(context) {
-                                    return `${context.dataset.label}: ${context.raw} głosów`;
-                                }
-                            }
-                        }
+                        ]
                     },
-                    scales: {
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'Czas oddania głosu',
-                                color: '#ffffff',
-                                font:{
-                                    size: 25
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.dataset.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        const votes = context.raw;
+                                        const percentage = data[context.dataIndex].percentage;
+                                        return `${label}${votes} głosów (${percentage.toFixed(1)}%)`;
+                                    }
                                 },
+                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                titleColor: '#ffffff',
+                                bodyColor: '#ffffff',
                             },
-                            ticks: {
-                                color: '#ffffff',
-                                maxRotation: 45,
-                                minRotation: 45,
-                                font:{
-                                    size:15
+                            legend: {
+                                labels: {
+                                    color: '#fff',
+                                    usePointStyle: false,
+                                    boxWidth: 15,
+                                    boxHeight: 15,
                                 }
-                            },
-                            grid: {
-                                color: 'rgba(255, 255, 255, 0.1)'
                             }
                         },
-                        y: {
-                            title: {
-                                display: true,
-                                text: 'Skumulowana liczba głosów',
-                                color: '#ffffff',
-                                font:{
-                                    size: 25
+                        scales: {
+                            x: {
+                                ticks: {
+                                    color: '#ffffff',
+                                    font:{
+                                        size:15
+                                    }
                                 },
-                            },
-                            ticks: {
-                                color: '#ffffff',
-                                precision: 0,
-                                font:{
-                                    size:15
+                                grid: {
+                                    color: 'rgba(255, 255, 255, 0.1)'
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Kandydaci',
+                                    color: '#ffffff',
+                                    font:{
+                                        size:25
+                                    }
                                 }
                             },
-                            grid: {
-                                color: 'rgba(255, 255, 255, 0.1)'
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    color: '#ffffff',
+                                    font:{
+                                        size:15
+                                    }
+                                },
+                                grid: {
+                                    color: 'rgba(255, 255, 255, 0.1)'
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Liczba głosów',
+                                    color: '#ffffff',
+                                    font:{
+                                        size:25
+                                    }
+                                }
                             }
                         }
                     }
-                }
-            });
+                });
+            } catch (error) {
+                console.error('Błąd podczas pobierania danych:', error);
+            }
         });
-});
+
+        // Drugi skrypt (oś czasu głosowania)
+        document.addEventListener('DOMContentLoaded', async function() {
+            const votingId = {{ voting.pk }};
+            const ctx = document.getElementById('timelineChart').getContext('2d');
+            const token = await getToken();
+            if (!token) {
+                console.error('Nie udało się pobrać tokenu autoryzacyjnego');
+                return;
+            }
+            try {
+                const response = await fetch(`/samorzad/votings/${votingId}/timeline/`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                if (!response.ok) {
+                    throw new Error(`Błąd HTTP: ${response.status}`);
+                }
+                const data = await response.json();
+                const colors = [
+                    '#4BC0C0', '#FF6384', '#36A2EB', '#FFCE56', '#9966FF',
+                    '#FF9F40', '#8AC249', '#EA5F89', '#00BFFF', '#A0522D',
+                    '#FF6B6B', '#48D1CC', '#9370DB', '#3CB371', '#FFD700',
+                    '#FF6347', '#7B68EE', '#20B2AA', '#DA70D6', '#778899'
+                ];
+                const datasets = [];
+                let colorIndex = 0;
+                for (const [candidateId, candidateData] of Object.entries(data.candidates)) {
+                    datasets.push({
+                        label: candidateData.name,
+                        data: candidateData.votes,
+                        borderColor: colors[colorIndex % colors.length],
+                        backgroundColor: colors[colorIndex % colors.length],
+                        tension: 0.0,
+                        fill: false,
+                        pointRadius: 2,
+                        pointHoverRadius: 5,
+                    });
+                    colorIndex++;
+                }
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: data.timeline,
+                        datasets: datasets
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                                labels: {
+                                    color: '#ffffff',
+                                }
+                            },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false,
+                                callbacks: {
+                                    label: function(context) {
+                                        return `${context.dataset.label}: ${context.raw} głosów`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Czas oddania głosu',
+                                    color: '#ffffff',
+                                    font:{
+                                        size: 25
+                                    },
+                                },
+                                ticks: {
+                                    color: '#ffffff',
+                                    maxRotation: 45,
+                                    minRotation: 45,
+                                    font:{
+                                        size:15
+                                    }
+                                },
+                                grid: {
+                                    color: 'rgba(255, 255, 255, 0.1)'
+                                }
+                            },
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: 'Skumulowana liczba głosów',
+                                    color: '#ffffff',
+                                    font:{
+                                        size: 25
+                                    },
+                                },
+                                ticks: {
+                                    color: '#ffffff',
+                                    precision: 0,
+                                    font:{
+                                        size:15
+                                    }
+                                },
+                                grid: {
+                                    color: 'rgba(255, 255, 255, 0.1)'
+                                }
+                            }
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('Błąd podczas pobierania danych osi czasu:', error);
+            }
+        });
+    </script>
+<script>
+    const myCarousel = document.getElementById('carouselExampleIndicators')
+    myCarousel.addEventListener('slid.bs.carousel', event => {
+        let currentVisibleCandidate = document.querySelector('.carousel-inner').querySelector('.active').getAttribute('candidate-id');
+        document.querySelectorAll('.candidate-program').forEach(element => {
+            if (element.getAttribute('candidate-id') == currentVisibleCandidate) {
+                element.style.display = 'block';
+            }
+            else{
+                element.style.display = 'none';
+            }
+        });
+        document.getElementById('candidateName').innerText = document.querySelector('div[class="image-container carousel-item active"]').querySelector('img').getAttribute('alt');
+    })
 </script>
 </body>
 </html>
