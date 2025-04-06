@@ -70,6 +70,16 @@ class CandidateRegistration(models.Model):
     def __str__(self):
         return f'CandidateRegistration(candidate={self.candidate.pk}, voting={self.voting.pk})'
 
+    def clean(self):
+        # Sprawdź, czy w danym głosowaniu nie ma już 20 kandydatów
+        if self.voting.candidate_registrations.count() >= 20 and not self.voting.candidate_registrations.filter(
+                pk=self.pk).exists():
+            raise ValidationError("W głosowaniu nie może być więcej niż 20 kandydatów.")
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
 
 class Vote(models.Model):
     candidate_registration = models.ForeignKey(CandidateRegistration, on_delete=models.CASCADE, related_name='votes')
@@ -81,10 +91,10 @@ class Vote(models.Model):
 
     def clean(self):
         voting = self.candidate_registration.voting
-        # if timezone.now() < voting.planned_start:
-        #     raise ValidationError("Nie można głosować przed rozpoczęciem głosowania")
-        # if timezone.now() > voting.planned_end:
-        #     raise ValidationError("Nie można głosować po zakończeniu głosowania")
+        if timezone.now() < voting.planned_start:
+            raise ValidationError("Nie można głosować przed rozpoczęciem głosowania")
+        if timezone.now() > voting.planned_end:
+            raise ValidationError("Nie można głosować po zakończeniu głosowania")
         if not self.candidate_registration.is_eligible:
             raise ValidationError("Nie można oddać głosu na kandydata, który nie został dopuszczony do wyborów.")
 

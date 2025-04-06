@@ -11,9 +11,9 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
-
 from django.conf.global_settings import LOGIN_REDIRECT_URL, MEDIA_ROOT
 from dotenv import load_dotenv
+from django.utils import timezone
 import os
 
 load_dotenv()
@@ -29,7 +29,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DJANGO_DEBUG')
 
 ALLOWED_HOSTS = []
 
@@ -88,37 +88,23 @@ TEMPLATES = [
 WSGI_APPLICATION = 'ekonomvote.wsgi.application'
 
 
-# Database
-# https://docs.djangoproject.com/en/5.1/ref/settings/#databases
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('DB_NAME'),
-        'USER': os.getenv('DB_USER'),
-        'PASSWORD': os.getenv('DB_PASSWORD'),
-        'HOST': os.getenv('DB_HOST'),
-        'PORT': os.getenv('DB_PORT')
-    }
-}
-
 # Na potrzeby ekonomika bez dockera
 # 1. pip install mysqlclient
 # 2. python manage.py migrate
 # 3. python manage.py loaddata datadump.json
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.mysql',
-#         'NAME': 'ekonomvote',
-#         'USER': 'root',
-#         'PASSWORD': '',
-#         'HOST': 'localhost',
-#         'PORT': '3306',
-#         'OPTIONS': {
-#             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-#         }
-#     }
-# }
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': os.getenv('DB_NAME'),
+        'USER': os.getenv('DB_USER'),
+        'PASSWORD': os.getenv('DB_PASSWORD'),
+        'HOST': os.getenv('DB_HOST'),
+        'PORT': os.getenv('DB_PORT'),
+        'OPTIONS': {
+            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+        }
+    }
+}
 
 
 # Password validation
@@ -173,3 +159,36 @@ MICROSOFT_TENANT_ID = os.getenv('MICROSOFT_TENANT_ID')
 MICROSOFT_REDIRECT = os.getenv('MICROSOFT_REDIRECT')
 MICROSOFT_LOGOUT = os.getenv('MICROSOFT_LOGOUT')
 LOGIN_URL='/microsoft-authentication/login'
+
+# API
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'samorzad.api.authentication.NoDbJWTAuthentication',
+    ),
+}
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timezone.timedelta(minutes=60),
+    'REFRESH_TOKEN_LIFETIME': timezone.timedelta(days=1),
+    'ROTATE_REFRESH_TOKENS': False,
+    'BLACKLIST_AFTER_ROTATION': False,
+    'UPDATE_LAST_LOGIN': False, # Nie ma logowania do bazy danych
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': SECRET_KEY,
+    'VERIFYING_KEY': None,
+    'AUDIENCE': None,
+    'ISSUER': None,
+    'JWK_URL': None,
+    'LEEWAY': 0,
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
+    'USER_AUTHENTICATION_RULE': 'twoja_aplikacja.authentication.no_db_user_authentication_rule',
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+    'TOKEN_TYPE_CLAIM': 'token_type',
+    'TOKEN_USER_CLASS': 'rest_framework_simplejwt.models.TokenUser',
+    'JTI_CLAIM': 'jti',
+}
+
+

@@ -31,7 +31,6 @@ def microsoft_callback(request:HttpRequest):
         code = request.GET.get('code')
         token_result = auth.get_token(code, redirect_uri=redirect_uri)
         user_info = auth.get_user_info(token_result['access_token'])
-        print(user_info)
         request.session['microsoft_user_id'] = user_info['id']
         request.session['is_authenticated'] = True
         return redirect('samorzad:index')

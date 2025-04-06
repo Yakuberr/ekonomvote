@@ -1,5 +1,5 @@
 {% macro render_navbar() %}
-<nav class="navbar navbar-expand-lg bg-body-tertiary">
+<nav class="navbar navbar-expand bg-body-tertiary">
   <div class="container-fluid">
     <a class="navbar-brand ms-1" href="{{ url('samorzad:index') }}">
       <img src="{{ static('logo.png') }}" alt="Logo ekonomika" width="40" height="40">
@@ -16,4 +16,48 @@
     </div>
   </div>
 </nav>
+{% endmacro %}
+
+
+{% macro render_messages(request) %}
+    {% set messages = get_messages(request) %}
+    {% if messages %}
+    <div class="fixed-top" style="top: 0px; z-index: 1050;">
+        {% for message in messages %}
+        <div class="alert
+             {% if message.tags == 'error' %}alert-danger
+             {% elif message.tags == 'warning' %}alert-warning
+             {% elif message.tags == 'info' %}alert-info
+             {% else %}alert-success{% endif %}
+             alert-dismissible fade show m-3"
+             role="alert"
+             data-auto-dismiss="2500">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+  <script>
+      document.addEventListener('DOMContentLoaded', function() {
+          const alerts = document.querySelectorAll('[data-auto-dismiss]');
+          alerts.forEach(alert => {
+              const delay = parseInt(alert.getAttribute('data-auto-dismiss'));
+              setTimeout(() => {
+                  // Dodaj klasę fade-out (możesz dostosować czas trwania animacji)
+                  alert.style.transition = 'opacity 0.5s ease-out';
+                  alert.style.opacity = '0';
+                  setTimeout(() => {
+                      const bsAlert = new bootstrap.Alert(alert);
+                      bsAlert.close();
+                  }, 500); // Dopasuj do czasu trwania animacji
+              }, delay);
+          });
+      });
+      </script>
+      <style>
+          .alert {
+              transition: opacity 0.5s ease-out;
+          }
+      </style>
+      {% endif %}
 {% endmacro %}

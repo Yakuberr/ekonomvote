@@ -37,30 +37,35 @@ def list_votings(request: HttpRequest):
 def get_voting_details(request: HttpRequest, id: int):
     if request.method not in ['GET', 'POST']:
         return HttpResponseNotAllowed(["GET"])
-    voting = get_object_or_404(Voting, pk=id)
-    voting = Voting.objects.filter(pk=id)
-    top_candidate_id = Vote.objects.filter(candidate_registration__voting_id=id).values('candidate_registration__candidate_id').annotate(count=Count('id')) \
-        .order_by('-count') \
-        .values_list('candidate_registration__candidate_id', flat=True) \
-        .first()
-    q = Vote.objects.filter(candidate_registration__voting_id=id) \
-    .values('candidate_registration__candidate') \
-    .annotate(
-        count=Count('id'),
-        first_name=F('candidate_registration__candidate__first_name'),
-        last_name=F('candidate_registration__candidate__last_name'),
-        program=F('candidate_registration__candidate__electoral_programs__info'),
-        image_url=F('candidate_registration__candidate__image')
-    ) \
-    .filter(candidate_registration__candidate__electoral_programs__voting_id=id) \
-    .order_by('-count')
-    voting = voting.annotate(votes_count=Count('candidate_registrations__votes', distinct=True)).first()
-    if voting.votes_count == 0 and top_candidate_id is None:
-        messages.error(request, f'Głosowanie rozpoczęte {voting.parse_planned_start()} nie zostało poprawnie przeprowadzone')
+
+    voting = get_object_or_404(
+        Voting.objects.annotate(
+            total_votes=Count('candidate_registrations__votes')
+        ),
+        pk=id
+    )
+    if voting.candidate_registrations.count() == 0:
+        messages.error(
+            request,
+            f'Głosowanie rozpoczęte {voting.parse_planned_start()} nie zostało poprawnie przeprowadzone'
+        )
         return redirect(reverse('samorzad:index'))
+
+    candidates = CandidateRegistration.objects.filter(
+        voting_id=id,
+        is_eligible=True
+    ).annotate(
+        candidate_votes=Count('votes'),  # Głosy per kandydat
+        first_name=F('candidate__first_name'),
+        last_name=F('candidate__last_name'),
+        program=F('candidate__electoral_programs__info'),
+        image_url=F('candidate__image')
+    ).order_by('-candidate_votes')
+
     return render(request, 'voting_details.html', {
         'voting': voting,
-        'candidates':q
+        'candidates': candidates,
+        'total_votes': voting.total_votes  # Przekazanie łącznej liczby głosów do szablonu
     })
 
 
