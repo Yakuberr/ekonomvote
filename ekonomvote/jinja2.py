@@ -14,7 +14,7 @@ def environment(**options):
             "url": reverse,
             'get_messages':messages.get_messages,
             'now':timezone.now,
-            'media_url':settings.MEDIA_URL
+            'media_url':settings.MEDIA_URL,
         }
     )
     return env
