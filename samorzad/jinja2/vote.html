@@ -46,10 +46,6 @@
             font-size: 1.2rem;
         }
 
-        .form-container {
-            width: 100%;
-            text-align: center;
-        }
 
         .image-container {
             height: 300px;
@@ -69,7 +65,7 @@
 <body>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     {{ render_messages(request) }}
-    {{ render_navbar() }}
+    {{ render_navbar(csrf_input) }}
     <main class="container my-5">
         <div class="d-flex justify-content-center align-items-center flex-column">
             <div class="h-50 w-75 p-1 mb-3 align-self-start"><h2>Wybierz swojego kandydata</h2></div>
@@ -84,6 +80,7 @@
                             <img src="{{ c.image.url }}" class="candidate-image rounded" alt="Zdjęcie kandydata {{ c.first_name }} {{ c.last_name }}">
                           </div>
                           <figcaption class="figure-caption text-center fs-5 mt-2">{{ c.first_name }} {{ c.last_name }}</figcaption>
+                            <figcaption class="figure-caption text-center card-title mt-2 text-body-secondary">Klasa {{ c.school_class }}</figcaption>
                         </figure>
                     </div>
                 {% endfor %}
@@ -106,7 +103,7 @@
                 </div>
             </div>
 
-            <div class="form-container">
+            <div class="w-100 d-flex justify-content-center align-items-center">
                 <form method="post" action="{{ url('samorzad:post_vote') }}" class="w-100">
                     {{ csrf_input }}
                     <input type="hidden" id="registration_id" name="registration_id" value="">

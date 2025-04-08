@@ -37,7 +37,6 @@ def list_votings(request: HttpRequest):
 def get_voting_details(request: HttpRequest, id: int):
     if request.method not in ['GET', 'POST']:
         return HttpResponseNotAllowed(["GET"])
-
     voting = get_object_or_404(
         Voting.objects.annotate(
             total_votes=Count('candidate_registrations__votes')
@@ -50,7 +49,13 @@ def get_voting_details(request: HttpRequest, id: int):
             f'Głosowanie rozpoczęte {voting.parse_planned_start()} nie zostało poprawnie przeprowadzone'
         )
         return redirect(reverse('samorzad:index'))
-
+    vote = Vote.objects.filter(
+        azure_user_id=request.session.get('microsoft_user_id'),
+        candidate_registration__voting=voting
+    ).select_related('candidate_registration__candidate').first()
+    if vote is None:
+        messages.error(request, 'Nie można podejrzeć wyników przed zagłosowaniem')
+        return redirect(reverse('samorzad:post_vote'))
     candidates = CandidateRegistration.objects.filter(
         voting_id=id,
         is_eligible=True
@@ -59,9 +64,9 @@ def get_voting_details(request: HttpRequest, id: int):
         first_name=F('candidate__first_name'),
         last_name=F('candidate__last_name'),
         program=F('candidate__electoral_programs__info'),
-        image_url=F('candidate__image')
+        image_url=F('candidate__image'),
+        school_class=F('candidate__school_class')
     ).order_by('-candidate_votes')
-
     return render(request, 'voting_details.html', {
         'voting': voting,
         'candidates': candidates,
@@ -90,7 +95,8 @@ def post_vote(request: HttpRequest):
             'first_name': reg.candidate.first_name,
             'last_name': reg.candidate.last_name,
             'image': reg.candidate.image,
-            'program_info': electoral_program.info if electoral_program else "Brak programu"
+            'program_info': electoral_program.info if electoral_program else "Brak programu",
+            'school_class':reg.candidate.school_class
         })
     if request.method == 'GET':
         voted = Vote.objects.filter(

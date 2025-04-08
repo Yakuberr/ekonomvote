@@ -29,7 +29,7 @@
     <script type="text/javascript" src="https://unpkg.com/qr-code-styling@1.5.0/lib/qr-code-styling.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     {{ render_messages(request) }}
-    {{ render_navbar() }}
+    {{ render_navbar(csrf_input) }}
         <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
       <div class="modal-dialog">
         <div class="modal-content">
@@ -75,8 +75,10 @@
         </div>
         <hr class="my-4">
         {% endif %}
-        <h4 class="mb-4">Zakończone głosowania</h4>
-        <div class="d-flex justify-content-start align-items-center flex-row flex-wrap gap-5">
+        <div class="d-flex justify-content-center justify-content-lg-start">
+            <h4 class="mb-4">Zakończone głosowania</h4>
+        </div>
+        <div class="d-flex justify-content-lg-start justify-content-center align-items-center flex-row flex-wrap gap-5">
             {% for v in old_votings %}
             <div class="card mb-4" style="width: 25rem;">
                 <img src="{{ static('glosowanie.png') }}" class="card-img-top old-voting-img" alt="głosowanie">
@@ -100,7 +102,7 @@
     </main>
 <script type="text/javascript">
       QrCreator.render({
-        text: "http://localhost:8000{{url('samorzad:post_vote')}}",
+        text: "{{ request.build_absolute_uri(url('samorzad:post_vote')) }}",
         radius: 0.2,
         ecLevel: 'H',
         fill: '#04b4ad',
