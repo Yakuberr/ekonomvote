@@ -1,4 +1,4 @@
-{% macro render_navbar() %}
+{% macro render_navbar(csrf_input) %}
 <nav class="navbar navbar-expand bg-body-tertiary">
   <div class="container-fluid">
     <a class="navbar-brand ms-1" href="{{ url('samorzad:index') }}">
@@ -10,7 +10,8 @@
     <div class="collapse navbar-collapse" id="navbarToggler">
       <ul class="navbar-nav me-auto mb-2 mb-lg-0">
       </ul>
-      <form class="d-flex justify-content-end" role="search">
+      <form class="d-flex justify-content-end"  method="post" action="{{ url('office_auth:logout') }}">
+          {{ csrf_input }}
         <button class="btn btn-outline-eco-light-cyan" type="submit">Wyloguj się</button>
       </form>
     </div>
@@ -31,7 +32,7 @@
              {% else %}alert-success{% endif %}
              alert-dismissible fade show m-3"
              role="alert"
-             data-auto-dismiss="2500">
+             data-auto-dismiss="4000">
             {{ message }}
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
