@@ -35,7 +35,7 @@ class Candidate(models.Model):
     image = models.ImageField(upload_to='uploads/samorzad/', null=False, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    is_eligible = models.BooleanField(default=False)
+    school_class = models.CharField(max_length=20, null=True)
 
     def __str__(self):
         return f'Candiate(first_name={self.first_name}, last_name={self.last_name})'
@@ -71,7 +71,6 @@ class CandidateRegistration(models.Model):
         return f'CandidateRegistration(candidate={self.candidate.pk}, voting={self.voting.pk})'
 
     def clean(self):
-        # Sprawdź, czy w danym głosowaniu nie ma już 20 kandydatów
         if self.voting.candidate_registrations.count() >= 20 and not self.voting.candidate_registrations.filter(
                 pk=self.pk).exists():
             raise ValidationError("W głosowaniu nie może być więcej niż 20 kandydatów.")
@@ -99,7 +98,6 @@ class Vote(models.Model):
             raise ValidationError("Nie można oddać głosu na kandydata, który nie został dopuszczony do wyborów.")
 
     def save(self, *args, **kwargs):
-        # Sprawdzamy unikalność głosu dla danego użytkownika w danym głosowaniu
         voting = self.candidate_registration.voting
         if Vote.objects.filter(
                 candidate_registration__voting=voting,
