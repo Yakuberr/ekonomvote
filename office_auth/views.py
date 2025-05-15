@@ -39,7 +39,9 @@ def microsoft_callback(request:HttpRequest):
 
 def logout_view(request:HttpRequest):
     request.session.flush()
-    return redirect('office_auth:microsoft_login')
+    redirect_uri = request.build_absolute_uri(reverse("office_auth:home"))
+    logout_url = f"https://login.microsoftonline.com/{settings.MICROSOFT_TENANT_ID}/oauth2/v2.0/logout?post_logout_redirect_uri={redirect_uri}"
+    return redirect(logout_url)
 
 
 @azure_login_required
