@@ -6,7 +6,7 @@ from django.contrib import messages
 from django.db.models import Count
 from django.core.exceptions import ValidationError
 from django.db.models import F
-from office_auth.views import azure_login_required
+from office_auth.models import AzureUser
 from .models import Voting, Candidate, Vote, ElectoralProgram, CandidateRegistration
 from .forms import VotingForm
 
@@ -51,7 +51,7 @@ def get_voting_details(request: HttpRequest, id: int):
         )
         return redirect(reverse('samorzad:index'))
     vote = Vote.objects.filter(
-        azure_user_id=request.session.get('microsoft_user_id'),
+        azure_user=request.user,
         candidate_registration__voting=voting
     ).select_related('candidate_registration__candidate').first()
     if vote is None:
@@ -101,13 +101,13 @@ def post_vote(request: HttpRequest):
         })
     if request.method == 'GET':
         voted = Vote.objects.filter(
-            azure_user_id=request.session.get('microsoft_user_id'),
+            azure_user = request.user,
             candidate_registration__voting=fresh_voting
         ).exists()
         posted_vote = None
         if voted:
             vote = Vote.objects.filter(
-                azure_user_id=request.session.get('microsoft_user_id'),
+                azure_user=request.user,
                 candidate_registration__voting=fresh_voting
             ).select_related('candidate_registration__candidate').first()
             if vote:
@@ -122,6 +122,9 @@ def post_vote(request: HttpRequest):
             'posted_vote': posted_vote
         })
     if request.method == 'POST':
+        if request.user.is_superuser or request.user.microsoft_user_id is None:
+            messages.error(request, 'Głosować mogą tylko konta zalogowane poprzez office')
+            redirect(reverse('samorzad:post_vote'))
         form = VotingForm(request.POST)
         if form.is_valid():
             registration_id = form.cleaned_data.get('registration_id')
@@ -132,7 +135,7 @@ def post_vote(request: HttpRequest):
                     is_eligible=True
                 )
                 Vote.objects.create(
-                    azure_user_id=request.session.get('microsoft_user_id'),
+                    azure_user=request.user,
                     candidate_registration=registration
                 )
                 messages.success(request, 'Dziękujemy za oddanie głosu')
