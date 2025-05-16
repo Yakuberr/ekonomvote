@@ -102,10 +102,9 @@ class Vote(models.Model):
         voting = self.candidate_registration.voting
         if Vote.objects.filter(
                 candidate_registration__voting=voting,
-                azure_user_id=self.azure_user_id
-        ).exists():
-            raise ValidationError("Użytkownik już oddał głos w tym głosowaniu")
-
+                azure_user=self.azure_user
+        ).count() == 3:
+            raise ValidationError("Użytkownik oddał już maksymalnie 3 głosy w głosowaniu")
         if self.pk:
             raise ValidationError("Edytowanie modelu Vote jest zabronione!")
 
