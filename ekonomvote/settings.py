@@ -153,6 +153,9 @@ MICROSOFT_REDIRECT = os.getenv('MICROSOFT_REDIRECT')
 MICROSOFT_LOGOUT = os.getenv('MICROSOFT_LOGOUT')
 LOGIN_URL='/microsoft-authentication/login'
 
+# Wskazanie domyślnego modelu użytkownika
+AUTH_USER_MODEL = 'office_auth.AzureUser'
+
 # API
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
