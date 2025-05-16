@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils import timezone, dateparse
 from django.core.exceptions import ValidationError
+from office_auth.models import AzureUser
 import pytz
 
 class Voting(models.Model):
@@ -82,7 +83,7 @@ class CandidateRegistration(models.Model):
 
 class Vote(models.Model):
     candidate_registration = models.ForeignKey(CandidateRegistration, on_delete=models.CASCADE, related_name='votes')
-    azure_user_id = models.CharField(null=False, max_length=50)
+    azure_user = models.ForeignKey(AzureUser, on_delete=models.CASCADE, related_name='votes', null=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def parse_planned_end(self):
