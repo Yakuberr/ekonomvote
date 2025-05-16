@@ -6,13 +6,7 @@ from django.conf import settings
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from .auth_utils import Office365Authentication
-
-def azure_login_required(view_func):
-    def wrapper(request, *args, **kwargs):
-        if not request.session.get('is_authenticated'):
-            return redirect('office_auth:microsoft_login')
-        return view_func(request, *args, **kwargs)
-    return wrapper
+from .models import AzureUser
 
 
 def microsoft_login(request: HttpRequest):
@@ -20,7 +14,6 @@ def microsoft_login(request: HttpRequest):
     redirect_uri = request.build_absolute_uri(reverse('office_auth:microsoft_callback'))
     error_uri = request.build_absolute_uri(reverse('office_auth:microsoft_callback'))
     auth_url = auth.generate_auth_url(redirect_uri=redirect_uri, error_uri=error_uri)
-    print(auth_url)
     return redirect(auth_url)
 
 
@@ -31,8 +24,12 @@ def microsoft_callback(request:HttpRequest):
         code = request.GET.get('code')
         token_result = auth.get_token(code, redirect_uri=redirect_uri)
         user_info = auth.get_user_info(token_result['access_token'])
-        request.session['microsoft_user_id'] = user_info['id']
-        request.session['is_authenticated'] = True
+        user, created = AzureUser.objects.get_or_create(
+            # TODO: Zamiast chamsko pobierać wartość klucza należy użyć metody .get oraz zabezpieczyć przed możliością wsytąpienia user_info['id'] is None
+            microsoft_user_id=user_info['id']
+        )
+        login(request, user)
+
         return redirect('samorzad:index')
     except Exception as e:
         return redirect('office_auth:microsoft_login')
@@ -44,7 +41,7 @@ def logout_view(request:HttpRequest):
     return redirect(logout_url)
 
 
-@azure_login_required
+@login_required(login_url='office_auth:microsoft_login')
 def home_view(request:HttpRequest):
     microsoft_user_id = request.session.get('microsoft_user_id')
     context = {

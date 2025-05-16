@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, reverse, get_object_or_404
 from django.http import HttpRequest, HttpResponseNotAllowed, HttpResponse
+from django.contrib.auth.decorators import login_required
 from django.utils import timezone, dateparse
 from django.contrib import messages
 from django.db.models import Count
@@ -10,7 +11,7 @@ from .models import Voting, Candidate, Vote, ElectoralProgram, CandidateRegistra
 from .forms import VotingForm
 
 
-@azure_login_required
+@login_required(login_url='office_auth:microsoft_login')
 def list_votings(request: HttpRequest):
     if request.method != "GET":
         return HttpResponseNotAllowed(["GET"])
@@ -33,7 +34,7 @@ def list_votings(request: HttpRequest):
     })
 
 
-@azure_login_required
+@login_required(login_url='office_auth:microsoft_login')
 def get_voting_details(request: HttpRequest, id: int):
     if request.method not in ['GET', 'POST']:
         return HttpResponseNotAllowed(["GET"])
@@ -74,7 +75,7 @@ def get_voting_details(request: HttpRequest, id: int):
     })
 
 
-@azure_login_required
+@login_required(login_url='office_auth:microsoft_login')
 def post_vote(request: HttpRequest):
     fresh_voting = Voting.objects.filter(planned_end__gt=timezone.now()).order_by('planned_start').first()
     if not fresh_voting:
