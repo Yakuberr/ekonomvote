@@ -122,7 +122,7 @@ def post_vote(request: HttpRequest):
             'posted_vote': posted_vote
         })
     if request.method == 'POST':
-        if request.user.is_superuser or request.user.microsoft_user_id is None:
+        if request.user.microsoft_user_id is None:
             messages.error(request, 'Głosować mogą tylko konta zalogowane poprzez office')
             redirect(reverse('samorzad:post_vote'))
         form = VotingForm(request.POST)
