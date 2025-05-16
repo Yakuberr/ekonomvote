@@ -83,7 +83,7 @@ class CandidateRegistration(models.Model):
 
 class Vote(models.Model):
     candidate_registration = models.ForeignKey(CandidateRegistration, on_delete=models.CASCADE, related_name='votes')
-    azure_user = models.ForeignKey(AzureUser, on_delete=models.CASCADE, related_name='votes', null=False)
+    microsoft_user = models.ForeignKey(AzureUser, on_delete=models.CASCADE, related_name='votes')
     created_at = models.DateTimeField(auto_now_add=True)
 
     def parse_planned_end(self):
@@ -102,7 +102,7 @@ class Vote(models.Model):
         voting = self.candidate_registration.voting
         if Vote.objects.filter(
                 candidate_registration__voting=voting,
-                azure_user=self.azure_user
+                azure_user=self.microsoft_user
         ).count() == 3:
             raise ValidationError("Użytkownik oddał już maksymalnie 3 głosy w głosowaniu")
         if self.pk:
