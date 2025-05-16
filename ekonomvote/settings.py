@@ -38,6 +38,7 @@ ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
     'rest_framework',
+    'panel.apps.PanelConfig',
     'oscary.apps.OscaryConfig',
     'samorzad.apps.SamorzadConfig',
     'office_auth.apps.OffceAuthConfig',
