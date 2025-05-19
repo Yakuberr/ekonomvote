@@ -77,7 +77,8 @@ class CandidateRegistration(models.Model):
         return f'CandidateRegistration(candidate={self.candidate.pk}, voting={self.voting.pk})'
 
     def clean(self):
-        if self.voting.candidate_registrations.count() >= 50 and not self.voting.candidate_registrations.filter(
+        voting = self.voting
+        if voting.candidate_registrations.count() >= 50 and not voting.candidate_registrations.filter(
                 pk=self.pk).exists():
             raise ValidationError("W głosowaniu nie może być więcej niż 20 kandydatów.")
 
