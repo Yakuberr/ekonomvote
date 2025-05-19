@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils import timezone, dateparse
 from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator
 from office_auth.models import AzureUser
 import pytz
 
@@ -9,6 +10,10 @@ class Voting(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     planned_start = models.DateTimeField(null=False, unique=True)
     planned_end = models.DateTimeField(null=False, unique=True)
+    votes_per_user = models.PositiveSmallIntegerField(
+        default=1,
+        validators=[MinValueValidator(1, 'Wartość musi być większa od 0')]
+    )
 
     def parse_planned_start(self):
         return self.planned_start.astimezone(tz=pytz.timezone('Europe/Warsaw')).strftime('%Y.%m.%d %H:%M:%S')
@@ -31,12 +36,12 @@ class Voting(models.Model):
 
 class Candidate(models.Model):
     first_name = models.CharField(null=False, max_length=150)
-    second_name = models.CharField(null=True, blank=True, max_length=150)
+    second_name = models.CharField(default="", max_length=150)
     last_name = models.CharField(null=False, max_length=150)
-    image = models.ImageField(upload_to='uploads/samorzad/', null=False, unique=True)
+    image = models.ImageField(upload_to='uploads/samorzad/', null=True, blank=True, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    school_class = models.CharField(max_length=20, null=True)
+    school_class = models.CharField(max_length=20, null=True, blank=True)
 
     def __str__(self):
         return f'Candiate(first_name={self.first_name}, last_name={self.last_name})'
@@ -72,7 +77,7 @@ class CandidateRegistration(models.Model):
         return f'CandidateRegistration(candidate={self.candidate.pk}, voting={self.voting.pk})'
 
     def clean(self):
-        if self.voting.candidate_registrations.count() >= 20 and not self.voting.candidate_registrations.filter(
+        if self.voting.candidate_registrations.count() >= 50 and not self.voting.candidate_registrations.filter(
                 pk=self.pk).exists():
             raise ValidationError("W głosowaniu nie może być więcej niż 20 kandydatów.")
 
@@ -102,11 +107,10 @@ class Vote(models.Model):
         voting = self.candidate_registration.voting
         if Vote.objects.filter(
                 candidate_registration__voting=voting,
-                azure_user=self.microsoft_user
-        ).count() == 3:
+                microsoft_user=self.microsoft_user
+        ).count() == voting.votes_per_user:
             raise ValidationError("Użytkownik oddał już maksymalnie 3 głosy w głosowaniu")
         if self.pk:
             raise ValidationError("Edytowanie modelu Vote jest zabronione!")
-
         self.full_clean()
         super().save(*args, **kwargs)
