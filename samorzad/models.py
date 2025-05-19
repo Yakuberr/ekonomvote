@@ -139,7 +139,7 @@ class Vote(models.Model):
     microsoft_user = models.ForeignKey(AzureUser, on_delete=models.CASCADE, related_name='votes')
     created_at = models.DateTimeField(auto_now_add=True)
 
-    def parse_planned_end(self):
+    def parse_created_at(self):
         return self.created_at.astimezone(tz=pytz.timezone('Europe/Warsaw')).strftime('%Y.%m.%d %H:%M:%S')
 
     def clean(self):
