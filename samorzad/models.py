@@ -6,6 +6,15 @@ from office_auth.models import AzureUser
 import pytz
 
 class Voting(models.Model):
+    """
+    Model reprezentujący głosowanie, pola:
+
+    - created_at: Czas utworzenia obiektu (strefa UTC)
+    - updated_at: Czas aktualizacji obiektu (strefa UTC)
+    - planned_start: Czas rozpoczęcia głosowania (UTC)
+    - planned_end: Czas zakończenia głosowania (UTC)
+    - votes_per_user: Dodatnia liczba, która reprezentuje liczbę głosów które można oddać na poszczególnych kandydatów
+    """
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     planned_start = models.DateTimeField(null=False, unique=True)
@@ -16,9 +25,11 @@ class Voting(models.Model):
     )
 
     def parse_planned_start(self):
+        """Zwraca planned_start w formacie polskiej strefy czasowej w postaci stringa"""
         return self.planned_start.astimezone(tz=pytz.timezone('Europe/Warsaw')).strftime('%Y.%m.%d %H:%M:%S')
 
     def parse_planned_end(self):
+        """Zwraca planned_end w formacie polskiej strefy czasowej w postaci stringa"""
         return self.planned_end.astimezone(tz=pytz.timezone('Europe/Warsaw')).strftime('%Y.%m.%d %H:%M:%S')
 
     def clean(self):
@@ -35,6 +46,16 @@ class Voting(models.Model):
         return f'Voting(start={self.parse_planned_start()}, end={self.parse_planned_end()})'
 
 class Candidate(models.Model):
+    """Model reprezentujący kandydata na wybory do samorządu, pola:
+
+    - first_name: Imię kandydata
+    - second_name: Drugie imię kandydata, domyślnie pusty string
+    - last_name: Nazwisko kandydata
+    - image: Zdjęcie kandydata, może być null
+    - created_at: Czas utworzenia obiektu (strefa UTC)
+    - updated_at: Czas aktualizacji obiektu (strefa UTC)
+    - school_class: Klasa kandydata w obecnych wyborach, może być null ale nie powinna
+    """
     first_name = models.CharField(null=False, max_length=150)
     second_name = models.CharField(default="", max_length=150)
     last_name = models.CharField(null=False, max_length=150)
@@ -47,6 +68,16 @@ class Candidate(models.Model):
         return f'Candiate(first_name={self.first_name}, last_name={self.last_name})'
 
 class ElectoralProgram(models.Model):
+    """
+    Model reprezentujący program wyborczy kandydata w wyborach. Każdy kandydat może mieć różne programy wyborcze w różnych głosowaniach
+    ALE może mieć tylko 1 program wyborczy w konkretnym głosowaniu (class Meta), pola:
+
+    - candidate: Klucz obcy kandydata
+    - voting: Klucz obcy głosowania
+    - info: Tekst programu wyborczego
+    - created_at: Czas utworzenia obiektu (strefa UTC)
+    - updated_at: Czas aktualizacji obiektu (strefa UTC)
+    """
     candidate = models.ForeignKey(Candidate, on_delete=models.CASCADE, related_name='electoral_programs', null=False)
     voting = models.ForeignKey(Voting, on_delete=models.CASCADE, related_name='electoral_programs', null=False)
     info = models.TextField(null=False)
@@ -63,12 +94,20 @@ class ElectoralProgram(models.Model):
 
 
 class CandidateRegistration(models.Model):
+    """Model n..n łączący modele kandydata i głosowania, pola:
+
+    - candidate: Klucz obcy modelu kandydata
+    - voting: Klucz obcy modelu głosowania
+    - is_eligible: Boolean określający czy kandydat jest dopuszczony go głosowania
+    - created_at: Czas utworzenia obiektu (strefa UTC)
+    """
     candidate = models.ForeignKey(Candidate, on_delete=models.CASCADE, related_name='registrations')
     voting = models.ForeignKey(Voting, on_delete=models.CASCADE, related_name='candidate_registrations')
     is_eligible = models.BooleanField(default=False)  # Przeniesione z modelu Candidate
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
+        # Zapobiega duplikatom
         constraints = [
             models.UniqueConstraint(fields=['candidate', 'voting'], name='unique_candidate_per_voting')
         ]
@@ -88,6 +127,14 @@ class CandidateRegistration(models.Model):
 
 
 class Vote(models.Model):
+    """Model reprezentujący oddany głos w głosowaniu na samorząd, pola
+
+    - candidate_registration: klucz obcy zarejestrowanego kandydata
+    - microsoft_user: klucz obcy poświadczonego użytkownika aplikacji
+    - created_at: Czas utworzenia obiektu (strefa UTC)
+
+    UWAGA: Nie da się edytować obiektów
+    """
     candidate_registration = models.ForeignKey(CandidateRegistration, on_delete=models.CASCADE, related_name='votes')
     microsoft_user = models.ForeignKey(AzureUser, on_delete=models.CASCADE, related_name='votes')
     created_at = models.DateTimeField(auto_now_add=True)
