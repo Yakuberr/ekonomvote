@@ -10,10 +10,12 @@ from .models import AzureUser
 
 
 def microsoft_login(request: HttpRequest):
+    if request.session.get('microsoft_user_id') is not None:
+        return redirect('samorzad:index')
     auth = Office365Authentication()
     redirect_uri = request.build_absolute_uri(reverse('office_auth:microsoft_callback'))
     error_uri = request.build_absolute_uri(reverse('office_auth:microsoft_callback'))
-    auth_url = auth.generate_auth_url(redirect_uri=redirect_uri, error_uri=error_uri)
+    auth_url = auth.generate_auth_url(redirect_uri=redirect_uri, error_uri=error_uri, state=None)
     return redirect(auth_url)
 
 
@@ -29,7 +31,7 @@ def microsoft_callback(request:HttpRequest):
             microsoft_user_id=user_info['id']
         )
         login(request, user)
-
+        request.session['microsoft_user_id'] = user_info['id']
         return redirect('samorzad:index')
     except Exception as e:
         return redirect('office_auth:microsoft_login')
