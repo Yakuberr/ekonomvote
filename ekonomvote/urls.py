@@ -21,8 +21,9 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path(settings.ADMIN_URL, admin.site.urls),
     path('samorzad/', include('samorzad.urls')),
+    path('panel/', include('panel.urls')),
     path('', include('office_auth.urls'))
 ]
 

@@ -58,6 +58,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    #'office_auth.middleware.AzureADAdminLoginMiddleware'
 ]
 
 ROOT_URLCONF = 'ekonomvote.urls'
@@ -156,6 +157,9 @@ LOGIN_URL='/microsoft-authentication/login'
 
 # Wskazanie domyślnego modelu użytkownika
 AUTH_USER_MODEL = 'office_auth.AzureUser'
+
+# Ukryty endpoint do panelu administracyjnego Django
+ADMIN_URL = os.getenv('DJANGO_ADMIN_URL') + '/'
 
 # API
 REST_FRAMEWORK = {
