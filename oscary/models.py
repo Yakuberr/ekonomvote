@@ -74,7 +74,7 @@ class Nomination(models.Model):
         default=1,
         validators=[MinValueValidator(1, 'Wartość musi być większa od 0')]
     )
-    role = models.CharField(choices=NominationRole, default=NominationRole.FINAL)
+    role = models.CharField(choices=NominationRole.choices, default=NominationRole.FINAL)
 
     def parse_planned_start(self):
         """Zwraca planned_start w formacie polskiej strefy czasowej w postaci stringa"""
@@ -123,7 +123,7 @@ class Nomination(models.Model):
 class Vote(models.Model):
     teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='votes')
     oscar = models.ForeignKey(Oscar, on_delete=models.CASCADE, related_name='votes')
-    user = models.ForeignKey(AzureUser, on_delete=models.CASCADE, related_name='votes')
+    user = models.ForeignKey(AzureUser, on_delete=models.CASCADE, related_name='oscar_votes')
     voting_round = models.ForeignKey(Nomination, on_delete=models.CASCADE, related_name='votes')
     created_at = models.DateTimeField(auto_now_add=True)
 
