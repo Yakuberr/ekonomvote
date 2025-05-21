@@ -136,7 +136,7 @@ class Vote(models.Model):
     UWAGA: Nie da się edytować obiektów
     """
     candidate_registration = models.ForeignKey(CandidateRegistration, on_delete=models.CASCADE, related_name='votes')
-    microsoft_user = models.ForeignKey(AzureUser, on_delete=models.CASCADE, related_name='votes')
+    microsoft_user = models.ForeignKey(AzureUser, on_delete=models.CASCADE, related_name='samorzad_votes')
     created_at = models.DateTimeField(auto_now_add=True)
 
     def parse_created_at(self):
