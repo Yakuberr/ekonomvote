@@ -16,14 +16,19 @@ class Office365Authentication:
             client_credential=self.client_secret
         )
 
-    def generate_auth_url(self, redirect_uri, error_uri=None):
+    def generate_auth_url(self, redirect_uri, error_uri=None, state=None):
         """Generuje URL do autoryzacji"""
         params = {
             'scopes': ['User.Read'],
             'redirect_uri': redirect_uri
         }
+        extra = {}
         if error_uri:
-            params['extra_query_parameters'] = {'error_uri': error_uri}
+            extra['error_uri'] = error_uri
+        if state:
+            params['state'] = state
+        if extra:
+            params['extra_query_parameters'] = extra
         return self.app.get_authorization_request_url(**params)
 
     def get_token(self, authorization_code, redirect_uri):

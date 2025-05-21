@@ -5,17 +5,24 @@ from django.urls import reverse
 from django.conf import settings
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
+
+from urllib.parse import urlencode, parse_qs
+
 from .auth_utils import Office365Authentication
 from .models import AzureUser
 
 
 def microsoft_login(request: HttpRequest):
+    next_url= request.GET.get('next')
+    state = None
+    if next_url is not None:
+        state=urlencode({'next': next_url})
     if request.session.get('microsoft_user_id') is not None:
         return redirect('samorzad:index')
     auth = Office365Authentication()
     redirect_uri = request.build_absolute_uri(reverse('office_auth:microsoft_callback'))
     error_uri = request.build_absolute_uri(reverse('office_auth:microsoft_callback'))
-    auth_url = auth.generate_auth_url(redirect_uri=redirect_uri, error_uri=error_uri, state=None)
+    auth_url = auth.generate_auth_url(redirect_uri=redirect_uri, error_uri=error_uri, state=state)
     return redirect(auth_url)
 
 
@@ -32,7 +39,14 @@ def microsoft_callback(request:HttpRequest):
         )
         login(request, user)
         request.session['microsoft_user_id'] = user_info['id']
-        return redirect('samorzad:index')
+        state = request.GET.get('state')
+        redirect_to = 'samorzad:index'
+        if state:
+            parsed_state = parse_qs(state)
+            next_list = parsed_state.get('next')
+            if next_list:
+                redirect_to = next_list[0]
+        return redirect(redirect_to)
     except Exception as e:
         return redirect('office_auth:microsoft_login')
 
