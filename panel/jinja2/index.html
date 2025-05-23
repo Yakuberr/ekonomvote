@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %} Strona główna {% endblock %}
+{% block body_navbar %}
+{{render_navbar(csrf_input, 'home')}}
+{% endblock %}
+{% block body_content %}
+    <div class="container-sm">
+        <div class="row mt-5 ms-5 me-5 mb-1">
+            <div class="col">
+                <h2 class="text-lg-center">Wybierz rodzaj głosowania</h2>
+            </div>
+        </div>
+        <div class="row me-5 ms-5 mb-5">
+            <div class="col">
+                <h5 class="fs-6 text-muted text-lg-center">Pamiętaj że jako Administrator bierzesz pełną odpowiedzialność za zarządzanie głosowaniami.</h5>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col d-flex justify-content-center align-items-center mb-5">
+                <div class="card bg-black bg-opacity-25" style="width: 38rem;">
+                    <img src="{{ static('oscary.jpg') }}" class="card-img-top" alt="oscary">
+                    <div class="card-body">
+                        <h5 class="card-title">Gala Oscarów</h5>
+                        <ul class="card-text ps-4 mb-4">
+                            <li>Zarządaj głosowaniami.</li>
+                            <li>Dodawaj oskary i nauczycieli. Zarządzaj opisami nagród.</li>
+                            <li>Przeglądaj statystyki i wykresy dotyczące głosowań.</li>
+                        </ul>
+                        <a href="#" class="btn btn-outline-eco-light-cyan">Przejdź</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col d-flex justify-content-center align-items-center mb-5">
+                <div class="card bg-black bg-opacity-25" style="width: 38rem;">
+                    <img src="{{ static('glosowanie_mono.png') }}" class="card-img-top" alt="glosowanie">
+                    <div class="card-body">
+                        <h5 class="card-title">Samorząd uczniowski</h5>
+                        <ul class="card-text ps-4 mb-4">
+                            <li>Zarządaj głosowaniami.</li>
+                            <li>Dodawaj programy wyborcze i kandydatów.</li>
+                            <li>Przeglądaj statystyki i wykresy dotyczące głosowań.</li>
+                        </ul>
+                        <a href="#" class="btn btn-outline-eco-light-cyan">Przejdź</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock body_content %}

@@ -1,0 +1,50 @@
+{% from 'panel_macros.html' import render_navbar, render_messages %}
+<!DOCTYPE html>
+<html lang="pl" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    {% block head_meta %}{% endblock %}
+    <title>{% block title %}Lista głosowań {% endblock %}</title>
+    {% block head_css %}
+    <link rel="stylesheet" href="{{ static('css/custom-boostrap.min.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    {% endblock %}
+    {% block head_icon %}
+    <link rel="shortcut icon" type="image/png" href="{{ static('logo.ico') }}" >
+    {% endblock %}
+    <style>
+        {% block head_css_internal %}
+        .navbar-toggler,
+        .navbar-toggler:focus,
+        .navbar-toggler:active,
+        .navbar-toggler-icon:focus {
+            outline-color: var(--bs-eco-light-cyan);
+        }
+
+        .old-voting-img {
+            filter: grayscale(100%);
+            opacity: 0.8;
+        }
+
+        .voting-stats {
+            font-size: 0.9rem;
+            color: var(--bs-secondary-color);
+        }
+        {% endblock %}
+    </style>
+</head>
+<body>
+    {% block body_js %}
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    {% endblock %}
+    {% block body_messages %}
+    {{ render_messages(request) }}
+    {% endblock %}
+    {% block body_navbar %}
+    {{ render_navbar(csrf_input) }}
+    {% endblock %}
+    {% block body_content %}
+    {% endblock %}
+</body>
+</html>

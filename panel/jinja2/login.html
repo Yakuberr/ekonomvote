@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %} Logowanie {% endblock %}
+{% block head_css_internal %}
+  {{ super() }}
+  #panelLoginForm {
+      min-width: 18rem !important;
+  }
+  .form-logo{
+    width:100%;
+    height: auto;
+  }
+{% endblock %}
+{% block body_navbar %}
+{% endblock %}
+{% block body_content %}
+<div class="container-sm mt-5 mb-5 hv-100">
+    <div class="row justify-content-center">
+        <div class="col d-flex justify-content-center p-5">
+            <form class="w-50 p-3 pb-4 border border-2 border-eco-light-cyan rounded-3 bg-black bg-opacity-25" id="panelLoginForm" method="post" action="{{url('panel:login')}}">
+                <legend class="mb-3">
+                    <div class="row">
+                        <div class="col col-lg-3 d-flex justify-content-start align-items-center">
+                            <img src="{{ static('logo.png') }}" class="img-fluid form-logo" alt="Logo aplikacji">
+                        </div>
+                        <div class="col d-flex align-items-center justify-content-center">
+                            <span>Panel administracyjny</span>
+                        </div>
+                    </div>
+                </legend>
+                <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+                <hr class="w-100">
+                <div class="mb-3">
+                    <label for="exampleInputEmail1" class="form-label">Login</label>
+                    <input name="login" type="text" class="form-control bg-black bg-opacity-25 d-inline-flex focus-ring py-2 px-2 text-decoration-none border rounded-2" id="exampleInputEmail1" style="--bs-focus-ring-color: rgba(var(--bs-eco-light-cyan-rgb), .5)" required>
+                </div>
+                <div class="mb-5">
+                    <label for="exampleInputPassword1" class="form-label">Hasło</label>
+                    <input name="password" type="password" class="form-control bg-black bg-opacity-25 d-inline-flex focus-ring py-2 px-2 text-decoration-none border rounded-2" id="exampleInputPassword1" style="--bs-focus-ring-color: rgba(var(--bs-eco-light-cyan-rgb), .5)" required>
+                </div>
+                <button type="submit" class="btn btn-outline-eco-light-cyan">Zaloguj się</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

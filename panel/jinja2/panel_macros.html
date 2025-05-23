@@ -1,0 +1,77 @@
+{% macro render_navbar(csrf_input, current_page='') %}
+<nav class="navbar navbar-expand bg-body-tertiary">
+  <div class="container-fluid">
+    <a class="navbar-brand ms-1" href="{{ url('panel:index') }}">
+      <img src="{{ static('logo.png') }}" alt="Logo ekonomika" width="40" height="40" class="me-lg-5 me-md-4 me-2">
+        Panel Administratora
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarToggler" aria-controls="navbarToggler" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarToggler">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item">
+          <a class="nav-link {% if current_page == 'home' %}active{% endif %}" href="{{ url('panel:index') }}">Home</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if current_page == 'oscary' %}active{% endif %}" href="#">Oscary</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if current_page == 'samorząd' %}active{% endif %}" href="#">Samorząd</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if current_page == 'pomoc' %}active{% endif %}" href="#">Pomoc</a>
+        </li>
+      </ul>
+      <form class="d-flex justify-content-end" method="post" action="{{ url('office_auth:logout') }}">
+        {{ csrf_input }}
+        <button class="btn btn-outline-eco-light-cyan" type="submit">Wyloguj się</button>
+      </form>
+    </div>
+  </div>
+</nav>
+{% endmacro %}
+
+
+{% macro render_messages(request) %}
+    {% set messages = get_messages(request) %}
+    {% if messages %}
+    <div class="fixed-top" style="top: 0px; z-index: 1050;">
+        {% for message in messages %}
+        <div class="alert
+             {% if message.tags == 'error' %}alert-danger
+             {% elif message.tags == 'warning' %}alert-warning
+             {% elif message.tags == 'info' %}alert-info
+             {% else %}alert-success{% endif %}
+             alert-dismissible fade show m-3"
+             role="alert"
+             data-auto-dismiss="4000">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+  <script>
+      document.addEventListener('DOMContentLoaded', function() {
+          const alerts = document.querySelectorAll('[data-auto-dismiss]');
+          alerts.forEach(alert => {
+              const delay = parseInt(alert.getAttribute('data-auto-dismiss'));
+              setTimeout(() => {
+                  // Dodaj klasę fade-out (możesz dostosować czas trwania animacji)
+                  alert.style.transition = 'opacity 0.5s ease-out';
+                  alert.style.opacity = '0';
+                  setTimeout(() => {
+                      const bsAlert = new bootstrap.Alert(alert);
+                      bsAlert.close();
+                  }, 500); // Dopasuj do czasu trwania animacji
+              }, delay);
+          });
+      });
+      </script>
+      <style>
+          .alert {
+              transition: opacity 0.5s ease-out;
+          }
+      </style>
+      {% endif %}
+{% endmacro %}
