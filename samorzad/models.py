@@ -59,7 +59,7 @@ class Candidate(models.Model):
     first_name = models.CharField(null=False, max_length=150)
     second_name = models.CharField(default="", max_length=150)
     last_name = models.CharField(null=False, max_length=150)
-    image = models.ImageField(upload_to='uploads/samorzad/', null=True, blank=True, unique=True)
+    image = models.ImageField(upload_to='uploads/samorzad/', null=True, blank=True, unique=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     school_class = models.CharField(max_length=20, null=True, blank=True)
