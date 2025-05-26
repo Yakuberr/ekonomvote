@@ -1,0 +1,80 @@
+{% from 'panel_macros.html' import render_navbar, render_messages %}
+<!DOCTYPE html>
+<html lang="pl" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    {% block head_meta %}{% endblock %}
+    <title>{% block title %}Samorząd - Admin {% endblock %}</title>
+    {% block head_css %}
+    <link rel="stylesheet" href="{{ static('css/custom-boostrap.min.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    {% endblock %}
+    {% block head_icon %}
+    <link rel="shortcut icon" type="image/png" href="{{ static('logo.ico') }}" >
+    {% endblock %}
+    <style>
+        html, body {
+            height: 100%;
+            overflow: hidden; /* WYŁĄCZA scrolla strony */
+            margin: 0;
+        }
+
+        main{
+            height: 100%;
+        }
+        .row {
+            height: 100%;
+        }
+
+        .scrollable-column {
+            height: 100%;
+            overflow-y: auto; /* TYLKO ta kolumna będzie przewijana */
+        }
+        .nav .nav-link.active {
+            text-decoration: underline;
+            font-weight: bold;
+        }
+        .dropdown-item:active{
+            background-color: var(--bs-eco-light-cyan);
+        }
+        li.active{
+            text-decoration: underline;
+            font-weight: bold;
+            color: var(--bs-dark);
+        }
+        a.page-link {
+        background-color: var(--bs-dark); /* kolor Bootstrapowy "danger" */
+        color: #fff;
+        border-color: var(--bs-eco-light-cyan);
+        }
+
+        a.page-link:hover {
+        background-color: var(--bs-eco-light-cyan);
+        border-color: var(--bs-eco-light-cyan);
+        color: var(--bs-dark);
+        }
+
+        li.active a.page-link {
+        background-color: var(--bs-eco-light-cyan);
+        border-color: var(--bs-eco-light-cyan);
+        color: var(--bs-dark);
+        }
+        {% block head_css_internal %}
+        {% endblock %}
+    </style>
+</head>
+<body>
+    {% block body_js %}
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    {% endblock %}
+    {% block body_messages %}
+    {{ render_messages(request) }}
+    {% endblock %}
+    {% block body_navbar %}
+    {{ render_navbar(csrf_input) }}
+    {% endblock %}
+    {% block body_content %}
+    {% endblock %}
+</body>
+</html>

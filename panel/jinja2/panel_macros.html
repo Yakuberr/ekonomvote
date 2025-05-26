@@ -1,5 +1,5 @@
 {% macro render_navbar(csrf_input, current_page='') %}
-<nav class="navbar navbar-expand bg-body-tertiary">
+<nav class="navbar navbar-expand-lg sticky-top bg-body-tertiary">
   <div class="container-fluid">
     <a class="navbar-brand ms-1" href="{{ url('panel:index') }}">
       <img src="{{ static('logo.png') }}" alt="Logo ekonomika" width="40" height="40" class="me-lg-5 me-md-4 me-2">
@@ -17,13 +17,13 @@
           <a class="nav-link {% if current_page == 'oscary' %}active{% endif %}" href="#">Oscary</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link {% if current_page == 'samorząd' %}active{% endif %}" href="#">Samorząd</a>
+          <a class="nav-link {% if current_page == 'samorząd' %}active{% endif %}" href="{{ url('panel:samorzad_index') }}">Samorząd</a>
         </li>
         <li class="nav-item">
           <a class="nav-link {% if current_page == 'pomoc' %}active{% endif %}" href="#">Pomoc</a>
         </li>
       </ul>
-      <form class="d-flex justify-content-end" method="post" action="{{ url('office_auth:logout') }}">
+      <form class="d-flex justify-content-start" method="post" action="{{ url('office_auth:logout') }}">
         {{ csrf_input }}
         <button class="btn btn-outline-eco-light-cyan" type="submit">Wyloguj się</button>
       </form>
