@@ -28,7 +28,7 @@ def list_votings(request: HttpRequest):
         candidates_count=Count('candidate_registrations', distinct=True),
         votes_count=Count('candidate_registrations__votes', distinct=True)
     ).order_by('-planned_end')
-    return render(request, 'index.html', {
+    return render(request, 'samorzad_index.html', {
         'fresh_voting': fresh_voting,
         'old_votings': old_votings
     })
