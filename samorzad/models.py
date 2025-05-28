@@ -21,7 +21,7 @@ class Voting(models.Model):
     planned_end = models.DateTimeField(null=False, unique=True)
     votes_per_user = models.PositiveSmallIntegerField(
         default=1,
-        validators=[MinValueValidator(1, 'Wartość musi być większa od 0')]
+        validators=[MinValueValidator(1, 'Ilość głosów musi być większa od 0')]
     )
 
     def parse_planned_start(self):
@@ -34,9 +34,9 @@ class Voting(models.Model):
 
     def clean(self):
         if self.planned_start <= timezone.now():
-            raise ValidationError("planned_start musi być większe niż obecna data i godzina.")
+            raise ValidationError("Głosowanie musi zaczynać się później niż obecna data.")
         if self.planned_start >= self.planned_end:
-            raise ValidationError("planned_start musi być mniejsze niż planned_end.")
+            raise ValidationError("Głosowanie musi kończyć się później niż jego data rozpoczęcia.")
 
     def save(self, *args, **kwargs):
         self.full_clean()
