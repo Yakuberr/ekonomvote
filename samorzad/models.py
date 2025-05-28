@@ -32,6 +32,9 @@ class Voting(models.Model):
         """Zwraca planned_end w formacie polskiej strefy czasowej w postaci stringa"""
         return self.planned_end.astimezone(tz=pytz.timezone('Europe/Warsaw')).strftime('%Y.%m.%d %H:%M:%S')
 
+    def parse_created_at(self):
+        return self.created_at.astimezone(tz=pytz.timezone('Europe/Warsaw')).strftime('%Y.%m.%d %H:%M:%S')
+
     def clean(self):
         if self.planned_start <= timezone.now():
             raise ValidationError("Głosowanie musi zaczynać się później niż obecna data.")
@@ -78,19 +81,14 @@ class ElectoralProgram(models.Model):
     - created_at: Czas utworzenia obiektu (strefa UTC)
     - updated_at: Czas aktualizacji obiektu (strefa UTC)
     """
-    candidate = models.ForeignKey(Candidate, on_delete=models.CASCADE, related_name='electoral_programs', null=False)
-    voting = models.ForeignKey(Voting, on_delete=models.CASCADE, related_name='electoral_programs', null=False)
+    candidature = models.OneToOneField('CandidateRegistration', on_delete=models.CASCADE, related_name='electoral_program')
     info = models.TextField(null=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(fields=['candidate', 'voting'], name='unique_program_per_voting_per_candidate')
-        ]
 
     def __str__(self):
-        return f'ElectoralProgram(candidate={self.candidate.pk}, voting={self.voting.pk})'
+        return f'ElectoralProgram(candidature={self.candidature.pk})'
 
 
 class CandidateRegistration(models.Model):
