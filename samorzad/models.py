@@ -19,7 +19,7 @@ class Voting(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     planned_start = models.DateTimeField(null=False, unique=True)
     planned_end = models.DateTimeField(null=False, unique=True)
-    votes_per_user = models.PositiveSmallIntegerField(
+    votes_per_user = models.SmallIntegerField(
         default=1,
         validators=[MinValueValidator(1, 'Ilość głosów musi być większa od 0')]
     )
