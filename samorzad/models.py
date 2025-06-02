@@ -26,15 +26,14 @@ class Voting(models.Model):
 
     def parse_planned_start(self):
         """Zwraca planned_start w formacie polskiej strefy czasowej w postaci stringa"""
-        return self.planned_start.astimezone(tz=pytz.timezone('Europe/Warsaw')).strftime('%Y.%m.%d %H:%M:%S')
+        return self.planned_start.astimezone(tz=pytz.timezone('Europe/Warsaw'))
 
     def parse_planned_end(self):
         """Zwraca planned_end w formacie polskiej strefy czasowej w postaci stringa"""
-        return self.planned_end.astimezone(tz=pytz.timezone('Europe/Warsaw')).strftime('%Y.%m.%d %H:%M:%S')
+        return self.planned_end.astimezone(tz=pytz.timezone('Europe/Warsaw'))
 
     def parse_created_at(self):
-        return self.created_at.astimezone(tz=pytz.timezone('Europe/Warsaw')).strftime('%Y.%m.%d %H:%M:%S')
-
+        return self.created_at.astimezone(tz=pytz.timezone('Europe/Warsaw'))
     def clean(self):
         if self.planned_start <= timezone.now():
             raise ValidationError("Głosowanie musi zaczynać się później niż obecna data.")
@@ -60,7 +59,7 @@ class Candidate(models.Model):
     - school_class: Klasa kandydata w obecnych wyborach, może być null ale nie powinna
     """
     first_name = models.CharField(null=False, max_length=150)
-    second_name = models.CharField(default="", max_length=150)
+    second_name = models.CharField(default="", max_length=150, blank=True)
     last_name = models.CharField(null=False, max_length=150)
     image = models.ImageField(upload_to='uploads/samorzad/', null=True, blank=True, unique=False)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -115,9 +114,11 @@ class CandidateRegistration(models.Model):
 
     def clean(self):
         voting = self.voting
-        if voting.candidate_registrations.count() >= 50 and not voting.candidate_registrations.filter(
+        if voting.candidate_registrations.count() >= 30 and not voting.candidate_registrations.filter(
                 pk=self.pk).exists():
-            raise ValidationError("W głosowaniu nie może być więcej niż 20 kandydatów.")
+            raise ValidationError("W głosowaniu nie może być więcej niż 30 kandydatów.")
+        if voting.planned_start <= timezone.now():
+            raise ValidationError('Można dodać tylko przyszłe głosowania')
 
     def save(self, *args, **kwargs):
         self.full_clean()
