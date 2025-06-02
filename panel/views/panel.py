@@ -10,6 +10,8 @@ from ..forms import PanelLoginForm
 @login_required(login_url='office_auth:microsoft_login')
 def panel_login(request:HttpRequest):
     microsoft_user_id = request.session.get('microsoft_user_id')
+    if microsoft_user_id is not None and request.user.is_superuser:
+        return redirect(reverse('panel:index'))
     if request.method == 'GET':
         form = PanelLoginForm()
         return render(request, 'login.html', context={'form':form})
