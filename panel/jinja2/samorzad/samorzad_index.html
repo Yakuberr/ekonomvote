@@ -6,48 +6,63 @@
     {{ render_navbar(csrf_input, current_page='samorząd') }}
 {% endblock %}
 {% block body_content %}
-<main class="container-fluid">
-        <div class="row">
-            <div class="col-12 col-md-3 col-lg-2 border-4 border-eco-light-cyan">
+<main class="container-fluid overflow-hidden">
+        <div class="row overflow-hidden">
+            <div class="col-12 col-md-3 col-lg-2 border-4 border-eco-light-cyan independent-scroll">
                 <ul class="nav flex-row flex-md-column">
-                    <li class="nav-item">
-                        <a class="nav-link active link-eco-light-cyan" aria-current="page" href="#">Lista</a>
-                    </li>
-                    <li class="nav-item d-none d-md-block">
-                        <a class="nav-link link-eco-light-cyan" href="#">Dodaj głosowanie</a>
-                    </li>
-                    <li class="nav-item dropdown d-block d-md-none">
-                        <a class="nav-link link-eco-light-cyan dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-expanded="false">Głosowania</a>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link active link-eco-light-cyan dropdown-toggle" aria-current="page" data-bs-toggle="dropdown" href="#" role="button" aria-expanded="false">Lista</a>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#">Dodaj głosowanie</a></li>
-                            <li><a class="dropdown-item" href="#">Dodaj puste głosowanie</a></li>
+                            <li><a class="dropdown-item" href="{{ url('panel:samorzad_index') }}">Głosowań</a></li>
+                            <li><a class="dropdown-item" href="#">Kandydatów</a></li>
+                            <li><a class="dropdown-item" href="#">Kandydatur</a></li>
                         </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link link-eco-light-cyan" href="{{ url('panel:samorzad_add_empty_voting') }}">Dodaj głosowanie</a>
                     </li>
                     <hr class="d-none d-md-block m-2">
                     <li class="nav-item d-none d-md-block">
-                        <a class="nav-link link-eco-light-cyan" href="#">Dodaj kandydata</a>
+                        <a class="nav-link link-eco-light-cyan" href="{{ url('panel:samorzad_add_candidate') }}">Dodaj kandydata</a>
                     </li>
                     <li class="nav-item dropdown d-block d-md-none">
                         <a class="nav-link link-eco-light-cyan dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-expanded="false">Kandydaci</a>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#">Dodaj kandydata</a></li>
-                            <li><a class="dropdown-item" href="#">Dodaj program wyborczy</a></li>
-                            <li><a class="dropdown-item" href="#">Dodaj kandydature</a></li>
+                            <li><a class="dropdown-item" href="{{ url('panel:samorzad_add_candidate') }}">Dodaj kandydata</a></li>
+                            <li><a class="dropdown-item" href="{{ url('panel:samorzad_add_candidature') }}">Dodaj kandydature</a></li>
                         </ul>
                     </li>
                     <li class="nav-item d-none d-md-block">
-                        <a class="nav-link link-eco-light-cyan" href="#">Dodaj program wyborczy</a>
-                    </li>
-                    <li class="nav-item d-none d-md-block">
-                        <a class="nav-link link-eco-light-cyan" href="#">Dodaj kandydature</a>
-                    </li>
-                    <hr class="m-2 d-none d-md-block">
-                    <li class="nav-item d-none d-md-block">
-                        <a class="nav-link link-eco-light-cyan" href="#">Dodaj puste głosowanie</a>
+                        <a class="nav-link link-eco-light-cyan" href="{{ url('panel:samorzad_add_candidature') }}">Dodaj kandydature</a>
                     </li>
                 </ul>
             </div>
-            <div class="col-12 col-md-9 col-lg-10 bg-dark scrollable-column d-flex align-items-center flex-column">
+            <div class="col-12 col-md-9 col-lg-10 bg-dark scrollable-column d-flex align-items-center flex-column independent-scroll">
+                <div class="card mt-3 bg-black bg-opacity-25 border-eco-light-cyan">
+                    <div class="card-body">
+                        <h6 class="card-title text-eco-light-cyan mb-3">Sortowanie</h6>
+                        <form method="get" class="row g-3">
+                            <div class="col-md-6">
+                                <label for="sort" class="form-label text-light">Sortuj według:</label>
+                                <select name="sort" id="sort" class="form-select" onchange="this.form.submit()">
+                                    <option selected value="planned_start" {% if current_sort == 'planned_start' %}selected{% endif %}>Data rozpoczęcia</option>
+                                    <option value="planned_end" {% if current_sort == 'planned_end' %}selected{% endif %}>Data zakończenia</option>
+                                    <option value="created_at" {% if current_sort == 'created_at' %}selected{% endif %}>Data utworzenia</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-4 mb-md-0">
+                                <label for="order" class="form-label text-light">Kolejność:</label>
+                                <select name="order" id="order" class="form-select" onchange="this.form.submit()">
+                                    <option value="asc" {% if current_order == 'asc' %}selected{% endif %}>Rosnąco ↑</option>
+                                    <option value="desc" {% if current_order == 'desc' %}selected{% endif %}>Malejąco ↓</option>
+                                </select>
+                            </div>
+                            <!-- Zachowaj aktualną stronę -->
+                            <input type="hidden" name="page" value="{{ page_obj.number }}">
+                        </form>
+                    </div>
+                </div>
+
                 {% for v in page_obj %}
                     {% if v.planned_start <= now() and v.planned_end > now() %}
                         <div class="card mt-5 border border-eco-light-cyan border-2 bg-black bg-opacity-25">
@@ -57,8 +72,10 @@
                             <img src="{{ static('glosowanie.png') }}" class="card-img-top" alt="głosowanie">
                             <div class="card-body">
                                 <h5 class="card-title">Głosowanie</h5>
-                                <p class="card-text">Od {{v.parse_planned_start()}}<br/>Do {{v.parse_planned_end()}}</p>
-                                <a href="#" class="btn btn-outline-eco-light-cyan stretched-link">Podgląd</a>
+                                <p class="card-text small text-muted">Utworzono: {{ v.parse_created_at() }}</p>
+                                <p class="card-text">Od: {{v.parse_planned_start()}}<br/>Do: {{v.parse_planned_end()}}</p>
+                                <p class="card-text"><small class="text-muted">Ilość głosów do oddania: {{ v.votes_per_user }}</small></p>
+                                <a href="#" class="btn btn-outline-eco-light-cyan">Podgląd</a>
                             </div>
                         </div>
                     {% else %}
@@ -66,17 +83,20 @@
                             <img src="{{ static('glosowanie.png') }}" class="card-img-top" alt="głosowanie"  style="filter: grayscale(100%);">
                             <div class="card-body">
                                 <h5 class="card-title">Głosowanie</h5>
+                                <p class="card-text small text-muted">Utworzono: {{ v.parse_created_at() }}</p>
                                 <p class="card-text">Od: {{v.parse_planned_start()}}<br/>Do: {{v.parse_planned_end()}}</p>
-                                <a href="#" class="btn btn-outline-eco-light-cyan stretched-link">Podgląd</a>
+                                <p class="card-text"><small class="text-muted">Ilość głosów do oddania: {{ v.votes_per_user }}</small></p>
+                                <a href="#" class="btn btn-outline-eco-light-cyan">Podgląd</a>
                             </div>
                         </div>
                     {% endif %}
                 {% endfor %}
+                <!-- Paginacja z zachowaniem sortowania -->
                 <nav aria-label="pagination" class="mt-5">
                     <ul class="pagination">
                         {% if page_obj.has_previous() %}
-                        <li class="page-item"><a class="page-link" href="?page=1">&laquo;&laquo; </a></li>
-                        <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number() }}">&laquo;</a></li>
+                        <li class="page-item"><a class="page-link" href="?page=1&sort={{ current_sort }}&order={{ current_order }}">&laquo;&laquo; </a></li>
+                        <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number() }}&sort={{ current_sort }}&order={{ current_order }}">&laquo;</a></li>
                         {% else %}
                         <li class="page-item disabled"><a class="page-link">&laquo;&laquo; </a></li>
                         <li class="page-item disabled"><a class="page-link">&laquo;</a></li>
@@ -85,8 +105,8 @@
                         <a class="page-link" href="#" aria-current="page">{{ page_obj.number }}</a>
                         </li>
                         {% if page_obj.has_next() %}
-                        <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number() }}">&raquo;</a></li>
-                        <li class="page-item"><a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">&raquo;&raquo;</a></li>
+                        <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number() }}&sort={{ current_sort }}&order={{ current_order }}">&raquo;</a></li>
+                        <li class="page-item"><a class="page-link" href="?page={{ page_obj.paginator.num_pages }}&sort={{ current_sort }}&order={{ current_order }}">&raquo;&raquo;</a></li>
                         {% else %}
                         <li class="page-item disabled"><a class="page-link">&raquo;</a></li>
                         <li class="page-item disabled"><a class="page-link">&raquo;&raquo;</a></li>

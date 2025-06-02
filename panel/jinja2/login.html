@@ -30,12 +30,12 @@
                 <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
                 <hr class="w-100">
                 <div class="mb-3">
-                    <label for="exampleInputEmail1" class="form-label">Login</label>
-                    <input name="login" type="text" class="form-control bg-black bg-opacity-25 d-inline-flex focus-ring py-2 px-2 text-decoration-none border rounded-2" id="exampleInputEmail1" style="--bs-focus-ring-color: rgba(var(--bs-eco-light-cyan-rgb), .5)" required>
+                    <label for="loginInput" class="form-label">Login</label>
+                    <input name="login" type="text" class="form-control bg-black bg-opacity-25" id="loginInput" required>
                 </div>
                 <div class="mb-5">
-                    <label for="exampleInputPassword1" class="form-label">Hasło</label>
-                    <input name="password" type="password" class="form-control bg-black bg-opacity-25 d-inline-flex focus-ring py-2 px-2 text-decoration-none border rounded-2" id="exampleInputPassword1" style="--bs-focus-ring-color: rgba(var(--bs-eco-light-cyan-rgb), .5)" required>
+                    <label for="passwordInput" class="form-label">Hasło</label>
+                    <input name="password" type="password" class="form-control bg-black bg-opacity-25" id="passwordInput" required>
                 </div>
                 <button type="submit" class="btn btn-outline-eco-light-cyan">Zaloguj się</button>
             </form>

@@ -8,6 +8,7 @@
     <title>{% block title %}Samorząd - Admin {% endblock %}</title>
     {% block head_css %}
     <link rel="stylesheet" href="{{ static('css/custom-boostrap.min.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
     {% endblock %}
     {% block head_icon %}
@@ -60,6 +61,19 @@
         border-color: var(--bs-eco-light-cyan);
         color: var(--bs-dark);
         }
+
+        input.form-control:focus, select.form-select:focus{
+            border-color: var(--bs-eco-light-cyan);
+            box-shadow: none;
+        }
+        input.form-check-input:focus{
+            box-shadow: none;
+            border-color: var(--bs-border-color);
+        }
+        input[type=checkbox]:checked{
+            background-color: var(--bs-eco-light-cyan);
+            border-color: var(--bs-eco-light-cyan);
+        }
         {% block head_css_internal %}
         {% endblock %}
     </style>
@@ -67,6 +81,7 @@
 <body>
     {% block body_js %}
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/htmx.org@2.0.4" integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+" crossorigin="anonymous"></script>
     {% endblock %}
     {% block body_messages %}
     {{ render_messages(request) }}

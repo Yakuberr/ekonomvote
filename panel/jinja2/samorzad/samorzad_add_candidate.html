@@ -1,0 +1,77 @@
+{% extends "samorzad/samorzad_base.html" %}
+{% block title %}
+    Samorząd - lista głosowań
+{% endblock title %}
+{% block body_navbar %}
+    {{ render_navbar(csrf_input, current_page='samorząd') }}
+{% endblock %}
+{% block body_content %}
+<main class="container-fluid">
+        <div class="row">
+            <div class="col-12 col-md-3 col-lg-2 border-4 border-eco-light-cyan">
+                <ul class="nav flex-row flex-md-column">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link link-eco-light-cyan dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-expanded="false">Lista</a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ url('panel:samorzad_index') }}">Głosowań</a></li>
+                            <li><a class="dropdown-item" href="#">Kandydatów</a></li>
+                            <li><a class="dropdown-item" href="#">Kandydatur</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link link-eco-light-cyan" href="{{ url('panel:samorzad_add_empty_voting') }}">Dodaj głosowanie</a>
+                    </li>
+                    <hr class="d-none d-md-block m-2">
+                    <li class="nav-item d-none d-md-block">
+                        <a class="nav-link active link-eco-light-cyan" href="{{ url('panel:samorzad_add_candidate') }}" aria-current="page">Dodaj kandydata</a>
+                    </li>
+                    <li class="nav-item dropdown d-block d-md-none">
+                        <a class="nav-link active link-eco-light-cyan dropdown-toggle" aria-current="page" data-bs-toggle="dropdown" href="#" role="button" aria-expanded="false">Kandydaci</a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ url('panel:samorzad_add_candidate') }}">Dodaj kandydata</a></li>
+                            <li><a class="dropdown-item" href="{{ url('panel:samorzad_add_candidature') }}">Dodaj kandydature</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item d-none d-md-block">
+                        <a class="nav-link link-eco-light-cyan" href="{{ url('panel:samorzad_add_candidature') }}">Dodaj kandydature</a>
+                    </li>
+                </ul>
+            </div>
+            <div class="col-12 col-md-9 col-lg-10 bg-dark scrollable-column d-flex align-items-center flex-column">
+                <form class="mt-5 bg-black bg-opacity-25 ps-5 pe-5 pt-4 pb-4 border border-2 border-eco-light-cyan rounded-3" action="{{ url('panel:samorzad_add_candidate') }}" method="post" enctype="multipart/form-data">
+                    <legend class="mb-3 text-eco-light-cyan">Dodaj kandydata</legend>
+                    <div class="mb-3">
+                        <label for="firstName" class="form-label">Imię</label>
+                        <input name="first_name" type="text" class="form-control bg-black bg-opacity-25" id="firstName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="secondName" class="form-label">Drugie imię</label>
+                        <input name="second_name" type="text" class="form-control bg-black bg-opacity-25" id="secondName">
+                    </div>
+                    <div class="mb-3">
+                        <label for="lastName" class="form-label">Nazwisko</label>
+                        <input name="last_name" type="text" class="form-control bg-black bg-opacity-25" id="lastName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="imageInput">Zdjęcie kandydata: 400x400, max 2MB</label>
+                        <input name="image" accept="image" type="file" class="form-control bg-black bg-opacity-25" id="imageInput">
+                    </div>
+                    <div class="mb-4">
+                        <label for="schoolClass" class="form-label">Klasa (np: 5 TE)</label>
+                        <input name="school_class" type="text" class="form-control bg-black bg-opacity-25 w-25" id="schoolClass" required>
+                    </div>
+                    {{ csrf_input }}
+                    <button type="submit" class="btn btn-outline-eco-light-cyan">Dodaj</button>
+                </form>
+            </div>
+        </div>
+    </main>
+    <script>
+        document.querySelectorAll("label + input[required]").forEach(input => {
+            const label = input.previousElementSibling;
+            if (label && label.tagName.toLowerCase() === "label") {
+                label.innerHTML += ' <span style="color: rgb(213, 13, 13)">*</span>';
+            }
+            });
+    </script>
+{% endblock body_content %}
