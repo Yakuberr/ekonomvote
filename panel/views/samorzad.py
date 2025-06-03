@@ -20,7 +20,7 @@ def add_empty_voting(request:HttpRequest):
         return redirect(reverse('panel:login'))
     if request.method == 'GET':
         form = SamorzadAddEmptyVotingForm()
-        return render(request, 'samorzad/samorzad_add_empty_voting.html', context={})
+        return render(request, 'panel/samorzad/samorzad_add_empty_voting.html', context={})
     if request.method == 'POST':
         form = SamorzadAddEmptyVotingForm(request.POST)
         if form.is_valid():
@@ -32,7 +32,7 @@ def add_empty_voting(request:HttpRequest):
                 for error in errors:
                     messages.add_message(request, level=40, message=error)
             return redirect(reverse('panel:samorzad_add_empty_voting'))
-        return render(request, 'samorzad/samorzad_add_empty_voting.html', context={})
+        return render(request, 'panel/samorzad/samorzad_add_empty_voting.html', context={})
 
 @require_http_methods(['GET'])
 @login_required(login_url='office_auth:microsoft_login')
@@ -56,7 +56,7 @@ def samorzad_index(request:HttpRequest):
     if page_number > paginator.num_pages:
         page_number = paginator.num_pages
     page_obj = paginator.get_page(page_number)
-    return render(request, 'samorzad/samorzad_index.html', context={
+    return render(request, 'panel/samorzad/samorzad_index.html', context={
         'page_obj':page_obj,
         'current_sort': sort_by,
         'current_order': order,
@@ -70,7 +70,7 @@ def samorzad_add_candidate(request:HttpRequest):
         return redirect(reverse('panel:login'))
     if request.method == 'GET':
         form = SamorzadAddCandidateForm()
-        return render(request, 'samorzad/samorzad_add_candidate.html', context={
+        return render(request, 'panel/samorzad/samorzad_add_candidate.html', context={
             'form':form
         })
     if request.method == 'POST':
@@ -94,7 +94,7 @@ def samorzad_add_candidature(request:HttpRequest):
         form = CandidateRegistrationForm()
         formset = ElectoralProgramFormSet()
         votings = Voting.objects.filter(planned_start__gt=timezone.now()).order_by('planned_start')
-        return render(request, 'samorzad/samorzad_add_candidature.html', context={
+        return render(request, 'panel/samorzad/samorzad_add_candidature.html', context={
             'votings':votings
         })
     if request.method == 'POST':
@@ -125,13 +125,13 @@ def samorzad_add_candidature(request:HttpRequest):
 def partial_candidates_search(request:HttpRequest):
     query = request.GET.get('search', '')
     if query == '':
-        return render(request, 'samorzad/partials/candidates_select.html', context={
+        return render(request, 'panel/samorzad/partials/candidates_select.html', context={
             'candidates':[]
         })
     vector = SearchVector('first_name', 'second_name', 'last_name')
     query = SearchQuery(query, search_type='plain')
     candidates = Candidate.objects.annotate(rank=SearchRank(vector, query)).filter(rank__gte=0.03).order_by('-rank')
-    return render(request, 'samorzad/partials/candidates_select.html', context={
+    return render(request, 'panel/samorzad/partials/candidates_select.html', context={
         'candidates': candidates
     })
 

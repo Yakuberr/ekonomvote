@@ -1,4 +1,4 @@
-{% extends "samorzad/samorzad_base.html" %}
+{% extends "panel/samorzad/samorzad_base.html" %}
 {% block title %}
     Samorząd - lista głosowań
 {% endblock title %}
@@ -88,7 +88,7 @@
                                 <div class="form-text">Podaj imię, drugie imię i nazwisko</div>
                             </div>
                         <div id="selectCanidatePlaceholder">
-                            {% include "samorzad/partials/candidates_select.html" %}
+                            {% include "panel/samorzad/partials/candidates_select.html" %}
                         </div>
                         <div class="form-check mb-3">
                             <input name="is_eligible" class="form-check-input" type="checkbox" value="" id="checkChecked" checked>

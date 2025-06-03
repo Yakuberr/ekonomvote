@@ -14,7 +14,7 @@ def panel_login(request:HttpRequest):
         return redirect(reverse('panel:index'))
     if request.method == 'GET':
         form = PanelLoginForm()
-        return render(request, 'login.html', context={'form':form})
+        return render(request, 'panel/login.html', context={'form':form})
     if request.method == 'POST':
         form = PanelLoginForm(request.POST)
         if form.is_valid():
@@ -42,5 +42,5 @@ def panel_index(request:HttpRequest):
         return HttpResponseNotAllowed(permitted_methods=['GET'])
     if not request.user.is_superuser:
         return redirect(reverse('panel:login'))
-    return render(request, 'index.html')
+    return render(request, 'panel/index.html')
 
