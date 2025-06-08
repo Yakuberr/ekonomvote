@@ -2,6 +2,7 @@ from django.db import models
 from django.utils import timezone, dateparse
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
+from django.core.exceptions import ObjectDoesNotExist
 from office_auth.models import AzureUser
 import pytz
 
@@ -34,6 +35,10 @@ class Voting(models.Model):
 
     def parse_created_at(self):
         return self.created_at.astimezone(tz=pytz.timezone('Europe/Warsaw'))
+
+    def parse_updated_at(self):
+        return self.updated_at.astimezone(tz=pytz.timezone('Europe/Warsaw'))
+
     def clean(self):
         if self.planned_start <= timezone.now():
             raise ValidationError("Głosowanie musi zaczynać się później niż obecna data.")
@@ -65,6 +70,13 @@ class Candidate(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     school_class = models.CharField(max_length=20, null=True, blank=True)
+
+
+    def parse_created_at(self):
+        return self.created_at.astimezone(tz=pytz.timezone('Europe/Warsaw'))
+
+    def parse_updated_at(self):
+        return self.updated_at.astimezone(tz=pytz.timezone('Europe/Warsaw'))
 
     def __str__(self):
         return f'Candiate(first_name={self.first_name}, last_name={self.last_name})'
@@ -102,23 +114,33 @@ class CandidateRegistration(models.Model):
     voting = models.ForeignKey(Voting, on_delete=models.CASCADE, related_name='candidate_registrations')
     is_eligible = models.BooleanField(default=False)  # Przeniesione z modelu Candidate
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def parse_created_at(self):
+        return self.created_at.astimezone(tz=pytz.timezone('Europe/Warsaw'))
+
+    def parse_updated_at(self):
+        return self.updated_at.astimezone(tz=pytz.timezone('Europe/Warsaw'))
 
     class Meta:
         # Zapobiega duplikatom
         constraints = [
-            models.UniqueConstraint(fields=['candidate', 'voting'], name='unique_candidate_per_voting')
+            models.UniqueConstraint(fields=['candidate', 'voting'], name='unique_candidate_per_voting',
+            violation_error_message="Kandydatura dla tego kandydata już istnieje w tym głosowaniu")
         ]
 
     def __str__(self):
         return f'CandidateRegistration(candidate={self.candidate.pk}, voting={self.voting.pk})'
 
     def clean(self):
-        voting = self.voting
-        if voting.candidate_registrations.count() >= 30 and not voting.candidate_registrations.filter(
+        try:
+            voting = self.voting
+        except ObjectDoesNotExist:
+            raise ValidationError("Podane głosowanie nie istnieje w systemie.")
+        # TODO: O tą zmienną trzeba się pytać lecha
+        if voting.candidate_registrations.count() >= 15 and not voting.candidate_registrations.filter(
                 pk=self.pk).exists():
-            raise ValidationError("W głosowaniu nie może być więcej niż 30 kandydatów.")
-        if voting.planned_start <= timezone.now():
-            raise ValidationError('Można dodać tylko przyszłe głosowania')
+            raise ValidationError("W głosowaniu nie może być więcej niż 15 kandydatów.")
 
     def save(self, *args, **kwargs):
         self.full_clean()
@@ -143,21 +165,26 @@ class Vote(models.Model):
 
     def clean(self):
         voting = self.candidate_registration.voting
+        # Walidacja czasu oddanego głosu
         if timezone.now() < voting.planned_start:
             raise ValidationError("Nie można głosować przed rozpoczęciem głosowania")
         if timezone.now() > voting.planned_end:
             raise ValidationError("Nie można głosować po zakończeniu głosowania")
+        # Walidacja kandydatury
         if not self.candidate_registration.is_eligible:
             raise ValidationError("Nie można oddać głosu na kandydata, który nie został dopuszczony do wyborów.")
-
-    def save(self, *args, **kwargs):
+        # Walidacja ilości głosów/głosowanie i ilości głosów/kandydatura
+        if Vote.objects.filter(candidate_registration=self.candidate_registration, microsoft_user=self.microsoft_user).exists():
+            raise ValidationError("Już zagłosowałeś na tego kandydata.")
         voting = self.candidate_registration.voting
         if Vote.objects.filter(
                 candidate_registration__voting=voting,
                 microsoft_user=self.microsoft_user
         ).count() == voting.votes_per_user:
-            raise ValidationError("Użytkownik oddał już maksymalnie 3 głosy w głosowaniu")
+            raise ValidationError("Użytkownik oddał już maksymalną ilość głosów w głosowaniu")
         if self.pk:
             raise ValidationError("Edytowanie modelu Vote jest zabronione!")
+
+    def save(self, *args, **kwargs):
         self.full_clean()
         super().save(*args, **kwargs)
