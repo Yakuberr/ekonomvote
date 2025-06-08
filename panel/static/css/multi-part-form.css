@@ -1,0 +1,48 @@
+fieldset{
+    animation: form-fade 250ms  ease-in-out forwards;
+}
+
+
+fieldset.active{
+    animation: form-slide 250ms 125ms ease-in-out both;
+}
+
+fieldset.no-animation{
+    animation: none !important;
+}
+
+form.multi-step-form{
+    overflow: hidden;
+    position: relative;
+}
+
+.hide{
+    display: none;
+}
+
+@keyframes form-slide {
+    0%{
+        transform: translateX(200%);
+        opacity: 0;
+    }
+    100%{
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes form-fade {
+    0%{
+        transform: scale(1);
+        opacity: 1;
+    }
+    50%{
+        transform: scale(.75);
+        opacity: 0;
+    }
+    100%{
+        transform: scale(0);
+        opacity: 0;
+    }
+    
+}
