@@ -116,16 +116,6 @@ class ElectoralProgramForm(forms.ModelForm):
         return cleaned
 
 
-ElectoralProgramFormSet = inlineformset_factory(
-    CandidateRegistration,
-    ElectoralProgram,
-    form=ElectoralProgramForm,
-    fields=['info'],
-    extra=1,
-    can_delete=False,
-    min_num=1,
-    validate_min=True
-)
 
 
 

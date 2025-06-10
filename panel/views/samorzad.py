@@ -1,19 +1,20 @@
 from django.contrib.auth.views import LoginView
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponseForbidden, HttpRequest, HttpResponseNotAllowed
-from django.shortcuts import redirect, render, reverse
+from django.http import HttpResponseForbidden, HttpRequest, HttpResponseNotAllowed, HttpResponse
+from django.shortcuts import redirect, render, reverse, get_object_or_404
 from django.views.decorators.http import require_http_methods
 from django.core.paginator import Paginator
 from django.utils import timezone
 from django.contrib import messages
 from django.contrib.postgres.search import SearchRank, SearchQuery, SearchVector, TrigramSimilarity
+from django.core.exceptions import ValidationError
 
 import pytz
-from rest_framework.exceptions import ValidationError
 
-from samorzad.models import Voting, Candidate, CandidateRegistration
-from panel.forms import SamorzadAddEmptyVotingForm, SamorzadAddCandidateForm, CandidateRegistrationForm, ElectoralProgramFormSet
+from samorzad.models import Voting, Candidate, CandidateRegistration, ElectoralProgram
+from panel.forms import SamorzadAddEmptyVotingForm, SamorzadAddCandidateForm, CandidateRegistrationForm, ElectoralProgramForm
+
 
 # CREATE views
 # TODO: Walidcja czy id danego obiektu w bazie danych istnieje
@@ -24,7 +25,9 @@ def add_empty_voting(request:HttpRequest):
         return redirect(reverse('panel:login'))
     if request.method == 'GET':
         form = SamorzadAddEmptyVotingForm()
-        return render(request, 'panel/samorzad/samorzad_add_empty_voting.html', context={})
+        return render(request, 'panel/samorzad/samorzad_add_empty_voting.html', context={
+            'form': form
+        })
     if request.method == 'POST':
         form = SamorzadAddEmptyVotingForm(request.POST)
         if form.is_valid():
@@ -36,7 +39,9 @@ def add_empty_voting(request:HttpRequest):
                 for error in errors:
                     messages.add_message(request, level=40, message=error)
             return redirect(reverse('panel:samorzad_add_empty_voting'))
-        return render(request, 'panel/samorzad/samorzad_add_empty_voting.html', context={})
+        return render(request, 'panel/samorzad/samorzad_add_empty_voting.html', context={
+            'form':form
+        })
 
 @require_http_methods(['GET', 'POST'])
 @login_required(login_url='office_auth:microsoft_login')
@@ -66,33 +71,32 @@ def samorzad_add_candidature(request:HttpRequest):
     if not request.user.is_superuser:
         return redirect(reverse('panel:login'))
     if request.method == 'GET':
-        form = CandidateRegistrationForm()
-        formset = ElectoralProgramFormSet()
+        candidature_form = CandidateRegistrationForm()
+        electoral_form = ElectoralProgramForm()
         votings = Voting.objects.filter(planned_start__gt=timezone.now()).order_by('planned_start')
         return render(request, 'panel/samorzad/samorzad_add_candidature.html', context={
-            'votings':votings
+            'votings':votings,
+            'candidature_form':candidature_form,
+            'electoral_form':electoral_form
         })
     if request.method == 'POST':
-        form = CandidateRegistrationForm(request.POST)
-        formset = ElectoralProgramFormSet(request.POST)
-        if form.is_valid():
-            candidate_reg = form.save()
-            formset = ElectoralProgramFormSet(request.POST, instance=candidate_reg)
-            if formset.is_valid():
-                formset.save()
-                messages.success(request, "Pomyślnie dodano kandydature")
-                return redirect(reverse('panel:samorzad_add_candidature'))
-            else:
-                for i, form_errors in enumerate(formset.errors):
-                    for field, errors in form_errors.items():
-                        for error in errors:
-                            messages.error(request, f"Błąd. Upewnij się że program wyborczy nie jest pusty. {error}")
-                return redirect(reverse('panel:samorzad_add_candidature'))
+        candidature_form = CandidateRegistrationForm(request.POST)
+        electoral_form = ElectoralProgramForm(request.POST)
+        if candidature_form.is_valid() and electoral_form.is_valid():
+            candidature = candidature_form.save()
+            program = electoral_form.save(commit=False)
+            program.candidature = candidature
+            program.save()
+            messages.success(request, "Pomyślnie dodano kandydature")
+            return redirect(reverse('panel:list_candidatures'))
         else:
-            for field, errors in form.errors.items():
+            for field, errors in candidature_form.errors.items():
                 for error in errors:
                     messages.add_message(request, level=40, message=error)
-                    return redirect(reverse('panel:samorzad_add_candidature'))
+            for field, errors in electoral_form.errors.items():
+                for error in errors:
+                    messages.add_message(request, level=40, message=error)
+            return redirect(reverse('panel:samorzad_add_candidature'))
 
 
 @require_http_methods(["GET"])
@@ -232,6 +236,139 @@ def list_candidatures(request:HttpRequest):
         'current_order': order,
         'allowed_fields': allowed_sort_fields
     })
+
+# UPDATE views
+
+@require_http_methods(['GET', 'POST'])
+def update_voting(request:HttpRequest, voting_id:int):
+    if not request.user.is_superuser:
+        return redirect(reverse('panel:login'))
+    voting = get_object_or_404(Voting, pk=voting_id)
+    if request.method == 'GET':
+        form = SamorzadAddEmptyVotingForm(instance=voting)
+        return render(request, 'panel/samorzad/samorzad_add_empty_voting.html', context={
+            'form':form
+        })
+    if request.method == 'POST':
+        form = SamorzadAddEmptyVotingForm(request.POST, instance=voting)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Pomyślnie zaktualizowano dane głosowania.')
+            return redirect(reverse('panel:samorzad_index'))
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.add_message(request, level=40, message=error)
+            return redirect(reverse('panel:update_voting', kwargs={'voting_id':voting_id}))
+        return render(request, 'panel/samorzad/samorzad_add_empty_voting.html', context={
+            'form':form
+        })
+
+
+@require_http_methods(['GET', 'POST'])
+@login_required(login_url='office_auth:microsoft_login')
+def update_candidate(request:HttpRequest, candidate_id:int):
+    if not request.user.is_superuser:
+        return redirect(reverse('panel:login'))
+    candidate = get_object_or_404(Candidate, pk=candidate_id)
+    if request.method == 'GET':
+        form = SamorzadAddCandidateForm(instance=candidate)
+        return render(request, 'panel/samorzad/samorzad_add_candidate.html', context={
+            'form':form
+        })
+    if request.method == 'POST':
+        form = SamorzadAddCandidateForm(request.POST, request.FILES, instance=candidate)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Zaktualizowano dane kandydata')
+            return redirect(reverse('panel:list_candidates'))
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.add_message(request, level=40, message=error)
+            return redirect(reverse('panel:update_candidate', kwargs={'candidate_id':candidate_id}))
+
+
+
+
+@require_http_methods(["GET", 'POST'])
+@login_required(login_url='office_auth:microsoft_login')
+def update_candidature(request:HttpRequest, candidature_id:int):
+    if not request.user.is_superuser:
+        return redirect(reverse('panel:login'))
+    candidature = get_object_or_404(CandidateRegistration, pk=candidature_id)
+    electoral_program = ElectoralProgram.objects.filter(candidature=candidature).first()
+    if request.method == 'GET':
+        candidature_form = CandidateRegistrationForm(instance=candidature)
+        electoral_form = ElectoralProgramForm(instance=electoral_program)
+        votings = Voting.objects.filter(planned_start__gt=timezone.now()).order_by('planned_start')
+        selected_candidate = candidature_form.instance.candidate
+        return render(request, 'panel/samorzad/samorzad_add_candidature.html', context={
+            'votings':votings,
+            'candidature_form':candidature_form,
+            'electoral_form':electoral_form,
+            'selected_candidate':selected_candidate
+        })
+    if request.method == 'POST':
+        candidature_form = CandidateRegistrationForm(request.POST, instance=candidature)
+        electoral_form = ElectoralProgramForm(request.POST, instance=electoral_program)
+        if candidature_form.is_valid() and electoral_form.is_valid():
+            candidature = candidature_form.save()
+            program = electoral_form.save(commit=False)
+            program.candidature = candidature
+            program.save()
+            messages.success(request, "Pomyślnie zaktualizowano dane kandydatury")
+            return redirect(reverse('panel:list_candidatures'))
+        else:
+            for field, errors in candidature_form.errors.items():
+                for error in errors:
+                    messages.add_message(request, level=40, message=error)
+            for field, errors in electoral_form.errors.items():
+                for error in errors:
+                    messages.add_message(request, level=40, message=error)
+            return redirect(reverse('panel:update_candidature', kwargs={'candidature_id':candidature_id}))
+
+
+# DELETE views
+
+@require_http_methods(['POST'])
+@login_required(login_url='office_auth:microsoft_login')
+def delete_voting(request:HttpRequest):
+    if not request.user.is_superuser:
+        return redirect(reverse('panel:login'))
+    voting_id = request.POST.get('voting_id')
+    try:
+        Voting.objects.filter(id=voting_id).first().delete()
+        messages.success(request, 'Pomyślnie usunięto głosowanie.')
+    except AttributeError:
+        messages.error(request, 'Głosowanie o podanym id nie istnieje.')
+    return redirect(reverse('panel:samorzad_index'))
+
+@require_http_methods(['POST'])
+@login_required(login_url='office_auth:microsoft_login')
+def delete_candidate(request:HttpRequest):
+    if not request.user.is_superuser:
+        return redirect(reverse('panel:login'))
+    candidate_id = request.POST.get('candidate_id')
+    try:
+        Candidate.objects.filter(id=candidate_id).first().delete()
+        messages.success(request, 'Pomyślnie usunięto kandydata.')
+    except AttributeError :
+        messages.error(request, 'Kandydat o podanym id nie istnieje.')
+    return redirect(reverse('panel:list_candidates'))
+
+@require_http_methods(['POST'])
+@login_required(login_url='office_auth:microsoft_login')
+def delete_candidature(request:HttpRequest):
+    if not request.user.is_superuser:
+        return redirect(reverse('panel:login'))
+    candidature_id = request.POST.get('candidature_id')
+    try:
+        CandidateRegistration.objects.filter(id=candidature_id).first().delete()
+        messages.success(request, 'Pomyślnie usunięto kandydature.')
+    except AttributeError :
+        messages.error(request, 'Kandydatura o podanym id nie istnieje.')
+    return redirect(reverse('panel:list_candidatures'))
 
 
 
