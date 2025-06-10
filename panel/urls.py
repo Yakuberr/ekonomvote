@@ -8,7 +8,14 @@ from .views.samorzad import (
     samorzad_add_candidature,
     partial_candidates_search,
     list_candidates,
-    list_candidatures
+    list_candidatures,
+    #read_voting,
+    update_voting,
+    update_candidate,
+    update_candidature,
+    delete_voting,
+    delete_candidate,
+    delete_candidature,
 )
 
 
@@ -24,6 +31,12 @@ urlpatterns = [
     path('samorzad/', samorzad_index, name='samorzad_index'),
     path('samorzad/lista-kandydatow', list_candidates, name='list_candidates'),
     path('samorzad/lista-kandydatur', list_candidatures, name="list_candidatures"),
+    path('samorzad/glosowania/edytuj/<int:voting_id>', update_voting, name="update_voting"),
+    path('samorzad/kandydaci/edytuj/<int:candidate_id>', update_candidate, name="update_candidate"),
+    path('samorzad/kandydatury/edytuj/<int:candidature_id>', update_candidature, name="update_candidature"),
+    path('samorzad/glosowania/usun', delete_voting, name="delete_voting"),
+    path('samorzad/kandydaci/usun', delete_candidate, name="delete_candidate"),
+    path('samorzad/kandydatury/usun', delete_candidature, name="delete_candidature"),
     # Partials
     path('samorzad/szukaj/kandydaci', partial_candidates_search, name='partial_candidates_search')
 ]
