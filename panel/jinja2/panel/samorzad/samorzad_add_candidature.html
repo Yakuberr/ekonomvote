@@ -55,8 +55,71 @@
                 </ul>
             </div>
             <div class="col-12 col-md-9 col-lg-10 bg-dark scrollable-column d-flex justify-content-center flex-row independent-scroll">
-                <form data-step-form class="multi-step-form flex-fill ms-md-5 me-md-5" action="{{ url('panel:samorzad_add_candidature') }}" method="post">
-                     <fieldset data-step="0" class="mt-5 ms-sm-5 me-sm-5 bg-black bg-opacity-25 ps-5 pe-5 pt-4 pb-4 border border-2 border-eco-light-cyan rounded-3 no-animation">
+                {% if candidature_form.instance.pk %}
+                <form data-step-form class="multi-step-form flex-fill ms-md-5 me-md-5" action="{{ url('panel:update_candidature', kwargs={'candidature_id':candidature_form.instance.pk }) }}" method="post">
+                     <fieldset data-step="0" class="mt-5 ms-sm-5 me-sm-5 bg-black bg-opacity-25 ps-5 pe-5 pt-4 pb-4 border border-2 border-eco-light-cyan rounded-3 no-animation mb-5">
+                        <legend class="mb-3 text-eco-light-cyan">Edytuj dane kandydatury</legend>
+                            <div class="mb-3">
+                                <select name="voting" class="form-select" aria-label="selektor głosowań" id="votingSelector" required>
+                                    <option value="{{ candidature_form.instance.voting.pk }}" selected>Głosowanie rozpoczynające się o: {{ candidature_form.instance.voting.parse_planned_start().strftime('%d.%m.%Y') }}</option>
+                                    {% for v in votings %}
+                                        <option value="{{ v.pk }}">Głosowanie rozpoczynające się o: {{ v.parse_planned_start().strftime('%d.%m.%Y') }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div id="votingSelector" class="form-text">Możesz wybrać tylko przyszłe głosowania</div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="input-group">
+                                    <span class="input-group-text" id="basic-addon1">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
+                                            <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0"></path>
+                                        </svg>
+                                    </span>
+                                    <input 
+                                    class="form-control" 
+                                    id="candidatesSearch" 
+                                    placeholder="Poszukaj kandydatów..."
+                                    name="search"
+                                    hx-get="{{ url('panel:partial_candidates_search') }}"
+                                    hx-trigger="keyup delay:250ms"
+                                    hx-target="#selectCanidatePlaceholder"
+                                    hx-include="[selected_candidate='{{ candidature_form.instance.candidate.pk }}']"
+                                    >
+                                </div>
+                                <div class="form-text">Podaj imię, drugie imię i nazwisko</div>
+                            </div>
+                        <div id="selectCanidatePlaceholder">
+                            {% include "panel/samorzad/partials/candidates_select.html" %}
+                        </div>
+                        <div class="form-check mb-3">
+                            <input name="is_eligible" class="form-check-input" type="checkbox" value="1" id="checkChecked" {% if candidature_form.instance.is_eligible %} checked {% endif %}>
+                            <label class="form-check-label" for="checkChecked">
+                                Kandydatura zezwolona
+                            </label>
+                        </div>
+                        <div class="mb-3 d-flex justify-content-around">
+                            <button type="button" class="opacity-0" disabled></button>
+                            <button type="button" data-next class="btn btn-outline-eco-light-cyan w-25">Dalej</button>
+                        </div>
+                    </fieldset>
+                    <fieldset data-step="1" class="mt-5 ms-sm-5 me-sm-5 bg-black bg-opacity-25 ps-5 pe-5 pt-4 pb-4 border border-2 border-eco-light-cyan rounded-3 hide">
+                        <legend class="mb-3 text-eco-light-cyan">Program wyborczy</legend>
+                        <div class="mb-4">
+                            <label class="mb-2" for="id_content">Użyj poniższego edytora żeby wstawić program wyborczy.</label>
+                            <textarea id="id_content" name="info">{{ electoral_form.instance.info }}</textarea>
+                        </div>
+                        <div class="mb-3 d-flex justify-content-around">
+                            <button type="button" data-prev class="btn btn-outline-eco-light-cyan w-25">Cofnij</button>
+                            {{ csrf_input }}
+                            <input type="hidden" name="electoral_program-TOTAL_FORMS" value="1">
+                            <input type="hidden" name="electoral_program-INITIAL_FORMS" value="0">
+                            <button type="submit" class="btn btn-eco-light-cyan w-25">Wyślij</button>
+                        </div>
+                    </fieldset>
+                </form>
+                {% else %}
+                    <form data-step-form class="multi-step-form flex-fill ms-md-5 me-md-5" action="{{ url('panel:samorzad_add_candidature') }}" method="post">
+                     <fieldset data-step="0" class="mt-5 ms-sm-5 me-sm-5 bg-black bg-opacity-25 ps-5 pe-5 pt-4 pb-4 border border-2 border-eco-light-cyan rounded-3 no-animation mb-5">
                         <legend class="mb-3 text-eco-light-cyan">Dane kandydatury</legend>
                             <div class="mb-3">
                                 <select name="voting" class="form-select" aria-label="selektor głosowań" id="votingSelector" required>
@@ -105,7 +168,7 @@
                         <legend class="mb-3 text-eco-light-cyan">Program wyborczy</legend>
                         <div class="mb-4">
                             <label class="mb-2" for="id_content">Użyj poniższego edytora żeby wstawić program wyborczy.</label>
-                            <textarea id="id_content" name="electoral_program-0-info"></textarea>
+                            <textarea id="id_content" name="info"></textarea>
                         </div>
                         <div class="mb-3 d-flex justify-content-around">
                             <button type="button" data-prev class="btn btn-outline-eco-light-cyan w-25">Cofnij</button>
@@ -116,6 +179,7 @@
                         </div>
                     </fieldset>
                 </form>
+                {% endif %}
                 <div class="my-3 my-md-0"></div>
                 <div class="my-5"></div>
             </div>
@@ -136,20 +200,20 @@
         menubar: true,
         plugins: 'lists advlist autolink charmap preview searchreplace wordcount visualblocks fullscreen code',
         toolbar: [
-            'undo redo |',                   // Cofnij, ponów
-            'bold italic underline strikethrough |',  // Pogrubienie, kursywa, podkreślenie, przekreślenie
-            'blockquote |',                  // Cytat
-            'bullist numlist |',             // Lista punktowana, numerowana
-            'outdent indent |',              // Zmniejsz/zwieksz wcięcie
-            'removeformat |',                // Usuń formatowanie
+            'undo redo |',                  
+            'bold italic underline strikethrough |',  
+            'blockquote |',                 
+            'bullist numlist |',            
+            'outdent indent |',             
+            'removeformat |',              
         ].join(' '),
         skin: 'oxide-dark',
         content_css: 'dark',
         branding: false,
         resize: true,
         onboarding: false,
-        language: 'pl',  // tutaj ustaw polski język
-        language_url: '{{ static("tinymce/langs/pl.js") }}',  // ścieżka do pliku językowego
+        language: 'pl',
+        language_url: '{{ static("tinymce/langs/pl.js") }}',
         });
     </script>
 {% endblock body_content %}

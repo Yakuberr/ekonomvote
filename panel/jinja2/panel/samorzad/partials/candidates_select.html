@@ -3,12 +3,19 @@
 #}
 
 <select name="candidate" id="selectCandidates" class="form-select mb-3" aria-label="selektor kandydatów" required>
-    {% if candidates %}
-    <option value="" selected disabled hidden>Ilość wyników: {{ candidates.count() }}</option>
+    {% if selected_candidate %}
+    <option value="{{ selected_candidate.pk }}">{{ selected_candidate.first_name }} {{selected_candidate.second_name}} {{ selected_candidate.last_name }}</option>>
+        {% for c in candidates %}
+            <option value="{{ c.pk }}">{{ c.first_name }} {{ c.second_name }} {{ c.last_name }} ({{ c.school_class }})</option>
+        {% endfor %}
     {% else %}
-    <option value="" selected disabled hidden>Brak wyników</option>
+        {% if candidates %}
+        <option value="" selected disabled hidden>Ilość wyników: {{ candidates.count() }}</option>
+        {% else %}
+        <option value="" selected disabled hidden>Brak wyników</option>
+        {% endif %}
+        {% for c in candidates %}
+            <option value="{{ c.pk }}">{{ c.first_name }} {{ c.second_name }} {{ c.last_name }} ({{ c.school_class }})</option>
+        {% endfor %}
     {% endif %}
-    {% for c in candidates %}
-        <option value="{{ c.pk }}">{{ c.first_name }} {{ c.second_name }} {{ c.last_name }} ({{ c.school_class }})</option>
-    {% endfor %}
 </select>

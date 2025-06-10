@@ -165,8 +165,8 @@
                                                 </td>
                                                 <td class="text-center align-middle">
                                                     <a href="#" class="btn btn-sm btn-outline-eco-light-cyan">Podgląd</a>
-                                                    <a href="#" class="btn btn-sm btn-outline-eco-light-cyan">Edytuj</a>
-                                                    <a href="#" class="btn btn-sm btn-outline-danger">Usuń</a>
+                                                    <a href="{{ url('panel:update_candidate', kwargs={'candidate_id':c.pk}) }}" class="btn btn-sm btn-outline-eco-light-cyan">Edytuj</a>
+                                                    <button btn-type="delete" btn-data="{{ c.pk }}" class="btn btn-sm btn-outline-danger">Usuń</button>
                                                 </td>
                                             </tr>
                                         {% endfor %}
@@ -213,4 +213,38 @@
             </div>
         </div>
     </main>
+        <!-- Modal -->
+    <div class="modal fade" id="warningModal" tabindex="-1" aria-labelledby="warningModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5 text-danger" id="warningModalLabel">Uwaga</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Usunięcie kandydata sprawi trwałe usunięcie kandydata z systemu łącznie ze wszystkimi jego statystykami. <br>
+                <span class="text-danger fw-bold text-decoration-underline">
+                    Operacji nie można cofnąć.
+                </span>
+            </div>
+            <div class="modal-footer">
+                <form action="{{ url('panel:delete_candidate') }}" method="post">
+                    <input hidden type="number" name="candidate_id" id="votingIdInput">
+                    {{ csrf_input }}
+                    <button type="submit" class="btn btn-danger">Usuń</button>
+                </form>
+            </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        const warningModal = new bootstrap.Modal(document.getElementById('warningModal'))
+        const votingIdInput = document.getElementById('votingIdInput')
+        document.querySelectorAll('button[btn-type="delete"]').forEach(btn=>{
+            btn.addEventListener('click', (e)=>{
+                warningModal.show()
+                votingIdInput.value = Number(e.currentTarget.getAttribute('btn-data'))
+            })
+        })
+    </script>
 {% endblock body_content %}
