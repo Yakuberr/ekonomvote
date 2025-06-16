@@ -44,7 +44,6 @@ INTERNAL_IPS = [
 
 INSTALLED_APPS = [
     'debug_toolbar',
-    'rest_framework',
     'panel.apps.PanelConfig',
     'oscary.apps.OscaryConfig',
     'samorzad.apps.SamorzadConfig',
@@ -169,35 +168,5 @@ AUTH_USER_MODEL = 'office_auth.AzureUser'
 # Ukryty endpoint do panelu administracyjnego Django
 ADMIN_URL = os.getenv('DJANGO_ADMIN_URL') + '/'
 
-# API
-REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'samorzad.api.authentication.NoDbJWTAuthentication',
-    ),
-}
-
-SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timezone.timedelta(minutes=60),
-    'REFRESH_TOKEN_LIFETIME': timezone.timedelta(days=1),
-    'ROTATE_REFRESH_TOKENS': False,
-    'BLACKLIST_AFTER_ROTATION': False,
-    'UPDATE_LAST_LOGIN': False, # Nie ma logowania do bazy danych
-    'ALGORITHM': 'HS256',
-    'SIGNING_KEY': SECRET_KEY,
-    'VERIFYING_KEY': None,
-    'AUDIENCE': None,
-    'ISSUER': None,
-    'JWK_URL': None,
-    'LEEWAY': 0,
-    'AUTH_HEADER_TYPES': ('Bearer',),
-    'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',
-    'USER_ID_FIELD': 'id',
-    'USER_ID_CLAIM': 'user_id',
-    'USER_AUTHENTICATION_RULE': 'twoja_aplikacja.authentication.no_db_user_authentication_rule',
-    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
-    'TOKEN_TYPE_CLAIM': 'token_type',
-    'TOKEN_USER_CLASS': 'rest_framework_simplejwt.models.TokenUser',
-    'JTI_CLAIM': 'jti',
-}
 
 
