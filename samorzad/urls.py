@@ -1,6 +1,5 @@
 from django.urls import path
 from . import views
-from .api.views import VotingResultsChartAPIView, VotingTimelineChartAPI, TokenObtainView, TokenRefreshView
 
 app_name="samorzad"
 
