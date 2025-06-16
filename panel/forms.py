@@ -10,7 +10,7 @@ import re
 import bleach
 
 from samorzad.models import Voting, Candidate, CandidateRegistration, ElectoralProgram
-from .bleach_config import ALLOWED_TAGS, ALLOWED_ATTRIBUTES
+from .bleach_config import ALLOWED_TAGS, ALLOWED_ATTRIBUTES, css_sanitizer
 
 MAX_IMAGE_SIZE_MB = 2
 
@@ -110,7 +110,8 @@ class ElectoralProgramForm(forms.ModelForm):
             value,
             tags=ALLOWED_TAGS,
             attributes=ALLOWED_ATTRIBUTES,
-            strip=True
+            strip=True,
+            css_sanitizer=css_sanitizer
         )
         cleaned = bleach.linkify(cleaned)
         return cleaned
