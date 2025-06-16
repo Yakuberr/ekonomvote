@@ -1,0 +1,92 @@
+    <script>
+            const ctx = document.getElementById('resultsChart').getContext('2d');
+            const data = {{ results|safe }}
+            const labels = data.map(item =>
+                `${item.candidate.first_name} ${item.candidate.last_name}`
+            );
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Liczba głosów',
+                            data: data.map(item => item.votes_count),
+                            borderWidth: 0,
+                            backgroundColor:'#04b5ac',
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    const votes = context.raw;
+                                    const percentage = data[context.dataIndex].percentage;
+                                    return `${label}${votes} głosów (${percentage.toFixed(1)}%)`;
+                                }
+                            },
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: '#ffffff',
+                            bodyColor: '#ffffff',
+                        },
+                        legend: {
+                            labels: {
+                                color: '#fff',
+                                usePointStyle: false,
+                                boxWidth: 15,
+                                boxHeight: 15,
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: {
+                                color: '#ffffff',
+                                font:{
+                                    size:15
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            title: {
+                                display: true,
+                                text: 'Kandydaci',
+                                color: '#ffffff',
+                                font:{
+                                    size:25
+                                }
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: '#ffffff',
+                                font:{
+                                    size:15
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            title: {
+                                display: true,
+                                text: 'Liczba głosów',
+                                color: '#ffffff',
+                                font:{
+                                    size:25
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+</script>

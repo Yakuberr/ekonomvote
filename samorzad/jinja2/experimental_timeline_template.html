@@ -1,0 +1,98 @@
+
+<script>
+        const timelineData = {{ timeline_data|safe }};
+        const ctx2 = document.getElementById('timelineChart').getContext('2d');
+            const colors = [
+                '#4BC0C0', '#FF6384', '#36A2EB', '#FFCE56', '#9966FF',
+                '#FF9F40', '#8AC249', '#EA5F89', '#00BFFF', '#A0522D',
+                '#FF6B6B', '#48D1CC', '#9370DB', '#3CB371', '#FFD700',
+                '#FF6347', '#7B68EE', '#20B2AA', '#DA70D6', '#778899'
+            ];
+            const datasets = [];
+            let colorIndex = 0;
+            for (const [candidateId, candidateData] of Object.entries(timelineData.candidates)) {
+                console.log(candidateData.name)
+                datasets.push({
+                    label: candidateData.name,
+                    data: candidateData.votes,
+                    borderColor: colors[colorIndex % colors.length],
+                    backgroundColor: colors[colorIndex % colors.length],
+                    tension: 0.0,
+                    fill: false,
+                    pointRadius: 2,
+                    pointHoverRadius: 5,
+                });
+                colorIndex++;
+            }
+            new Chart(ctx2, {
+                type: 'line',
+                data: {
+                    labels: timelineData.timeline,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                color: '#ffffff',
+                            }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: ${context.raw} głosów`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Czas oddania głosu',
+                                color: '#ffffff',
+                                font:{
+                                    size: 25
+                                },
+                            },
+                            ticks: {
+                                color: '#ffffff',
+                                maxRotation: 45,
+                                minRotation: 45,
+                                font:{
+                                    size:15
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Skumulowana liczba głosów',
+                                color: '#ffffff',
+                                font:{
+                                    size: 25
+                                },
+                            },
+                            ticks: {
+                                color: '#ffffff',
+                                precision: 0,
+                                font:{
+                                    size:15
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            }
+                        }
+                    }
+                }
+            });
+    </script>

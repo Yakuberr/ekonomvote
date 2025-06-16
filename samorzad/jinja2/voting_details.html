@@ -1,418 +1,279 @@
-{% from 'macros.html' import render_navbar, render_messages %}
+{% from 'office_auth/macros.html' import render_navbar, render_messages %}
 <!DOCTYPE html>
 <html lang="pl" data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
-    <title>Wyniki głosowania</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Głosowanie numer {{ voting.id }}</title>
     <link rel="stylesheet" href="{{ static('css/custom-boostrap.min.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
     <link rel="shortcut icon" type="image/png" href="{{ static('logo.ico') }}" >
     <style>
-        :root {
-            --chart-color: var(--bs-eco-light-cyan, #4BC0C0);
+        .navbar-toggler,
+        .navbar-toggler:focus,
+        .navbar-toggler:active,
+        .navbar-toggler-icon:focus {
+            outline-color: var(--bs-eco-light-cyan);
         }
 
-        .chart-container {
-            position: relative;
-            height: 65vh;
-            width: 70vw;
-            margin: 0 auto;
+        .old-voting-img {
+            filter: grayscale(100%);
+            opacity: 0.8;
         }
 
-        #carouselExampleIndicators{
-            overflow: hidden;
+        .voting-stats {
+            font-size: 0.9rem;
+            color: var(--bs-secondary-color);
         }
-
-        .carousel-item img {
-        width: 100%;        /* Wypełnij szerokość kontenera */
-        height: 25rem;      /* Ustaw stałą wysokość dla wszystkich obrazków */ 
-        object-fit: cover;  /* Skaluj obrazek, zachowując proporcje, aby wypełnić kontener. Przytnij, jeśli trzeba. */
-        object-position: center; /* Opcjonalnie: centruj obrazek w pionie i poziomie podczas przycinania */
-        display: block;     /* Usuwa ewentualne dodatkowe miejsce pod obrazkiem */
+        .accordion{
+                --bs-accordion-active-color: rgb(235, 235, 235);
+                --bs-accordion-active-bg: #077a7400;
+        }
+        .accordion-button:focus{
+            box-shadow: none;
+        }
+        .accordion-voted{
+            color: white;
+            background-color: #077a75 !important;
+        }
+        .accordion-voted-pernament{
+            color: white;
+            background-color: #05645e96 !important;
         }
     </style>
 </head>
 <body>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ static('bootstrap/bootstrap.bundle.min.js') }}"></script>
+    <script src="{{ static('htmx/htmx.min.js') }}"></script>
+    <script src="{{ static('chart/chart.js') }}"></script>
     {{ render_messages(request) }}
     {{ render_navbar(csrf_input) }}
-    <div class="container my-5">
-            <div class="d-flex justify-content-start flex-column align-items-center">
-        <h2 class="mb-3 p-1">Wyniki głosowania</h2>
-            <div class="d-flex justify-content-center mb-3">
-            <div class="card p-1 m-1" style="width: 35rem;">
-                <div id="carouselExampleIndicators" class="carousel slide card-img-top">
-                      <div class="carousel-indicators">
-                        {% for c in candidates %}
-                        <button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="{{ loop.index0 }}" {% if loop.first %} class="active" aria-current="true" {% endif %}  aria-label="Slide {{ loop.index }}"></button>
-                        {% endfor %}
-                      </div>
-                        <div class="carousel-inner">
-                        {% for c in candidates %}
-                        <div class="image-container carousel-item{% if loop.first %} active {% endif %}" candidate-id="{{ loop.index0 }}" candidate-class="{{ c.school_class }}">
-                          <img src="{{ media_url }}{{ c['image_url'] }}" class="d-block candidate-image" alt="{{ c['first_name'] }} {{ c['last_name'] }}">
-                        </div>
-                        {% endfor %}
-                      </div>
-                      <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide="prev">
-                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                        <span class="visually-hidden">Previous</span>
-                      </button>
-                      <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide="next">
-                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                        <span class="visually-hidden">Next</span>
-                      </button>
-                </div>
-              <div class="card-body">
-                  <h5 class="card-title ps-2" id="candidateName">{{ candidates[0]['first_name'] }} {{ candidates[0]['last_name'] }}</h5>
-                  <h6 class="card-subtitle ps-2 mb-2 text-body-secondary" id="candidateClass">Klasa: {{ candidates[0]['school_class'] }}</h6>
-                  <ul class="list-group list-group-flush">
-                    <li class="list-group-item"><span class="fw-medium">Rozpoczęcie:</span> {{ voting.parse_planned_start() }}</li>
-                    <li class="list-group-item"><span class="fw-medium">Zakończenie:</span> {{ voting.parse_planned_end() }}</li>
-                    <li class="list-group-item voting-stats">
-                        <span class="fw-medium">Zarejestrowani kandydaci:</span> {{ voting.candidate_registrations.count() }}
-                    </li>
-                    <li class="list-group-item voting-stats">
-                        <span class="fw-medium">Łącznie oddane głosy:</span> {{ total_votes }}
-                    </li>
-                  </ul>
-                  <button class="btn btn-outline-eco-light-cyan w-100" data-bs-toggle="collapse" data-bs-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample">Wyświetl program</button>
-                  <div class="collapse" id="collapseExample">
-                    <div class="p-1 mt-2">
-                      {% for c in candidates %}
-                        <div class="candidate-program" candidate-id="{{ loop.index0 }}" {% if not loop.first %} style="display: none;" {% endif %} >{{ c['program'] }}</div>
-                      {% endfor %}
-                    </div>
-                  </div>
-              </div>
+    <main class="container mt-5">
+        <div class="row mb-4">
+            <div class="col d-flex justify-content-center">
+                <h2 class="d-none d-md-block">Głosowanie na przewodniczącego samorządu uczniowskiego</h2>
+                <h2 class="d-md-none text-center">Głosowanie na przewodniczącego</h2>
             </div>
         </div>
-        <hr class="my-4 w-100">
-        <div class="chart-container p-3 mb-2">
-            <canvas id="resultsChart"></canvas>
+        <div class="row mb-4">
+            <div class="col d-flex justify-content-center fs-5">
+                Do końca głosowania zostało:&nbsp;<div id="countdownHolder"></div>
+            </div>
         </div>
-            <hr class="my-4 w-100">
-        <div class="chart-container mt-2 mb-5 p-3">
-            <canvas id="timelineChart"></canvas>
+        <div class="row mb-4">
+            <div class="col d-flex justify-content-center fs-5">
+                Ilość oddanych głosów: {{ votes_count }}
+            </div>
         </div>
+        <div class="row mb-4">
+            <div class="col">
+                <div class="accordion" id="candidatesAccordion">
+                    {% for reg in registrations %}
+                    <div class="accordion-item" id="accordionItem{{ reg.id }}">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button d-flex flex-row gap-3 align-items-center collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{loop.index}}" aria-expanded="false" aria-controls="collapseOne" style="min-height: 44px;">
+                                <img src="{% if reg.candidate.image %} {{ reg.candidate.image.url }} {% else %}  {{ static('no-pfp.jpg') }} {% endif %}" style="width: 75px; max-width: 100%;" alt="Zdjęcie kandydata: {{ reg.candidate.first_name }} {{ reg.candidate.second_name }} {{ reg.candidate.last_name }}" class="rounded img-fluid">
+                                <div class="">
+                                    <strong>{{ reg.candidate.first_name }} {{ reg.candidate.second_name }} {{ reg.candidate.last_name }}</strong>
+                                    {% if reg.has_voted %}
+                                    <i class="fa-solid fa-xmark text-eco-light-cyan"></i>
+                                    {% endif %}
+                                    <br>
+                                    <small class="text-muted">Klasa: {{ reg.candidate.school_class }}</small>
+                                </div>
+                            </button>
+                        </h2>
+                        <div id="collapse{{loop.index}}" class="accordion-collapse collapse" data-bs-parent="#candidatesAccordion">
+                            <div class="accordion-body">
+                                <div>{{ reg.electoral_program.info|safe }}</div>
+                                {% if can_vote and not user_has_voted %}
+                                <input type="checkbox" class="btn-check" reg-data="{{ reg.id }}" btn-role="vote" id="candidateCheck{{ reg.id }}" autocomplete="off"></input>
+                                <label for="candidateCheck{{ reg.id }}" class="btn btn-eco-light-cyan" id="candidateCheckLabel{{ reg.id }}">Zagłosuj</label>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% if can_vote %}
+                <div id="votesCounterDiv">
+                    {% if user_has_voted %}
+                    {%else%}
+                    <span class="form-text">Oddane głosy: 0/{{ voting.votes_per_user }}</span>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
         </div>
-    </div>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        {% if user_has_voted %}
+        <div class="row mb-4">
+            <div class="col-12 d-flex justify-content-center">
+                <div class="spinner-border htmx-indicator" role="status" id="chartSpinner">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+            <div class="col">
+                <div 
+                class="trigger"
+                hx-get="{{ url('samorzad:get_chart_data', kwargs={'voting_id':voting.id}) }}"
+                hx-trigger="load"
+                hx-target="main"
+                hx-swap="afterend"
+                hx-indicator="#chartSpinner">
+                </div>
+                <div style="height: 600px; width: 100%;">
+                    <canvas id="resultsChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="row mb-4">
+            <div class="col-12 d-flex justify-content-center">
+                <div class="spinner-border htmx-indicator" role="status" id="timelineSpinner">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+            <div class="col">
+                <div 
+                class="trigger"
+                hx-get="{{ url('samorzad:get_timeline_data', kwargs={'voting_id':voting.id}) }}"
+                hx-trigger="load"
+                hx-target="main"
+                hx-swap="afterend"
+                hx-indicator="#timelineSpinner">
+                </div>
+                <div style="height: 600px; width: 100%;">
+                    <canvas id="timelineChart"></canvas>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        {% if can_vote %}
+        <div class="row mb-3">
+            <div class="col">
+                <form method="post" class="d-flex justify-content-center" id="votingForm">
+                    {{ csrf_input }}
+                    <input type="hidden" name="form-TOTAL_FORMS" value="3">
+                    <input type="hidden" name="form-INITIAL_FORMS" value="0">
+                    <input type="hidden" name="form-MIN_NUM_FORMS" value="{{ voting.votes_per_user }}">
+                    <input type="hidden" name="form-MAX_NUM_FORMS" value="{{ voting.votes_per_user }}">
+                    <button id="sendVotesButton" type="submit" class="btn btn-eco-light-cyan w-75 disabled" disabled>
+                        <i class="fa-solid fa-check"></i>
+                        <strong>Prześlij formularz</strong>
+                        <i class="fa-solid fa-check"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+        <div class="row mb-3">
+            <div class="col d-flex justify-content-center">
+                <div>
+                    {% if not can_vote %}
+                    <span class="form-text">Administratorzy nie mogą głosować</span>
+                    {% else %}
+                    <span class="form-text">Stystyki będą dostępne po przesłaniu formularza</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </main>
     <script>
-        async function getToken() {
-            try {
-                const storedToken = localStorage.getItem('access_token');
-                const expiry = localStorage.getItem('token_expiry');
-                const refreshToken = localStorage.getItem('refresh_token');
-                if (storedToken && expiry && new Date().getTime() < parseInt(expiry)) {
-                    return storedToken;
-                }
-                if (refreshToken) {
-                    try {
-                        const refreshResponse = await fetch('/samorzad/token/refresh/', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify({ refresh: refreshToken })
-                        });
-
-                        if (refreshResponse.ok) {
-                            const refreshData = await refreshResponse.json();
-                            localStorage.setItem('access_token', refreshData.access);
-                            const newExpiryTime = new Date().getTime() + (55 * 60 * 1000);
-                            localStorage.setItem('token_expiry', newExpiryTime.toString());
-
-                            return refreshData.access;
-                        }
-                    } catch (refreshError) {
-                        console.warn('Nie udało się odświeżyć tokenu:', refreshError);
-                        localStorage.removeItem('access_token');
-                        localStorage.removeItem('refresh_token');
-                        localStorage.removeItem('token_expiry');
-                    }
-                }
-                const response = await fetch('/samorzad/token/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    credentials: 'same-origin' // Ważne dla uwierzytelnienia sesji
-                });
-
-                if (!response.ok) {
-                    throw new Error('Błąd uwierzytelniania');
-                }
-
-                const data = await response.json();
-                // Zapisz tokeny w localStorage
-                localStorage.setItem('access_token', data.access);
-                localStorage.setItem('refresh_token', data.refresh);
-                const expiryTime = new Date().getTime() + (55 * 60 * 1000);
-                localStorage.setItem('token_expiry', expiryTime.toString());
-
-                return data.access;
-            } catch (error) {
-                console.error('Błąd podczas pobierania tokenu:', error);
-                return null;
+        // Counter
+        const votingEndDate = new Date('{{voting.parse_planned_end().isoformat()}}').getTime()
+         const now = new Date().getTime();
+        let remainingTime = votingEndDate - now
+        if (remainingTime < 0) {
+            document.getElementById('countdownHolder').parentElement.remove()
+        }
+        let remainingHours = Math.floor(remainingTime / (1000 * 60 * 60))
+        let remainingMinutes = Math.floor((remainingTime % (1000 * 60 * 60)) / (1000 * 60));
+        let remainingSeconds = Math.floor((remainingTime % (1000 * 60)) / 1000);
+        if (remainingHours < 10) remainingHours = `0${remainingHours}`
+        if (remainingMinutes < 10) remainingMinutes = `0${remainingMinutes}`
+        if (remainingSeconds < 10) remainingSeconds = `0${remainingSeconds}`
+        document.getElementById('countdownHolder').innerText = `${remainingHours}:${remainingMinutes}:${remainingSeconds}`
+        if (remainingTime < 0){
+            clearInterval(intervalID)
+            document.getElementById('countdownHolder').innerText = ""
+        }
+        intervalID = setInterval(function(){
+            const now = new Date().getTime();
+            let remainingTime = votingEndDate - now
+            let remainingHours = Math.floor(remainingTime / (1000 * 60 * 60))
+            let remainingMinutes = Math.floor((remainingTime % (1000 * 60 * 60)) / (1000 * 60));
+            let remainingSeconds = Math.floor((remainingTime % (1000 * 60)) / 1000);
+            if (remainingHours < 10) remainingHours = `0${remainingHours}`
+            if (remainingMinutes < 10) remainingMinutes = `0${remainingMinutes}`
+            if (remainingSeconds < 10) remainingSeconds = `0${remainingSeconds}`
+            document.getElementById('countdownHolder').innerText = `${remainingHours}:${remainingMinutes}:${remainingSeconds}`
+            if (remainingTime < 0){
+                clearInterval(intervalID)
+                document.getElementById('countdownHolder').innerText = ""
+            }
+        }, 1000)
+    </script>
+    
+    {% if user_has_voted or not can_vote %}
+    {% else %}
+        <script>
+        // voting counter
+        function submitFormHandler(){
+            if (votesCounter == maxVotingCounter){
+                submitButton.classList.remove('disabled')
+                submitButton.disabled = false
+            }else{
+                submitButton.classList.add('disabled')
+                submitButton.disabled = true
             }
         }
-    </script>
-    <script>
-            // Pierwszy skrypt (wyniki głosowania)
-        document.addEventListener('DOMContentLoaded', async function() {
-            const votingId = {{ voting.pk }};
-            const ctx = document.getElementById('resultsChart').getContext('2d');
-            const chartColor = getComputedStyle(document.documentElement)
-                .getPropertyValue('--chart-color').trim();
-            const chartTextColor = getComputedStyle(document.body).getPropertyValue('--bs-heading-color');
-            const token = await getToken();            
-            if (!token) {
-                console.error('Nie udało się pobrać tokenu autoryzacyjnego');
-                return;
-            }
-            const getColorWithOpacity = (baseColor, opacity) => {
-                return baseColor + opacity;
-            };
-            try {
-                const response = await fetch(`/samorzad/votings/${votingId}/results/`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
-                if (!response.ok) {
-                    throw new Error(`Błąd HTTP: ${response.status}`);
-                }
-                const data = await response.json();
-                const labels = data.map(item =>
-                    `${item.candidate.first_name} ${item.candidate.last_name}`
-                );
-                Chart.defaults.color = '#ffffff';
-                Chart.defaults.borderColor = 'rgba(255, 255, 255, 0.1)';
-                new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: labels,
-                        datasets: [
-                            {
-                                label: 'Liczba Głosów',
-                                data: data.map(item => item.votes_count),
-                                backgroundColor: data.map(() => chartColor),
-                                borderColor: 'transparent',
-                                borderWidth: 0
-                            }
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            tooltip: {
-                                callbacks: {
-                                    label: function(context) {
-                                        let label = context.dataset.label || '';
-                                        if (label) {
-                                            label += ': ';
-                                        }
-                                        const votes = context.raw;
-                                        const percentage = data[context.dataIndex].percentage;
-                                        return `${label}${votes} głosów (${percentage.toFixed(1)}%)`;
-                                    }
-                                },
-                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                                titleColor: '#ffffff',
-                                bodyColor: '#ffffff',
-                            },
-                            legend: {
-                                labels: {
-                                    color: '#fff',
-                                    usePointStyle: false,
-                                    boxWidth: 15,
-                                    boxHeight: 15,
-                                }
-                            }
-                        },
-                        scales: {
-                            x: {
-                                ticks: {
-                                    color: '#ffffff',
-                                    font:{
-                                        size:15
-                                    }
-                                },
-                                grid: {
-                                    color: 'rgba(255, 255, 255, 0.1)'
-                                },
-                                title: {
-                                    display: true,
-                                    text: 'Kandydaci',
-                                    color: '#ffffff',
-                                    font:{
-                                        size:25
-                                    }
-                                }
-                            },
-                            y: {
-                                beginAtZero: true,
-                                ticks: {
-                                    color: '#ffffff',
-                                    font:{
-                                        size:15
-                                    }
-                                },
-                                grid: {
-                                    color: 'rgba(255, 255, 255, 0.1)'
-                                },
-                                title: {
-                                    display: true,
-                                    text: 'Liczba głosów',
-                                    color: '#ffffff',
-                                    font:{
-                                        size:25
-                                    }
-                                }
-                            }
-                        }
-                    }
-                });
-            } catch (error) {
-                console.error('Błąd podczas pobierania danych:', error);
-            }
-        });
 
-        // Drugi skrypt (oś czasu głosowania)
-        document.addEventListener('DOMContentLoaded', async function() {
-            const votingId = {{ voting.pk }};
-            const ctx = document.getElementById('timelineChart').getContext('2d');
-            const token = await getToken();
-            if (!token) {
-                console.error('Nie udało się pobrać tokenu autoryzacyjnego');
-                return;
-            }
-            try {
-                const response = await fetch(`/samorzad/votings/${votingId}/timeline/`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
-                if (!response.ok) {
-                    throw new Error(`Błąd HTTP: ${response.status}`);
+        function createInput(value, counter){
+            let newInputElement = document.createElement('input')
+            newInputElement.hidden = true
+            newInputElement.setAttribute('type', 'number')
+            newInputElement.value = value
+            newInputElement.setAttribute('name', `form-${counter}-candidate_registration_id`)
+            return newInputElement
+        }
+
+        function removeInput(value){
+            document.querySelector(`input[name="vote_${value}"]`).remove()
+        }
+
+        const maxVotingCounter = {{ voting.votes_per_user }}
+        let votesCounter = 0
+        const counterDiv = document.getElementById('votesCounterDiv')
+        const submitButton = document.getElementById('sendVotesButton');
+        const form = document.getElementById('votingForm')
+        document.querySelectorAll('input[reg-data]').forEach(element =>{
+            element.addEventListener('click', event=>{
+                let label = document.querySelector(`label[for="${event.target.id}"]`)
+                let accordionItem = document.getElementById(`accordionItem${event.target.getAttribute('reg-data')}`).children[0].children[0]
+                if (event.target.getAttribute('btn-role') == 'vote' && votesCounter < maxVotingCounter) {
+                    votesCounter++
+                    event.target.setAttribute('btn-role', 'unvote')
+                    label.innerText = "Usuń głos"
+                    counterDiv.children[0].innerText = `Oddane głosy: ${votesCounter}/{{ voting.votes_per_user }}`
+                    submitFormHandler()
+                    accordionItem.classList.add('accordion-voted')
+                    let element = createInput(event.target.getAttribute('reg-data'), votesCounter-1)
+                    form.appendChild(element)
+                    return 
                 }
-                const data = await response.json();
-                const colors = [
-                    '#4BC0C0', '#FF6384', '#36A2EB', '#FFCE56', '#9966FF',
-                    '#FF9F40', '#8AC249', '#EA5F89', '#00BFFF', '#A0522D',
-                    '#FF6B6B', '#48D1CC', '#9370DB', '#3CB371', '#FFD700',
-                    '#FF6347', '#7B68EE', '#20B2AA', '#DA70D6', '#778899'
-                ];
-                const datasets = [];
-                let colorIndex = 0;
-                for (const [candidateId, candidateData] of Object.entries(data.candidates)) {
-                    datasets.push({
-                        label: candidateData.name,
-                        data: candidateData.votes,
-                        borderColor: colors[colorIndex % colors.length],
-                        backgroundColor: colors[colorIndex % colors.length],
-                        tension: 0.0,
-                        fill: false,
-                        pointRadius: 2,
-                        pointHoverRadius: 5,
-                    });
-                    colorIndex++;
+                if(event.target.getAttribute('btn-role') != 'vote'){
+                    votesCounter--
+                    event.target.setAttribute('btn-role', 'vote')
+                    label.innerText = "Zagłosuj"
+                    counterDiv.children[0].innerText = `Oddane głosy: ${votesCounter}/{{ voting.votes_per_user }}`
+                    submitFormHandler()
+                    accordionItem.classList.remove('accordion-voted')
+                    removeInput(event.target.getAttribute('reg-data'))
+                    return
                 }
-                new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: data.timeline,
-                        datasets: datasets
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                position: 'top',
-                                labels: {
-                                    color: '#ffffff',
-                                }
-                            },
-                            tooltip: {
-                                mode: 'index',
-                                intersect: false,
-                                callbacks: {
-                                    label: function(context) {
-                                        return `${context.dataset.label}: ${context.raw} głosów`;
-                                    }
-                                }
-                            }
-                        },
-                        scales: {
-                            x: {
-                                title: {
-                                    display: true,
-                                    text: 'Czas oddania głosu',
-                                    color: '#ffffff',
-                                    font:{
-                                        size: 25
-                                    },
-                                },
-                                ticks: {
-                                    color: '#ffffff',
-                                    maxRotation: 45,
-                                    minRotation: 45,
-                                    font:{
-                                        size:15
-                                    }
-                                },
-                                grid: {
-                                    color: 'rgba(255, 255, 255, 0.1)'
-                                }
-                            },
-                            y: {
-                                title: {
-                                    display: true,
-                                    text: 'Skumulowana liczba głosów',
-                                    color: '#ffffff',
-                                    font:{
-                                        size: 25
-                                    },
-                                },
-                                ticks: {
-                                    color: '#ffffff',
-                                    precision: 0,
-                                    font:{
-                                        size:15
-                                    }
-                                },
-                                grid: {
-                                    color: 'rgba(255, 255, 255, 0.1)'
-                                }
-                            }
-                        }
-                    }
-                });
-            } catch (error) {
-                console.error('Błąd podczas pobierania danych osi czasu:', error);
-            }
-        });
+            })
+        })
     </script>
-<script>
-    const myCarousel = document.getElementById('carouselExampleIndicators')
-    myCarousel.addEventListener('slid.bs.carousel', event => {
-        let currentVisibleCandidate = document.querySelector('.carousel-inner').querySelector('.active').getAttribute('candidate-id');
-        document.querySelectorAll('.candidate-program').forEach(element => {
-            if (element.getAttribute('candidate-id') == currentVisibleCandidate) {
-                element.style.display = 'block';
-            }
-            else{
-                element.style.display = 'none';
-            }
-        });
-        document.getElementById('candidateName').innerText = document.querySelector('div[class="image-container carousel-item active"]').querySelector('img').getAttribute('alt');
-        document.getElementById('candidateClass').innerText = "Klasa: " + document.querySelector('div[class="image-container carousel-item active"]').getAttribute('candidate-class');
-    })
-</script>
+    {% endif %}
 </body>
 </html>
