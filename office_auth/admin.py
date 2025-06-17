@@ -4,4 +4,8 @@ from .models import AzureUser
 
 # Register your models here.
 
-admin.site.register(AzureUser)
+
+class AzureUserAdmin(admin.ModelAdmin):
+    exclude = ['microsoft_user_id']
+
+admin.site.register(AzureUser, AzureUserAdmin)
