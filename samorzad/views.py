@@ -33,7 +33,7 @@ def list_votings(request: HttpRequest):
     ).annotate(
         registrations_count=Count('candidate_registrations', filter=Q(candidate_registrations__is_eligible=True), distinct=True)
     ).order_by('planned_start').first()
-    return render(request, 'samorzad_index.html', {
+    return render(request, 'samorzad/samorzad_index.html', {
         'fresh_voting': fresh_voting,
     })
 
@@ -53,7 +53,7 @@ def partial_list_old_votings(request:HttpRequest):
     ).order_by('-planned_end')
     paginator = Paginator(old_votings, 9)
     page_obj = paginator.get_page(page_num)
-    return render(request, 'partials/old_votings_list.html', context={
+    return render(request, 'samorzad/partials/old_votings_list.html', context={
         'page_num':page_num,
         'page_obj':page_obj,
         "has_next": page_obj.has_next()
@@ -116,7 +116,7 @@ def get_timeline_data(request, voting_id):
             vote_counts[cand_id] += vote_buckets[timestamp].get(cand_id, 0)
             timeline_data["candidates"][cand_id]["votes"].append(vote_counts[cand_id])
 
-    return render(request, 'experimental_timeline_template.html', context={
+    return render(request, 'samorzad/experimental_timeline_template.html', context={
         'timeline_data':json.dumps(timeline_data, ensure_ascii=False),
     })
 
@@ -149,7 +149,7 @@ def get_chart_data(request:HttpRequest, voting_id:int):
             "percentage": round(percentage, 2),
         })
     results.sort(key=lambda d:d['votes_count'], reverse=True)
-    return render(request, 'experimental_chart_template.html', context={
+    return render(request, 'samorzad/experimental_chart_template.html', context={
         'results':json.dumps(results, ensure_ascii=False),
     })
 
@@ -181,7 +181,7 @@ def get_voting_details(request:HttpRequest, voting_id:int):
         # TODO: winner_id musi byc poprawiony (ma działać tylko po zakończeniu głosowania)
         winner_id = CandidateRegistration.objects.filter(voting=voting.id).annotate(votes_count=Count('votes')).order_by(
             '-votes_count').only('id').first().id
-        return render(request, 'voting_details.html', context={
+        return render(request, 'samorzad/voting_details.html', context={
             'voting':voting,
             'registrations':registrations,
             'votes_count':votes_count,
