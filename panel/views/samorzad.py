@@ -11,6 +11,7 @@ from django.contrib.postgres.search import SearchRank, SearchQuery, SearchVector
 from django.core.exceptions import ValidationError
 
 import pytz
+from urllib.parse import urlencode
 
 from samorzad.models import Voting, Candidate, CandidateRegistration, ElectoralProgram
 from panel.forms import SamorzadAddEmptyVotingForm, SamorzadAddCandidateForm, CandidateRegistrationForm, ElectoralProgramForm
@@ -31,9 +32,15 @@ def add_empty_voting(request:HttpRequest):
     if request.method == 'POST':
         form = SamorzadAddEmptyVotingForm(request.POST)
         if form.is_valid():
-            form.save()
-            messages.success(request, 'Puste głosowanie dodano pomyślnie')
-            return redirect(reverse('panel:samorzad_index'))
+            voting = form.save()
+            messages.success(request, f'Dodano pomyślnie nowe głosowanie o ID: {voting.id}')
+            redirect_to = request.POST.get('redirect_to', 'list')
+            URL_MAP = {
+                'list':reverse('panel:samorzad_index'),
+                'add_new':reverse('panel:samorzad_add_empty_voting'),
+                'edit':reverse('panel:update_voting', kwargs={'voting_id':voting.id})
+            }
+            return redirect(URL_MAP[redirect_to])
         else:
             for field, errors in form.errors.items():
                 for error in errors:
@@ -56,9 +63,15 @@ def samorzad_add_candidate(request:HttpRequest):
     if request.method == 'POST':
         form = SamorzadAddCandidateForm(request.POST, request.FILES)
         if form.is_valid():
-            form.save()
-            messages.success(request, 'Dodano pomyślnie nowego kandydata')
-            return redirect(reverse('panel:samorzad_index'))
+            candidate = form.save()
+            messages.success(request, f'Dodano pomyślnie nowego kandydata {candidate.first_name} {candidate.second_name} {candidate.last_name}, ID: {candidate.id}')
+            redirect_to = request.POST.get('redirect_to', 'list')
+            URL_MAP = {
+                'list':reverse('panel:list_candidates'),
+                'add_new':reverse('panel:samorzad_add_candidate'),
+                'edit':reverse('panel:update_candidate', kwargs={'candidate_id':candidate.id})
+            }
+            return redirect(URL_MAP[redirect_to])
         else:
             for field, errors in form.errors.items():
                 for error in errors:
@@ -87,8 +100,14 @@ def samorzad_add_candidature(request:HttpRequest):
             program = electoral_form.save(commit=False)
             program.candidature = candidature
             program.save()
-            messages.success(request, "Pomyślnie dodano kandydature")
-            return redirect(reverse('panel:list_candidatures'))
+            messages.success(request, f'Dodano pomyślnie nową kandydaturę od ID: {candidature.id}')
+            redirect_to = request.POST.get('redirect_to', 'list')
+            URL_MAP = {
+                'list':reverse('panel:list_candidatures'),
+                'add_new':reverse('panel:samorzad_add_candidature'),
+                'edit':reverse('panel:update_candidature', kwargs={'candidature_id':candidature.id})
+            }
+            return redirect(URL_MAP[redirect_to])
         else:
             for field, errors in candidature_form.errors.items():
                 for error in errors:
@@ -123,7 +142,7 @@ def samorzad_index(request:HttpRequest):
         return redirect(reverse('panel:login'))
     sort_by = request.GET.get('sort', 'planned_start')
     order = request.GET.get('order', 'desc')
-    allowed_sort_fields = ['planned_start', 'planned_end', 'created_at', 'updated_at']
+    allowed_sort_fields = ['planned_start', 'planned_end', 'created_at', 'updated_at', 'id']
     if sort_by not in allowed_sort_fields:
         sort_by = 'planned_start'
     if order not in ['asc', 'desc']:
@@ -157,6 +176,7 @@ def list_candidates(request:HttpRequest):
         'name': ['first_name', 'second_name', 'last_name'],
         'created_at': ['created_at'],
         'updated_at': ['updated_at'],
+        'id':['id'],
     }
     sort_by = request.GET.get('sort', 'name')
     order = request.GET.get('order', 'asc')
@@ -203,6 +223,7 @@ def list_candidatures(request:HttpRequest):
         'planned_start': ['voting__planned_start'],
         'created_at': ['created_at'],
         'updated_at': ['updated_at'],
+        'id':['id']
     }
     sort_by = request.GET.get('sort', 'name')
     order = request.GET.get('order', 'asc')
@@ -253,8 +274,14 @@ def update_voting(request:HttpRequest, voting_id:int):
         form = SamorzadAddEmptyVotingForm(request.POST, instance=voting)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Pomyślnie zaktualizowano dane głosowania.')
-            return redirect(reverse('panel:samorzad_index'))
+            messages.success(request, f'Zaktualizowano dane głosowania o ID: {voting_id}')
+            redirect_to = request.POST.get('redirect_to', 'list')
+            URL_MAP = {
+                'list':reverse('panel:samorzad_index'),
+                'add_new':reverse('panel:samorzad_add_empty_voting'),
+                'edit':reverse('panel:update_voting', kwargs={'voting_id':voting_id})
+            }
+            return redirect(URL_MAP[redirect_to])
         else:
             for field, errors in form.errors.items():
                 for error in errors:
@@ -280,8 +307,14 @@ def update_candidate(request:HttpRequest, candidate_id:int):
         form = SamorzadAddCandidateForm(request.POST, request.FILES, instance=candidate)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Zaktualizowano dane kandydata')
-            return redirect(reverse('panel:list_candidates'))
+            messages.success(request, f'Zaktualizowano dane kandydata o ID: {candidate_id}')
+            redirect_to = request.POST.get('redirect_to', 'list')
+            URL_MAP = {
+                'list':reverse('panel:list_candidates'),
+                'add_new':reverse('panel:samorzad_add_candidate'),
+                'edit':reverse('panel:update_candidate', kwargs={'candidate_id':candidate_id})
+            }
+            return redirect(URL_MAP[redirect_to])
         else:
             for field, errors in form.errors.items():
                 for error in errors:
@@ -317,8 +350,14 @@ def update_candidature(request:HttpRequest, candidature_id:int):
             program = electoral_form.save(commit=False)
             program.candidature = candidature
             program.save()
-            messages.success(request, "Pomyślnie zaktualizowano dane kandydatury")
-            return redirect(reverse('panel:list_candidatures'))
+            messages.success(request, f'Zaktualizowano dane kandydatury o ID: {candidature_id}')
+            redirect_to = request.POST.get('redirect_to', 'list')
+            URL_MAP = {
+                'list':reverse('panel:list_candidatures'),
+                'add_new':reverse('panel:samorzad_add_candidature'),
+                'edit':reverse('panel:update_candidature', kwargs={'candidature_id':candidature_id})
+            }
+            return redirect(URL_MAP[redirect_to])
         else:
             for field, errors in candidature_form.errors.items():
                 for error in errors:
@@ -337,12 +376,26 @@ def delete_voting(request:HttpRequest):
     if not request.user.is_superuser:
         return redirect(reverse('panel:login'))
     voting_id = request.POST.get('voting_id')
-    try:
-        Voting.objects.filter(id=voting_id).first().delete()
-        messages.success(request, 'Pomyślnie usunięto głosowanie.')
-    except AttributeError:
-        messages.error(request, 'Głosowanie o podanym id nie istnieje.')
-    return redirect(reverse('panel:samorzad_index'))
+    if not voting_id or not voting_id.isdigit():
+        messages.error(request, 'Nieprawidłowe ID głosowania.')
+        return redirect(reverse('panel:samorzad_index'))
+    voting = Voting.objects.filter(id=voting_id).first()
+    if voting:
+        voting.delete()
+        messages.success(
+            request,
+            f'Pomyślnie usunięto głosowanie: ID: {voting_id}'
+        )
+    else:
+        messages.error(request, 'Głosowanie o podanym ID nie istnieje.')
+    params = {
+        'sort':request.POST.get('sort'),
+        'order':request.POST.get('order'),
+        'page':request.POST.get('page'),
+    }
+    filtered_params = {k: v for k, v in params.items() if v}
+    url = reverse('panel:samorzad_index') + '?' + urlencode(filtered_params)
+    return redirect(url)
 
 @require_http_methods(['POST'])
 @login_required(login_url='office_auth:microsoft_login')
@@ -350,12 +403,27 @@ def delete_candidate(request:HttpRequest):
     if not request.user.is_superuser:
         return redirect(reverse('panel:login'))
     candidate_id = request.POST.get('candidate_id')
-    try:
-        Candidate.objects.filter(id=candidate_id).first().delete()
-        messages.success(request, 'Pomyślnie usunięto kandydata.')
-    except AttributeError :
-        messages.error(request, 'Kandydat o podanym id nie istnieje.')
-    return redirect(reverse('panel:list_candidates'))
+    if not candidate_id or not candidate_id.isdigit():
+        messages.error(request, 'Nieprawidłowe ID kandydata.')
+        return redirect(reverse('panel:list_candidates'))
+    candidate = Candidate.objects.filter(id=candidate_id).first()
+    if candidate:
+        candidate.delete()
+        messages.success(
+            request,
+            f'Pomyślnie usunięto kandydata: {candidate.first_name} {candidate.second_name} {candidate.last_name}, ID: {candidate_id}'
+        )
+    else:
+        messages.error(request, 'Kandydat o podanym ID nie istnieje.')
+    params = {
+        'sort':request.POST.get('sort'),
+        'search':request.POST.get('search'),
+        'order':request.POST.get('order'),
+        'page':request.POST.get('page'),
+    }
+    filtered_params = {k: v for k, v in params.items() if v}
+    url = reverse('panel:list_candidates') + '?' + urlencode(filtered_params)
+    return redirect(url)
 
 @require_http_methods(['POST'])
 @login_required(login_url='office_auth:microsoft_login')
@@ -363,13 +431,28 @@ def delete_candidature(request:HttpRequest):
     if not request.user.is_superuser:
         return redirect(reverse('panel:login'))
     candidature_id = request.POST.get('candidature_id')
-    try:
-        CandidateRegistration.objects.filter(id=candidature_id).first().delete()
-        messages.success(request, 'Pomyślnie usunięto kandydature.')
-    except AttributeError :
-        messages.error(request, 'Kandydatura o podanym id nie istnieje.')
-    return redirect(reverse('panel:list_candidatures'))
+    if not candidature_id or not candidature_id.isdigit():
+        messages.error(request, 'Nieprawidłowe ID kandydatury.')
+        return redirect(reverse('panel:list_candidatures'))
+    candidature = CandidateRegistration.objects.filter(id=candidature_id).first()
+    if candidature:
+        candidature.delete()
+        messages.success(
+            request,
+            f'Pomyślnie usunięto kandydaturę o ID: {candidature_id}'
+        )
+    else:
+        messages.error(request, 'Kandydatura o podanym ID nie istnieje.')
+    params = {
+        'sort':request.POST.get('sort'),
+        'search':request.POST.get('search'),
+        'order':request.POST.get('order'),
+        'page':request.POST.get('page'),
+    }
+    filtered_params = {k: v for k, v in params.items() if v}
+    url = reverse('panel:list_candidates') + '?' + urlencode(filtered_params)
+    return redirect(url)
 
-
+# TODO: Dodać interaktywne usuwanie obiektów w panelu admina lub takie co zachowuje aktywne zmienne request.GET
 
 

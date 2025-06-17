@@ -104,6 +104,7 @@
                                     <option selected value="name" {% if current_sort == 'name' %}selected{% endif %}>Imienia</option>
                                     <option value="created_at" {% if current_sort == 'created_at' %}selected{% endif %}>Data utworzenia</option>
                                     <option value="updated_at" {% if current_sort == 'updated_at' %}selected{% endif %}>Data edycji</option>
+                                    <option value="id" {% if current_sort == 'id' %}selected{% endif %}>ID</option>
                                 </select>
                             </div>
                             <div class="col-lg-3 col-6">
@@ -126,6 +127,7 @@
                             <table class="table table-dark table-striped table-hover mb-0 table-fixed">
                                 <thead class="table-dark">
                                     <tr>
+                                        <th scope="col" class="text-center align-middle">ID</th>
                                         <th scope="col" class="text-center align-middle">Zdjęcie</th>
                                         <th scope="col" class="text-center align-middle">Imię i nazwisko</th>
                                         <th scope="col" class="text-center align-middle">Klasa</th>
@@ -138,6 +140,9 @@
                                     {% if page_obj %}
                                         {% for c in page_obj %}
                                             <tr>
+                                                <td class="text-center align-middle">
+                                                    <span>{{ c.id }}</span>
+                                                </td>
                                                 <td class="text-center align-middle">
                                                     {% if c.image %}
                                                         <img src="{{ c.image.url }}" class="candidate-avatar" alt="kandydat">
@@ -172,7 +177,7 @@
                                         {% endfor %}
                                     {% else %}
                                         <tr>
-                                            <td colspan="6" class="text-center text-muted py-4">
+                                            <td colspan="7" class="text-center text-muted py-4">
                                                 <i class="fas fa-user-slash fa-2x mb-2"></i><br>
                                                 {% if query %}
                                                     Nie znaleziono kandydatów dla frazy: "{{ query }}"
@@ -230,6 +235,10 @@
             <div class="modal-footer">
                 <form action="{{ url('panel:delete_candidate') }}" method="post">
                     <input hidden type="number" name="candidate_id" id="votingIdInput">
+                    <input hidden type="text" name="search" value="{{ query }}">
+                    <input hidden type="text" name="sort" value="{{ current_sort }}">
+                    <input hidden type="text" name="order" value="{{ current_order }}">
+                    <input hidden type="text" name="page" value="{{ page_obj.number }}">
                     {{ csrf_input }}
                     <button type="submit" class="btn btn-danger">Usuń</button>
                 </form>

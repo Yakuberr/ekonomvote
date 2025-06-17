@@ -53,9 +53,16 @@
                         <label for="votingVotesPerUser" class="form-label">Ilość głosów do oddania</label>
                         <input name="votes_per_user" type="number" class="form-control bg-black bg-opacity-25 w-25" id="votingVotesPerUser" required value="{{ form.instance.votes_per_user }}">
                     </div>
-                    <div>
-                        {{ csrf_input }}
-                        <button type="submit" class="btn btn-outline-eco-light-cyan">Zapisz</button>
+                    {{ csrf_input }}    
+                    <div class="mb-4 d-flex flex-lg-row flex-column gap-1 gap-lg-none">
+                        <div class="col-12 col-lg-10 d-flex flex-lg-row flex-column justify-content-lg-start gap-lg-3 gap-1">
+                            <button type="submit" class="btn btn-outline-eco-light-cyan" name="redirect_to" value="list">Zapisz</button>
+                            <button type="submit" class="btn btn-outline-eco-light-cyan" name="redirect_to" value="add_new">Zapisz i dodaj nowego</button>
+                            <button type="submit" class="btn btn-outline-eco-light-cyan" name="redirect_to" value="edit">Zapisz i kontynuuj edycję</button>
+                        </div>
+                        <div class="col-12 col-lg-2 d-flex flex-lg-row flex-column justify-content-end">
+                            <button type="button" btn-type="delete" btn-data="{{ form.instance.pk }}" class="btn btn-sm btn-outline-danger">Usuń</button>                            
+                        </div>
                     </div>
                 </form>
                 {% else %}
@@ -73,15 +80,43 @@
                         <label for="votingVotesPerUser" class="form-label">Ilość głosów do oddania</label>
                         <input name="votes_per_user" type="number" class="form-control bg-black bg-opacity-25 w-25" id="votingVotesPerUser" required>
                     </div>
-                    <div>
-                        {{ csrf_input }}
-                        <button type="submit" class="btn btn-outline-eco-light-cyan">Dodaj</button>
+                    {{ csrf_input }}
+                    <div class="mb-4 d-flex flex-lg-row flex-column gap-1 gap-lg-none">
+                        <div class="col-12 col-lg-10 d-flex flex-lg-row flex-column justify-content-lg-start gap-lg-3 gap-1">
+                            <button type="submit" class="btn btn-outline-eco-light-cyan" name="redirect_to" value="list">Zapisz</button>
+                            <button type="submit" class="btn btn-outline-eco-light-cyan" name="redirect_to" value="add_new">Zapisz i dodaj nowego</button>
+                            <button type="submit" class="btn btn-outline-eco-light-cyan" name="redirect_to" value="edit">Zapisz i kontynuuj edycję</button>
+                        </div>
                     </div>
                     {% endif %}
                 </form>
             </div>
         </div>
     </main>
+        <!-- Modal -->
+    <div class="modal fade" id="warningModal" tabindex="-1" aria-labelledby="warningModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5 text-danger" id="warningModalLabel">Uwaga</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Usunięcie głosowania sprawi trwałe usunięcie głosowania z systemu łącznie ze wszystkimi statystykami. <br>
+                <span class="text-danger fw-bold text-decoration-underline">
+                    Operacji nie można cofnąć.
+                </span>
+            </div>
+            <div class="modal-footer">
+                <form action="{{ url('panel:delete_voting') }}" method="post">
+                    <input hidden type="number" name="voting_id" id="votingIdInput">
+                    {{ csrf_input }}
+                    <button type="submit" class="btn btn-danger">Usuń</button>
+                </form>
+            </div>
+            </div>
+        </div>
+    </div>
     <script>
         document.querySelectorAll("label + input[required]").forEach(input => {
             const label = input.previousElementSibling;
@@ -89,5 +124,15 @@
                 label.innerHTML += ' <span style="color: rgb(213, 13, 13)">*</span>';
             }
             });
+    </script>
+    <script>
+        const warningModal = new bootstrap.Modal(document.getElementById('warningModal'))
+        const votingIdInput = document.getElementById('votingIdInput')
+        document.querySelectorAll('button[btn-type="delete"]').forEach(btn=>{
+            btn.addEventListener('click', (e)=>{
+                warningModal.show()
+                votingIdInput.value = Number(e.currentTarget.getAttribute('btn-data'))
+            })
+        })
     </script>
 {% endblock body_content %}
