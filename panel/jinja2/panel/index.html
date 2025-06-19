@@ -1,7 +1,7 @@
 {% extends "panel/base.html" %}
 {% block title %} Strona główna {% endblock %}
 {% block body_navbar %}
-{{render_navbar(csrf_input, 'home')}}
+{{render_navbar(csrf_input)}}
 {% endblock %}
 {% block body_content %}
     <div class="container-sm">
@@ -12,7 +12,10 @@
         </div>
         <div class="row me-5 ms-5 mb-5">
             <div class="col">
-                <h5 class="fs-6 text-muted text-lg-center">Pamiętaj że jako Administrator bierzesz pełną odpowiedzialność za zarządzanie głosowaniami.</h5>
+                <h5 class="fs-6 text-muted text-lg-center">Pamiętaj że jako Opiekun bierzesz pełną odpowiedzialność za zarządzanie głosowaniami.</h5>
+                {% if request.user.is_superuser %}
+                <h5 class="form-text text-muted text-lg-center">Aby przejść do panelu administratora kliknij <a class="link-eco-light-cyan" href="{{ url('admin:index') }}">TUTAJ</a></h5>
+                {% endif %}
             </div>
         </div>
         <div class="row">
