@@ -15,15 +15,17 @@ from urllib.parse import urlencode
 
 from samorzad.models import Voting, Candidate, CandidateRegistration, ElectoralProgram
 from panel.forms import SamorzadAddEmptyVotingForm, SamorzadAddCandidateForm, CandidateRegistrationForm, ElectoralProgramForm
+from office_auth.auth_utils import opiekun_required
 
 
 # CREATE views
 # TODO: Walidcja czy id danego obiektu w bazie danych istnieje
 
+
 @require_http_methods(['GET', 'POST'])
+@login_required(login_url='office_auth:microsoft_login')
+@opiekun_required()
 def add_empty_voting(request:HttpRequest):
-    if not request.user.is_superuser:
-        return redirect(reverse('panel:login'))
     if request.method == 'GET':
         form = SamorzadAddEmptyVotingForm()
         return render(request, 'panel/samorzad/samorzad_add_empty_voting.html', context={
@@ -52,9 +54,8 @@ def add_empty_voting(request:HttpRequest):
 
 @require_http_methods(['GET', 'POST'])
 @login_required(login_url='office_auth:microsoft_login')
+@opiekun_required()
 def samorzad_add_candidate(request:HttpRequest):
-    if not request.user.is_superuser:
-        return redirect(reverse('panel:login'))
     if request.method == 'GET':
         form = SamorzadAddCandidateForm()
         return render(request, 'panel/samorzad/samorzad_add_candidate.html', context={
@@ -80,9 +81,8 @@ def samorzad_add_candidate(request:HttpRequest):
 
 @require_http_methods(["GET", 'POST'])
 @login_required(login_url='office_auth:microsoft_login')
+@opiekun_required()
 def samorzad_add_candidature(request:HttpRequest):
-    if not request.user.is_superuser:
-        return redirect(reverse('panel:login'))
     if request.method == 'GET':
         candidature_form = CandidateRegistrationForm()
         electoral_form = ElectoralProgramForm()
@@ -137,9 +137,8 @@ def partial_candidates_search(request:HttpRequest):
 
 @require_http_methods(['GET'])
 @login_required(login_url='office_auth:microsoft_login')
+@opiekun_required()
 def samorzad_index(request:HttpRequest):
-    if not request.user.is_superuser:
-        return redirect(reverse('panel:login'))
     sort_by = request.GET.get('sort', 'planned_start')
     order = request.GET.get('order', 'desc')
     allowed_sort_fields = ['planned_start', 'planned_end', 'created_at', 'updated_at', 'id']
@@ -169,9 +168,8 @@ def samorzad_index(request:HttpRequest):
 
 @login_required(login_url='office_auth:microsoft_login')
 @require_http_methods(['GET'])
+@opiekun_required()
 def list_candidates(request:HttpRequest):
-    if not request.user.is_superuser:
-        return redirect(reverse('panel:login'))
     SORT_MAP = {
         'name': ['first_name', 'second_name', 'last_name'],
         'created_at': ['created_at'],
@@ -214,9 +212,8 @@ def list_candidates(request:HttpRequest):
 
 @login_required(login_url='office_auth:microsoft_login')
 @require_http_methods(['GET'])
+@opiekun_required()
 def list_candidatures(request:HttpRequest):
-    if not request.user.is_superuser:
-        return redirect(reverse('panel:login'))
     query = request.GET.get('search')
     SORT_MAP = {
         'name': ['candidate__first_name', 'candidate__second_name', 'candidate__last_name'],
@@ -261,9 +258,9 @@ def list_candidatures(request:HttpRequest):
 # UPDATE views
 
 @require_http_methods(['GET', 'POST'])
+@login_required(login_url='office_auth:microsoft_login')
+@opiekun_required()
 def update_voting(request:HttpRequest, voting_id:int):
-    if not request.user.is_superuser:
-        return redirect(reverse('panel:login'))
     voting = get_object_or_404(Voting, pk=voting_id)
     if request.method == 'GET':
         form = SamorzadAddEmptyVotingForm(instance=voting)
@@ -294,9 +291,8 @@ def update_voting(request:HttpRequest, voting_id:int):
 
 @require_http_methods(['GET', 'POST'])
 @login_required(login_url='office_auth:microsoft_login')
+@opiekun_required()
 def update_candidate(request:HttpRequest, candidate_id:int):
-    if not request.user.is_superuser:
-        return redirect(reverse('panel:login'))
     candidate = get_object_or_404(Candidate, pk=candidate_id)
     if request.method == 'GET':
         form = SamorzadAddCandidateForm(instance=candidate)
@@ -326,9 +322,8 @@ def update_candidate(request:HttpRequest, candidate_id:int):
 
 @require_http_methods(["GET", 'POST'])
 @login_required(login_url='office_auth:microsoft_login')
+@opiekun_required()
 def update_candidature(request:HttpRequest, candidature_id:int):
-    if not request.user.is_superuser:
-        return redirect(reverse('panel:login'))
     candidature = get_object_or_404(CandidateRegistration, pk=candidature_id)
     electoral_program = ElectoralProgram.objects.filter(candidature=candidature).first()
     if request.method == 'GET':
@@ -372,9 +367,8 @@ def update_candidature(request:HttpRequest, candidature_id:int):
 
 @require_http_methods(['POST'])
 @login_required(login_url='office_auth:microsoft_login')
+@opiekun_required()
 def delete_voting(request:HttpRequest):
-    if not request.user.is_superuser:
-        return redirect(reverse('panel:login'))
     voting_id = request.POST.get('voting_id')
     if not voting_id or not voting_id.isdigit():
         messages.error(request, 'Nieprawidłowe ID głosowania.')
@@ -399,9 +393,8 @@ def delete_voting(request:HttpRequest):
 
 @require_http_methods(['POST'])
 @login_required(login_url='office_auth:microsoft_login')
+@opiekun_required()
 def delete_candidate(request:HttpRequest):
-    if not request.user.is_superuser:
-        return redirect(reverse('panel:login'))
     candidate_id = request.POST.get('candidate_id')
     if not candidate_id or not candidate_id.isdigit():
         messages.error(request, 'Nieprawidłowe ID kandydata.')
@@ -427,9 +420,8 @@ def delete_candidate(request:HttpRequest):
 
 @require_http_methods(['POST'])
 @login_required(login_url='office_auth:microsoft_login')
+@opiekun_required()
 def delete_candidature(request:HttpRequest):
-    if not request.user.is_superuser:
-        return redirect(reverse('panel:login'))
     candidature_id = request.POST.get('candidature_id')
     if not candidature_id or not candidature_id.isdigit():
         messages.error(request, 'Nieprawidłowe ID kandydatury.')
@@ -452,7 +444,5 @@ def delete_candidature(request:HttpRequest):
     filtered_params = {k: v for k, v in params.items() if v}
     url = reverse('panel:list_candidates') + '?' + urlencode(filtered_params)
     return redirect(url)
-
-# TODO: Dodać interaktywne usuwanie obiektów w panelu admina lub takie co zachowuje aktywne zmienne request.GET
 
 

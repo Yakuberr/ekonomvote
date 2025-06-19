@@ -15,11 +15,10 @@ import pytz
 import json
 
 from office_auth.models import AzureUser
-
+from office_auth.auth_utils import is_opiekun
 from .models import Voting, Candidate, Vote, ElectoralProgram, CandidateRegistration
 from .forms import VoteForm, BaseVoteFormSet
 
-# TODO: Dodać interaktywne usuwanie obiektów w panelu admina lub takie co zachowuje aktywne zmienne request.GET
 
 @require_http_methods(['GET'])
 @login_required(login_url='office_auth:microsoft_login')
@@ -60,10 +59,6 @@ def partial_list_old_votings(request:HttpRequest):
     })
 
 
-# QuerySet zliczania głosów dla poszczególnych kandydatur w ramach głosowania:
-# Vote.objects.select_related('candidate_registration').filter(candidate_registration__voting=voting_id).values('candidate_registration').annotate(votes_count=Count('id'))
-
-# TODO: Wrazie w usunąć pobieranie votingu z bazy danych w ramach oszczędzenia zapytań do bazy
 
 # PARTIAL views
 
@@ -159,7 +154,7 @@ def get_chart_data(request:HttpRequest, voting_id:int):
 @require_http_methods(["GET", "POST"])
 def get_voting_details(request:HttpRequest, voting_id:int):
     voting = get_object_or_404(Voting, id=voting_id)
-    can_vote = not request.user.is_superuser
+    can_vote = not is_opiekun(request.user)
     if request.method == 'GET':
         user_has_voted = CandidateRegistration.objects.filter(voting=voting.id,
                                                               votes__microsoft_user=request.user).exists()
@@ -179,15 +174,15 @@ def get_voting_details(request:HttpRequest, voting_id:int):
             )
         ).order_by('candidate__first_name', 'candidate__second_name', 'candidate__last_name')
         # TODO: winner_id musi byc poprawiony (ma działać tylko po zakończeniu głosowania)
-        winner_id = CandidateRegistration.objects.filter(voting=voting.id).annotate(votes_count=Count('votes')).order_by(
-            '-votes_count').only('id').first().id
+        # winner_id = CandidateRegistration.objects.filter(voting=voting.id).annotate(votes_count=Count('votes')).order_by(
+        #     '-votes_count').only('id').first().id
         return render(request, 'samorzad/voting_details.html', context={
             'voting':voting,
             'registrations':registrations,
             'votes_count':votes_count,
             'user_has_voted':user_has_voted,
             'can_vote':can_vote,
-            'winner_id':winner_id,
+            #'winner_id':winner_id,
         })
     if request.method == 'POST':
         if not can_vote:
@@ -216,10 +211,7 @@ def get_voting_details(request:HttpRequest, voting_id:int):
 
 
 
-# TODO: Naprawić docelowy URL dla kodu qr
 # TODO: Dodać warunek w templace dla samorzad:get_voting_details żeby stronę inaczej jeśli nie ma aktywnych kandydatów
-# TODO Sprawdzić czemu w niektórych głosowania z jedną kandydaturą nie widać kandydatury
 # TODO: Prowadzący kandydat może być uwidoczniony tylko po zagłosowaniu
-# TODO: w templatce samorzad_index należy zmienić text renderowany w kodzie qr na url odnoszące się do głosowania
 
 

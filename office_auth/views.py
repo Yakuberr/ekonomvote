@@ -5,6 +5,7 @@ from django.urls import reverse
 from django.conf import settings
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import Group
 
 from urllib.parse import urlencode, parse_qs
 
@@ -12,6 +13,7 @@ from .auth_utils import Office365Authentication
 from .models import AzureUser
 
 
+#TODO: Dodać cały system z grupami dla kont opiekunów głosować oraz dla samego administratora
 def microsoft_login(request: HttpRequest):
     next_url= request.GET.get('next')
     state = None
@@ -37,6 +39,8 @@ def microsoft_callback(request:HttpRequest):
             # TODO: Zamiast chamsko pobierać wartość klucza należy użyć metody .get oraz zabezpieczyć przed możliością wsytąpienia user_info['id'] is None
             microsoft_user_id=user_info['id']
         )
+        if created:
+            Group.objects.get(name='opiekunowie').user_set.add(user)
         login(request, user)
         request.session['microsoft_user_id'] = user_info['id']
         state = request.GET.get('state')
@@ -52,15 +56,7 @@ def microsoft_callback(request:HttpRequest):
 
 def logout_view(request:HttpRequest):
     request.session.flush()
-    redirect_uri = request.build_absolute_uri(reverse("office_auth:home"))
+    redirect_uri = request.build_absolute_uri(reverse("samorzad:index"))
     logout_url = f"https://login.microsoftonline.com/{settings.MICROSOFT_TENANT_ID}/oauth2/v2.0/logout?post_logout_redirect_uri={redirect_uri}"
     return redirect(logout_url)
 
-
-@login_required(login_url='office_auth:microsoft_login')
-def home_view(request:HttpRequest):
-    microsoft_user_id = request.session.get('microsoft_user_id')
-    context = {
-        'microsoft_user_id': microsoft_user_id,
-    }
-    return render(request, 'home.html', context)

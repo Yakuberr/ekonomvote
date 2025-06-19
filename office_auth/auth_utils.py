@@ -1,7 +1,12 @@
+from django.contrib.auth.decorators import user_passes_test
+from django.contrib.auth.models import Group
+from django.conf import settings
+from django.urls import reverse, reverse_lazy
+
 import msal
 import requests
-from django.conf import settings
-from django.urls import reverse
+
+from office_auth.models import AzureUser
 
 
 class Office365Authentication:
@@ -49,3 +54,15 @@ class Office365Authentication:
         return {
             'id': user_info.get('id'),
         }
+
+
+def opiekun_required():
+    def in_group(user:AzureUser):
+        return user.is_authenticated and user.groups.filter(name='opiekunowie').exists()
+    return user_passes_test(
+        in_group,
+        login_url=reverse_lazy('panel:login')
+    )
+
+def is_opiekun(user:AzureUser):
+    return user.groups.filter(name='opiekunowie').exists()
