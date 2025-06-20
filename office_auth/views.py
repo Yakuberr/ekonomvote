@@ -13,7 +13,6 @@ from .auth_utils import Office365Authentication
 from .models import AzureUser
 
 
-#TODO: Dodać cały system z grupami dla kont opiekunów głosować oraz dla samego administratora
 def microsoft_login(request: HttpRequest):
     next_url= request.GET.get('next')
     state = None
@@ -40,7 +39,7 @@ def microsoft_callback(request:HttpRequest):
             microsoft_user_id=user_info['id']
         )
         if created:
-            Group.objects.get(name='opiekunowie').user_set.add(user)
+            Group.objects.get(name='wyborcy').user_set.add(user)
         login(request, user)
         request.session['microsoft_user_id'] = user_info['id']
         state = request.GET.get('state')
