@@ -69,7 +69,7 @@ class Candidate(models.Model):
     image = models.ImageField(upload_to='uploads/samorzad/', null=True, blank=True, unique=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    school_class = models.CharField(max_length=20, null=True, blank=True)
+    school_class = models.CharField(max_length=20)
 
 
     def parse_created_at(self):
@@ -141,11 +141,13 @@ class CandidateRegistration(models.Model):
         if voting.candidate_registrations.count() >= 15 and not voting.candidate_registrations.filter(
                 pk=self.pk).exists():
             raise ValidationError("W głosowaniu nie może być więcej niż 15 kandydatów.")
+        now = timezone.now()
+        if now >= voting.planned_start:
+            raise ValidationError("Nie można dodawać nowych kandydatur do głosowania które już się zaczęło.")
 
     def save(self, *args, **kwargs):
         self.full_clean()
         super().save(*args, **kwargs)
-
 
 class Vote(models.Model):
     """Model reprezentujący oddany głos w głosowaniu na samorząd, pola
