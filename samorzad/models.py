@@ -41,9 +41,9 @@ class Voting(models.Model):
 
     def clean(self):
         if self.planned_start <= timezone.now():
-            raise ValidationError("Głosowanie musi zaczynać się później niż obecna data.")
+            raise ValidationError("Głosowanie musi zaczynać się później niż obecna data.", code='invalid_planned_start_value')
         if self.planned_start >= self.planned_end:
-            raise ValidationError("Głosowanie musi kończyć się później niż jego data rozpoczęcia.")
+            raise ValidationError("Głosowanie musi kończyć się później niż jego data rozpoczęcia.", code='invalid_planned_end_value')
 
     def save(self, *args, **kwargs):
         self.full_clean()
@@ -136,14 +136,14 @@ class CandidateRegistration(models.Model):
         try:
             voting = self.voting
         except ObjectDoesNotExist:
-            raise ValidationError("Podane głosowanie nie istnieje w systemie.")
+            raise ValidationError("Podane głosowanie nie istnieje w systemie.", code='voting_does_not_exist')
         # TODO: O tą zmienną trzeba się pytać lecha
         if voting.candidate_registrations.count() >= 15 and not voting.candidate_registrations.filter(
                 pk=self.pk).exists():
-            raise ValidationError("W głosowaniu nie może być więcej niż 15 kandydatów.")
+            raise ValidationError("W głosowaniu nie może być więcej niż 15 kandydatów.", code='voting_candidatures_limit_reached')
         now = timezone.now()
         if now >= voting.planned_start:
-            raise ValidationError("Nie można dodawać nowych kandydatur do głosowania które już się zaczęło.")
+            raise ValidationError("Nie można dodawać nowych kandydatur do głosowania które już się zaczęło.", code="voting_is_live")
 
     def save(self, *args, **kwargs):
         self.full_clean()
@@ -169,23 +169,23 @@ class Vote(models.Model):
         voting = self.candidate_registration.voting
         # Walidacja czasu oddanego głosu
         if timezone.now() < voting.planned_start:
-            raise ValidationError("Nie można głosować przed rozpoczęciem głosowania")
+            raise ValidationError("Nie można głosować przed rozpoczęciem głosowania", code='voting_not_started')
         if timezone.now() > voting.planned_end:
-            raise ValidationError("Nie można głosować po zakończeniu głosowania")
+            raise ValidationError("Nie można głosować po zakończeniu głosowania", code='voting_gone')
         # Walidacja kandydatury
         if not self.candidate_registration.is_eligible:
-            raise ValidationError("Nie można oddać głosu na kandydata, który nie został dopuszczony do wyborów.")
+            raise ValidationError("Nie można oddać głosu na kandydata, który nie został dopuszczony do wyborów.", code='illegal_candidature')
         # Walidacja ilości głosów/głosowanie i ilości głosów/kandydatura
         if Vote.objects.filter(candidate_registration=self.candidate_registration, microsoft_user=self.microsoft_user).exists():
-            raise ValidationError("Już zagłosowałeś na tego kandydata.")
+            raise ValidationError("Już zagłosowałeś na tego kandydata.", code='vote_dupliaction')
         voting = self.candidate_registration.voting
         if Vote.objects.filter(
                 candidate_registration__voting=voting,
                 microsoft_user=self.microsoft_user
         ).count() == voting.votes_per_user:
-            raise ValidationError("Użytkownik oddał już maksymalną ilość głosów w głosowaniu")
+            raise ValidationError("Użytkownik oddał już maksymalną ilość głosów w głosowaniu", code='vote_limit_reached')
         if self.pk:
-            raise ValidationError("Edytowanie modelu Vote jest zabronione!")
+            raise ValidationError("Edytowanie modelu Vote jest zabronione!", code='vote_action_forbidden')
 
     def save(self, *args, **kwargs):
         self.full_clean()

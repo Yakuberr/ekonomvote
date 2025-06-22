@@ -85,38 +85,45 @@ class VotingModelTest(TestCase):
         self.base_voting.votes_per_user = 0
         with self.assertRaises(ValidationError) as context:
             self.base_voting.save()
-            error_dict = context.exception.error_dict
-            self.assertIn('votes_per_user', error_dict,
-                msg=f"Błąd nie dotyczy `votes_per_user`, tylko: {error_dict}"
-            )
+        self.assertIn('votes_per_user', context.exception.error_dict)
         self.base_voting.votes_per_user = -1
         with self.assertRaises(ValidationError) as context:
             self.base_voting.save()
-            error_dict = context.exception.error_dict
-            self.assertIn('votes_per_user', error_dict,
-                msg=f"Błąd nie dotyczy `votes_per_user`, tylko: {error_dict}"
-            )
+        self.assertIn('votes_per_user', context.exception.error_dict)
 
     @freeze_time("2025-06-03 12:00:00")
     def test_edit_voting_after_start(self):
-        with self.assertRaises(ValidationError):
-            self.base_voting.save()
+        with self.assertRaises(ValidationError) as context:
+            self.base_voting.full_clean()
+        codes = []
+        for field, error_list in context.exception.error_dict.items():
+            for error in error_list:
+                codes.append(error.code)
+        self.assertEqual(codes[0], 'invalid_planned_start_value')
 
     @freeze_time("2025-06-03 12:00:00")
     def test_creating_not_in_future(self):
-        with self.assertRaises(ValidationError):
+        with self.assertRaises(ValidationError) as context:
             voting = Voting.objects.create(
                 planned_start=timezone.datetime(2025, 6, 3, 12, 0, 0, tzinfo=pytz.utc),
                 planned_end=timezone.datetime(2025, 6, 15, 8, 30, 0, tzinfo=pytz.utc),
             )
+        codes = []
+        for field, error_list in context.exception.error_dict.items():
+            for error in error_list:
+                codes.append(error.code)
+        self.assertEqual(codes[0], 'invalid_planned_start_value')
 
     @freeze_time("2025-06-01 12:00:00")
     def test_planned_end_after_start(self):
-        with self.assertRaises(ValidationError):
+        with self.assertRaises(ValidationError) as context:
             self.base_voting.planned_end = timezone.datetime(2025, 6, 2, 8, 30, 0, tzinfo=pytz.utc)
             self.base_voting.save()
-            self.base_voting.planned_end = timezone.datetime(2025, 6, 2, 8, 29, 0, tzinfo=pytz.utc)
-            self.base_voting.save()
+        codes = []
+        for field, error_list in context.exception.error_dict.items():
+            for error in error_list:
+                codes.append(error.code)
+        self.assertEqual(codes[0], 'invalid_planned_end_value')
 
 class CandidateModelTest(TransactionTestCase):
     def setUp(self):
@@ -187,7 +194,7 @@ class CandidateRegistrationModelTest(TestCase):
             last_name=f"Nowak1{i}",
             school_class="1 TI"
         )
-        with self.assertRaises(ValidationError):
+        with self.assertRaises(ValidationError) as context:
             registration = CandidateRegistration.objects.create(
                 candidate=candidate,
                 voting=self.base_voting,
@@ -197,15 +204,25 @@ class CandidateRegistrationModelTest(TestCase):
                 candidature=registration,
                 info="Testowy program wyborczy"
             )
+        codes = []
+        for field, error_list in context.exception.error_dict.items():
+            for error in error_list:
+                codes.append(error.code)
+        self.assertEqual(codes[0], 'voting_candidatures_limit_reached')
 
     @freeze_time('2025-06-01 12:00:00')
     def test_candidature_duplicate(self):
         registration = Voting.objects.prefetch_related('candidate_registrations').filter(id=self.base_voting.id).first().candidate_registrations.first()
-        with self.assertRaises(ValidationError):
+        with self.assertRaises(ValidationError) as context:
             duplicated_registration = CandidateRegistration.objects.create(
                 candidate=registration.candidate,
                 voting=self.base_voting
             )
+        codes = []
+        for field, error_list in context.exception.error_dict.items():
+            for error in error_list:
+                codes.append(error.code)
+        self.assertIsNone(codes[0])
 
     @freeze_time('2025-06-02 08:30:00')
     def test_candidature_add_aftertime(self):
@@ -214,7 +231,7 @@ class CandidateRegistrationModelTest(TestCase):
             last_name=f"Nowak24",
             school_class="1 TI"
         )
-        with self.assertRaises(ValidationError):
+        with self.assertRaises(ValidationError) as context:
             registration = CandidateRegistration.objects.create(
                 candidate=candidate,
                 voting=self.base_voting,
@@ -224,6 +241,11 @@ class CandidateRegistrationModelTest(TestCase):
                 candidature=registration,
                 info="Testowy program wyborczy"
             )
+        codes = []
+        for field, error_list in context.exception.error_dict.items():
+            for error in error_list:
+                codes.append(error.code)
+        self.assertEqual(codes[0], 'voting_is_live')
 
 class ElectoralProgramModelTest(TransactionTestCase):
     @freeze_time('2025-06-01 12:00:00')
@@ -265,9 +287,8 @@ class ElectoralProgramModelTest(TransactionTestCase):
         obj.refresh_from_db()
 
 
+# TODO: Dodać kody błędów w samorzad/models i oprzeć się na nic w testach
 
-
-# TODO: Dodać testy modelu głosowania z wykorzystaniem fixtur
 class VoteModelTest(TransactionTestCase):
     fixtures = ['azure_users_fixture.json']
 
@@ -318,28 +339,43 @@ class VoteModelTest(TransactionTestCase):
 
     @freeze_time('2025-06-02 08:29:59')
     def test_vote_before_start(self):
-        with self.assertRaises(ValidationError):
+        with self.assertRaises(ValidationError) as context:
             Vote.objects.create(
                 candidate_registration=self.candidature,
                 microsoft_user=self.azure_user
             )
+        codes = []
+        for field, error_list in context.exception.error_dict.items():
+            for error in error_list:
+                codes.append(error.code)
+        self.assertEqual(codes[0], 'voting_not_started')
 
     @freeze_time('2025-06-15 19:30:01')
     def test_vote_after_end(self):
-        with self.assertRaises(ValidationError):
+        with self.assertRaises(ValidationError) as context:
             Vote.objects.create(
                 candidate_registration=self.candidature,
                 microsoft_user=self.azure_user
             )
+        codes = []
+        for field, error_list in context.exception.error_dict.items():
+            for error in error_list:
+                codes.append(error.code)
+        self.assertEqual(codes[0], 'voting_gone')
 
     @freeze_time('2025-06-02 08:31:00')
     def test_vote_for_not_eligible_candidature(self):
         candidature = CandidateRegistration.objects.filter(voting=self.base_voting, is_eligible=False).first()
-        with self.assertRaises(ValidationError):
+        with self.assertRaises(ValidationError) as context:
             Vote.objects.create(
                 candidate_registration=candidature,
                 microsoft_user=self.azure_user
             )
+        codes = []
+        for field, error_list in context.exception.error_dict.items():
+            for error in error_list:
+                codes.append(error.code)
+        self.assertEqual(codes[0], 'illegal_candidature')
 
     @freeze_time('2025-06-02 08:31:00')
     def test_vote_duplicate(self):
@@ -348,11 +384,16 @@ class VoteModelTest(TransactionTestCase):
             candidate_registration=candidature,
             microsoft_user=self.azure_user
         )
-        with self.assertRaises(ValidationError):
+        with self.assertRaises(ValidationError) as context:
             Vote.objects.create(
                 candidate_registration=candidature,
                 microsoft_user=self.azure_user
             )
+        codes = []
+        for field, error_list in context.exception.error_dict.items():
+            for error in error_list:
+                codes.append(error.code)
+        self.assertEqual(codes[0], 'vote_dupliaction')
 
     @freeze_time('2025-06-02 08:31:00')
     def test_vote_amount_per_voter(self):
@@ -369,11 +410,16 @@ class VoteModelTest(TransactionTestCase):
             candidate_registration=candidatures[2],
             microsoft_user=self.azure_user
         )
-        with self.assertRaises(ValidationError):
+        with self.assertRaises(ValidationError) as context:
             Vote.objects.create(
                 candidate_registration=candidatures[3],
                 microsoft_user=self.azure_user
             )
+        codes = []
+        for field, error_list in context.exception.error_dict.items():
+            for error in error_list:
+                codes.append(error.code)
+        self.assertEqual(codes[0], 'vote_limit_reached')
 
     @freeze_time('2025-06-02 08:31:00')
     def test_vote_editing(self):
@@ -383,8 +429,13 @@ class VoteModelTest(TransactionTestCase):
         )
         new_user = AzureUser.objects.last()
         vote.microsoft_user = new_user
-        with self.assertRaises(ValidationError):
+        with self.assertRaises(ValidationError) as context:
             vote.save()
+        codes = []
+        for field, error_list in context.exception.error_dict.items():
+            for error in error_list:
+                codes.append(error.code)
+        self.assertEqual(codes[0], 'vote_action_forbidden')
 
 
 
