@@ -12,6 +12,7 @@ from urllib.parse import urlencode, parse_qs
 from .auth_utils import Office365Authentication
 from .models import AzureUser
 
+# TODO: Dodać możliwość logowania się do django admin opiekunom bez superusera ale tylko dla wyznaczonych uprawnień
 
 def microsoft_login(request: HttpRequest):
     next_url= request.GET.get('next')
@@ -36,7 +37,11 @@ def microsoft_callback(request:HttpRequest):
         user_info = auth.get_user_info(token_result['access_token'])
         user, created = AzureUser.objects.get_or_create(
             # TODO: Zamiast chamsko pobierać wartość klucza należy użyć metody .get oraz zabezpieczyć przed możliością wsytąpienia user_info['id'] is None
-            microsoft_user_id=user_info['id']
+            microsoft_user_id=user_info['id'],
+            first_name=user_info['first_name'],
+            last_name=user_info['last_name'],
+            email=user_info['email'],
+            username=user_info['email']
         )
         if created:
             Group.objects.get(name='wyborcy').user_set.add(user)

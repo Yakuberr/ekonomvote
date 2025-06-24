@@ -7,6 +7,12 @@ from django.contrib.auth.admin import UserAdmin
 
 
 class AzureUserAdmin(UserAdmin):
-    exclude = ['microsoft_user_id']
+    readonly_fields = ['microsoft_user_id']
+
+    fieldsets = UserAdmin.fieldsets + (
+        ('Azure Integration', {
+            'fields': ('microsoft_user_id',)
+        }),
+    )
 
 admin.site.register(AzureUser, AzureUserAdmin)
