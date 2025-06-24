@@ -47,7 +47,7 @@ INSTALLED_APPS = [
     'panel.apps.PanelConfig',
     'oscary.apps.OscaryConfig',
     'samorzad.apps.SamorzadConfig',
-    'office_auth.apps.OffceAuthConfig',
+    'office_auth.apps.OfficeAuthConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

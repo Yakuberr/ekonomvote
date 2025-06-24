@@ -53,6 +53,9 @@ class Office365Authentication:
         user_info = response.json()
         return {
             'id': user_info.get('id'),
+            'first_name':user_info.get('givenName'),
+            'last_name': user_info.get('surname'),
+            'email': user_info.get('mail'),
         }
 
 

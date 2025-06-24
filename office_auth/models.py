@@ -7,4 +7,4 @@ class AzureUser(AbstractUser):
     microsoft_user_id = models.CharField(max_length=256, unique=True, null=True, blank=True)
 
     def __str__(self):
-        return f'AzureUser(microsoft_user_id={self.microsoft_user_id}, is_superuser={self.is_superuser})'
+        return f'AzureUser(email={self.email}, is_superuser={self.is_superuser})'
