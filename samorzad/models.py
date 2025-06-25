@@ -16,13 +16,14 @@ class Voting(models.Model):
     - planned_end: Czas zakończenia głosowania (UTC)
     - votes_per_user: Dodatnia liczba, która reprezentuje liczbę głosów które można oddać na poszczególnych kandydatów
     """
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    planned_start = models.DateTimeField(null=False)
-    planned_end = models.DateTimeField(null=False)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='data utworzenia')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='data aktualizacji')
+    planned_start = models.DateTimeField(null=False, verbose_name='data startu')
+    planned_end = models.DateTimeField(null=False, verbose_name='data końca')
     votes_per_user = models.SmallIntegerField(
         default=1,
-        validators=[MinValueValidator(1, 'Ilość głosów musi być większa od 0')]
+        validators=[MinValueValidator(1, 'Ilość głosów musi być większa od 0')],
+        verbose_name='głosów na użytkownika'
     )
 
     def parse_planned_start(self):
@@ -63,13 +64,13 @@ class Candidate(models.Model):
     - updated_at: Czas aktualizacji obiektu (strefa UTC)
     - school_class: Klasa kandydata w obecnych wyborach, może być null ale nie powinna
     """
-    first_name = models.CharField(null=False, max_length=150)
-    second_name = models.CharField(default="", max_length=150, blank=True)
-    last_name = models.CharField(null=False, max_length=150)
-    image = models.ImageField(upload_to='uploads/samorzad/', null=True, blank=True, unique=False)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    school_class = models.CharField(max_length=20)
+    first_name = models.CharField(null=False, max_length=150, verbose_name='imię')
+    second_name = models.CharField(default="", max_length=150, blank=True, verbose_name='drugie imię')
+    last_name = models.CharField(null=False, max_length=150, verbose_name='nazwisko')
+    image = models.ImageField(upload_to='uploads/samorzad/', null=True, blank=True, unique=False, verbose_name='zdjęcie')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='data utworzenia')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='data aktualizacji')
+    school_class = models.CharField(max_length=20, verbose_name='klasa')
 
 
     def parse_created_at(self):
@@ -92,10 +93,10 @@ class ElectoralProgram(models.Model):
     - created_at: Czas utworzenia obiektu (strefa UTC)
     - updated_at: Czas aktualizacji obiektu (strefa UTC)
     """
-    candidature = models.OneToOneField('CandidateRegistration', on_delete=models.CASCADE, related_name='electoral_program')
-    info = models.TextField(null=False)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    candidature = models.OneToOneField('CandidateRegistration', on_delete=models.CASCADE, related_name='electoral_program', verbose_name='kandydatura')
+    info = models.TextField(null=False, verbose_name='program wyborczy')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='data utworzenia')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='data aktualizacji')
 
 
     def __str__(self):
@@ -110,11 +111,11 @@ class CandidateRegistration(models.Model):
     - is_eligible: Boolean określający czy kandydat jest dopuszczony go głosowania
     - created_at: Czas utworzenia obiektu (strefa UTC)
     """
-    candidate = models.ForeignKey(Candidate, on_delete=models.CASCADE, related_name='registrations')
-    voting = models.ForeignKey(Voting, on_delete=models.CASCADE, related_name='candidate_registrations')
-    is_eligible = models.BooleanField(default=False)  # Przeniesione z modelu Candidate
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    candidate = models.ForeignKey(Candidate, on_delete=models.CASCADE, related_name='registrations', verbose_name='kandydat')
+    voting = models.ForeignKey(Voting, on_delete=models.CASCADE, related_name='candidate_registrations', verbose_name='głosowanie')
+    is_eligible = models.BooleanField(default=False, verbose_name='dopuszczony do wyborów')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='data utworzenia')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='data aktualizacji')
 
     def parse_created_at(self):
         return self.created_at.astimezone(tz=pytz.timezone('Europe/Warsaw'))
@@ -158,9 +159,9 @@ class Vote(models.Model):
 
     UWAGA: Nie da się edytować obiektów
     """
-    candidate_registration = models.ForeignKey(CandidateRegistration, on_delete=models.CASCADE, related_name='votes')
-    microsoft_user = models.ForeignKey(AzureUser, on_delete=models.CASCADE, related_name='samorzad_votes')
-    created_at = models.DateTimeField(auto_now_add=True)
+    candidate_registration = models.ForeignKey(CandidateRegistration, on_delete=models.CASCADE, related_name='votes', verbose_name='kandydatura')
+    microsoft_user = models.ForeignKey(AzureUser, on_delete=models.CASCADE, related_name='samorzad_votes', verbose_name='użytkownik')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='data utworzenia')
 
     def parse_created_at(self):
         return self.created_at.astimezone(tz=pytz.timezone('Europe/Warsaw')).strftime('%Y.%m.%d %H:%M:%S')
