@@ -9,6 +9,8 @@ from django.utils import timezone
 from django.contrib import messages
 from django.contrib.postgres.search import SearchRank, SearchQuery, SearchVector, TrigramSimilarity
 from django.core.exceptions import ValidationError
+from django.contrib.contenttypes.models import ContentType
+from django.db import transaction
 
 import pytz
 from urllib.parse import urlencode
@@ -16,6 +18,8 @@ from urllib.parse import urlencode
 from samorzad.models import Voting, Candidate, CandidateRegistration, ElectoralProgram
 from panel.forms import SamorzadAddEmptyVotingForm, SamorzadAddCandidateForm, CandidateRegistrationForm, ElectoralProgramForm
 from office_auth.auth_utils import opiekun_required
+from office_auth.models import ActionLog
+from .utils import get_changed_fields
 
 
 # CREATE views
@@ -34,7 +38,15 @@ def add_empty_voting(request:HttpRequest):
     if request.method == 'POST':
         form = SamorzadAddEmptyVotingForm(request.POST)
         if form.is_valid():
-            voting = form.save()
+            with transaction.atomic():
+                voting = form.save()
+                ActionLog.objects.create(
+                    user=request.user,
+                    action_type=ActionLog.ActionType.ADD,
+                    altered_fields={},
+                    content_type=ContentType.objects.get_for_model(Voting),
+                    object_id=voting.id,
+                )
             messages.success(request, f'Dodano pomyślnie nowe głosowanie o ID: {voting.id}')
             redirect_to = request.POST.get('redirect_to', 'list')
             URL_MAP = {
@@ -64,7 +76,15 @@ def samorzad_add_candidate(request:HttpRequest):
     if request.method == 'POST':
         form = SamorzadAddCandidateForm(request.POST, request.FILES)
         if form.is_valid():
-            candidate = form.save()
+            with transaction.atomic():
+                candidate = form.save()
+                ActionLog.objects.create(
+                    user=request.user,
+                    action_type=ActionLog.ActionType.ADD,
+                    altered_fields={},
+                    content_type=ContentType.objects.get_for_model(Candidate),
+                    object_id=candidate.id,
+                )
             messages.success(request, f'Dodano pomyślnie nowego kandydata {candidate.first_name} {candidate.second_name} {candidate.last_name}, ID: {candidate.id}')
             redirect_to = request.POST.get('redirect_to', 'list')
             URL_MAP = {
@@ -96,10 +116,25 @@ def samorzad_add_candidature(request:HttpRequest):
         candidature_form = CandidateRegistrationForm(request.POST)
         electoral_form = ElectoralProgramForm(request.POST)
         if candidature_form.is_valid() and electoral_form.is_valid():
-            candidature = candidature_form.save()
-            program = electoral_form.save(commit=False)
-            program.candidature = candidature
-            program.save()
+            with transaction.atomic():
+                candidature = candidature_form.save()
+                program = electoral_form.save(commit=False)
+                program.candidature = candidature
+                program.save()
+                ActionLog.objects.create(
+                    user=request.user,
+                    action_type=ActionLog.ActionType.ADD,
+                    altered_fields={},
+                    content_type=ContentType.objects.get_for_model(CandidateRegistration),
+                    object_id=candidature.id,
+                )
+                ActionLog.objects.create(
+                    user=request.user,
+                    action_type=ActionLog.ActionType.ADD,
+                    altered_fields={},
+                    content_type=ContentType.objects.get_for_model(ElectoralProgram),
+                    object_id=program.id,
+                )
             messages.success(request, f'Dodano pomyślnie nową kandydaturę od ID: {candidature.id}')
             redirect_to = request.POST.get('redirect_to', 'list')
             URL_MAP = {
@@ -270,7 +305,16 @@ def update_voting(request:HttpRequest, voting_id:int):
     if request.method == 'POST':
         form = SamorzadAddEmptyVotingForm(request.POST, instance=voting)
         if form.is_valid():
-            form.save()
+            changed_data = get_changed_fields(form)
+            with transaction.atomic():
+                form.save()
+                ActionLog.objects.create(
+                    user=request.user,
+                    action_type=ActionLog.ActionType.UPDATE,
+                    altered_fields=changed_data,
+                    content_type=ContentType.objects.get_for_model(Voting),
+                    object_id=voting_id,
+                )
             messages.success(request, f'Zaktualizowano dane głosowania o ID: {voting_id}')
             redirect_to = request.POST.get('redirect_to', 'list')
             URL_MAP = {
@@ -302,7 +346,16 @@ def update_candidate(request:HttpRequest, candidate_id:int):
     if request.method == 'POST':
         form = SamorzadAddCandidateForm(request.POST, request.FILES, instance=candidate)
         if form.is_valid():
-            form.save()
+            changed_data = get_changed_fields(form)
+            with transaction.atomic():
+                form.save()
+                ActionLog.objects.create(
+                    user=request.user,
+                    action_type=ActionLog.ActionType.UPDATE,
+                    altered_fields=changed_data,
+                    content_type=ContentType.objects.get_for_model(Candidate),
+                    object_id=candidate_id,
+                )
             messages.success(request, f'Zaktualizowano dane kandydata o ID: {candidate_id}')
             redirect_to = request.POST.get('redirect_to', 'list')
             URL_MAP = {
@@ -341,10 +394,27 @@ def update_candidature(request:HttpRequest, candidature_id:int):
         candidature_form = CandidateRegistrationForm(request.POST, instance=candidature)
         electoral_form = ElectoralProgramForm(request.POST, instance=electoral_program)
         if candidature_form.is_valid() and electoral_form.is_valid():
-            candidature = candidature_form.save()
-            program = electoral_form.save(commit=False)
-            program.candidature = candidature
-            program.save()
+            candidature_update_data = get_changed_fields(candidature_form)
+            program_update_data = get_changed_fields(electoral_program)
+            with transaction.atomic():
+                candidature = candidature_form.save()
+                program = electoral_form.save(commit=False)
+                program.candidature = candidature
+                program.save()
+                ActionLog.objects.create(
+                    user=request.user,
+                    action_type=ActionLog.ActionType.UPDATE,
+                    altered_fields=candidature_update_data,
+                    content_type=ContentType.objects.get_for_model(CandidateRegistration),
+                    object_id=candidature_id,
+                )
+                ActionLog.objects.create(
+                    user=request.user,
+                    action_type=ActionLog.ActionType.UPDATE,
+                    altered_fields=program_update_data,
+                    content_type=ContentType.objects.get_for_model(ElectoralProgram),
+                    object_id=program.id,
+                )
             messages.success(request, f'Zaktualizowano dane kandydatury o ID: {candidature_id}')
             redirect_to = request.POST.get('redirect_to', 'list')
             URL_MAP = {
@@ -375,7 +445,15 @@ def delete_voting(request:HttpRequest):
         return redirect(reverse('panel:samorzad_index'))
     voting = Voting.objects.filter(id=voting_id).first()
     if voting:
-        voting.delete()
+        with transaction.atomic():
+            voting.delete()
+            ActionLog.objects.create(
+                user=request.user,
+                action_type=ActionLog.ActionType.DELETE,
+                altered_fields={},
+                content_type=ContentType.objects.get_for_model(Voting),
+                object_id=voting_id,
+            )
         messages.success(
             request,
             f'Pomyślnie usunięto głosowanie: ID: {voting_id}'
@@ -401,7 +479,15 @@ def delete_candidate(request:HttpRequest):
         return redirect(reverse('panel:list_candidates'))
     candidate = Candidate.objects.filter(id=candidate_id).first()
     if candidate:
-        candidate.delete()
+        with transaction.atomic():
+            candidate.delete()
+            ActionLog.objects.create(
+                user=request.user,
+                action_type=ActionLog.ActionType.DELETE,
+                altered_fields={},
+                content_type=ContentType.objects.get_for_model(Candidate),
+                object_id=candidate_id,
+            )
         messages.success(
             request,
             f'Pomyślnie usunięto kandydata: {candidate.first_name} {candidate.second_name} {candidate.last_name}, ID: {candidate_id}'
@@ -428,7 +514,23 @@ def delete_candidature(request:HttpRequest):
         return redirect(reverse('panel:list_candidatures'))
     candidature = CandidateRegistration.objects.filter(id=candidature_id).first()
     if candidature:
-        candidature.delete()
+        program_id = candidature.electoral_program.id
+        with transaction.atomic():
+            candidature.delete()
+            ActionLog.objects.create(
+                user=request.user,
+                action_type=ActionLog.ActionType.DELETE,
+                altered_fields={},
+                content_type=ContentType.objects.get_for_model(CandidateRegistration),
+                object_id=candidature_id,
+            )
+            ActionLog.objects.create(
+                user=request.user,
+                action_type=ActionLog.ActionType.DELETE,
+                altered_fields={},
+                content_type=ContentType.objects.get_for_model(ElectoralProgram),
+                object_id=program_id,
+            )
         messages.success(
             request,
             f'Pomyślnie usunięto kandydaturę o ID: {candidature_id}'
