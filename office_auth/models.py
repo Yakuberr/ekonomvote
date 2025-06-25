@@ -13,9 +13,9 @@ class AzureUser(AbstractUser):
 
 class ActionLog(models.Model):
     class ActionType(models.TextChoices):
-        ADD = "ADD"
-        DELETE = "DEL"
-        UPDATE = "UP"
+        CREATE = "C"
+        DELETE = "D"
+        UPDATE = "U"
 
     user = models.ForeignKey(AzureUser, on_delete=models.CASCADE, related_name='actions')
     action_type = models.CharField(choices=ActionType, max_length=3)
@@ -25,7 +25,7 @@ class ActionLog(models.Model):
     object_id = models.PositiveIntegerField()
 
     def __str__(self):
-        f'ActionLog(user={self.user.id}, action={self.action_type}, object_id={self.object_id})'
+        return f'ActionLog(user={self.user.id}, action={self.action_type}, object_id={self.object_id})'
 
     def save(self, *args, **kwargs):
         if self.pk:
