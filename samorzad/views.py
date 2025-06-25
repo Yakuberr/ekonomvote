@@ -9,6 +9,7 @@ from django.db.models import F, Exists, OuterRef, Q
 from django.views.decorators.http import require_http_methods
 from django.core.paginator import Paginator
 from django.forms import formset_factory
+from django.utils.timezone import datetime, timedelta
 
 from collections import defaultdict
 import pytz
@@ -61,58 +62,84 @@ def partial_list_old_votings(request:HttpRequest):
 
 
 # PARTIAL views
-
+# Widok powinno się cachować
 @require_http_methods(['GET'])
 @login_required(login_url='office_auth:microsoft_login')
 def get_timeline_data(request, voting_id):
     voting = get_object_or_404(Voting, pk=voting_id)
+    warsaw_tz = pytz.timezone('Europe/Warsaw')
+
+    # Określenie pełnego zakresu czasowego
+    start_time = voting.planned_start.astimezone(warsaw_tz).replace(minute=0, second=0, microsecond=0)
+    current_time = datetime.now(warsaw_tz).replace(minute=0, second=0, microsecond=0)
+
+    # Generowanie wszystkich godzin w zakresie (kluczowe dla Chart.js!)
+    all_hours = []
+    current_hour = start_time
+    while current_hour <= current_time:
+        all_hours.append(current_hour)
+        current_hour += timedelta(hours=1)
+
     votes = Vote.objects.filter(
         candidate_registration__voting=voting.id
     ).select_related(
         'candidate_registration__candidate'
     ).only(
-    'created_at',
-    'candidate_registration__id',
-    'candidate_registration__candidate__id',
-    'candidate_registration__candidate__first_name',
-    'candidate_registration__candidate__last_name'
+        'created_at',
+        'candidate_registration__id',
+        'candidate_registration__candidate__id',
+        'candidate_registration__candidate__first_name',
+        'candidate_registration__candidate__last_name'
     ).order_by('created_at')
 
-    # Struktura danych dla wykresu
+    # Struktura danych dla Chart.js
     timeline_data = {
         "timeline": [],
-        "candidates": defaultdict(lambda: {"votes": [], "name": ""})
+        "candidates": {}
     }
-    vote_buckets = defaultdict(lambda: defaultdict(int)) # Godzinowe kubełki danych
+
+    # Inicjalizacja wszystkich kandydatów
     registrations = CandidateRegistration.objects.filter(
         voting=voting,
         is_eligible=True
-    ).select_related('candidate').order_by('candidate__first_name', 'candidate__second_name', 'candidate__last_name')
+    ).select_related('candidate').order_by('candidate__first_name', 'candidate__last_name')
+
     for reg in registrations:
-        timeline_data["candidates"][reg.candidate.id]["name"] = \
-            f"{reg.candidate.first_name} {reg.candidate.last_name}"
+        timeline_data["candidates"][reg.candidate.id] = {
+            "name": f"{reg.candidate.first_name} {reg.candidate.last_name}",
+            "votes": []  # Będzie miał dokładnie len(all_hours) elementów
+        }
 
     # Grupowanie głosów do godzinowych kubełków
+    vote_buckets = defaultdict(lambda: defaultdict(int))
     for vote in votes:
-        timestamp = vote.created_at.astimezone(
-            pytz.timezone('Europe/Warsaw')
-        ).replace(minute=0, second=0, microsecond=0)
-
+        timestamp = vote.created_at.astimezone(warsaw_tz).replace(
+            minute=0, second=0, microsecond=0
+        )
         candidate_id = vote.candidate_registration.candidate.id
         vote_buckets[timestamp][candidate_id] += 1
 
-    # Skumulowane liczenie głosów w czasie
-    sorted_timestamps = sorted(vote_buckets.keys())
-    vote_counts = defaultdict(int)
+    # KLUCZOWE: Budowanie timeline dla WSZYSTKICH godzin
+    vote_counts = defaultdict(int)  # Skumulowane liczniki
 
-    for timestamp in sorted_timestamps:
+    for timestamp in all_hours:
+        # Dodaj godzinę do timeline
         timeline_data["timeline"].append(timestamp.strftime("%Y-%m-%d %H:%M"))
+
+        # Dla każdego kandydata dodaj głosy z tej godziny i zaktualizuj skumulowaną wartość
         for cand_id in timeline_data["candidates"]:
+            # Dodaj głosy z tej konkretnej godziny (0 jeśli brak)
             vote_counts[cand_id] += vote_buckets[timestamp].get(cand_id, 0)
+            # Dodaj skumulowaną wartość do tablicy (zawsze!)
             timeline_data["candidates"][cand_id]["votes"].append(vote_counts[cand_id])
 
+    # Weryfikacja: wszystkie tablice muszą mieć tę samą długość
+    timeline_length = len(timeline_data["timeline"])
+    for cand_id, cand_data in timeline_data["candidates"].items():
+        assert len(cand_data["votes"]) == timeline_length, f"Kandydat {cand_id} ma nieprawidłową długość danych"
+
     return render(request, 'samorzad/experimental_timeline_template.html', context={
-        'timeline_data':json.dumps(timeline_data, ensure_ascii=False),
+        'timeline_data': json.dumps(timeline_data, ensure_ascii=False),
     })
 
 @require_http_methods(["GET"])
@@ -157,7 +184,7 @@ def get_voting_details(request:HttpRequest, voting_id:int):
     can_vote = not is_opiekun(request.user)
     if request.method == 'GET':
         user_has_voted = CandidateRegistration.objects.filter(voting=voting.id,
-                                                              votes__microsoft_user=request.user).exists()
+                                                              votes__microsoft_user=request.user).exists() or is_opiekun(request.user)
         votes_count = Vote.objects.select_related('candidate_registration').filter(
             candidate_registration__voting=voting).count()
         registrations = CandidateRegistration.objects.filter(
