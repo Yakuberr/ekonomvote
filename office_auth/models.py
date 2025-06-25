@@ -27,7 +27,7 @@ class ActionLog(models.Model):
     def __str__(self):
         f'ActionLog(user={self.user.id}, action={self.action_type}, object_id={self.object_id})'
 
-    def save(*args, **kwargs):
+    def save(self, *args, **kwargs):
         if self.pk:
             raise ValidationError("Edytowanie modelu ActionLog jest zabronione!", code='log_action_forbidden')
         super().save(*args, **kwargs)
