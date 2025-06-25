@@ -110,7 +110,8 @@ def samorzad_add_candidature(request:HttpRequest):
         return render(request, 'panel/samorzad/samorzad_add_candidature.html', context={
             'votings':votings,
             'candidature_form':candidature_form,
-            'electoral_form':electoral_form
+            'electoral_form':electoral_form,
+            'candidate_id':None,
         })
     if request.method == 'POST':
         candidature_form = CandidateRegistrationForm(request.POST)
@@ -155,17 +156,26 @@ def samorzad_add_candidature(request:HttpRequest):
 
 @require_http_methods(["GET"])
 @login_required(login_url='office_auth:microsoft_login')
+@opiekun_required()
 def partial_candidates_search(request:HttpRequest):
     query = request.GET.get('search', '')
+    candidate_id = request.GET.get('candidate_id')
+    if candidate_id is None:
+        selected_candidate = None
+    elif not candidate_id.isdigit:
+        raise ValidationError("candidate_id nie jest liczbą całkowitą ")
     if query == '':
+        selected_candidate = Candidate.objects.filter(id=candidate_id).first()
         return render(request, 'panel/samorzad/partials/candidates_select.html', context={
-            'candidates':[]
+            'candidates':[],
+            'selected_candidate':selected_candidate
         })
     vector = SearchVector('first_name', 'second_name', 'last_name')
     query = SearchQuery(query, search_type='plain')
     candidates = Candidate.objects.annotate(rank=SearchRank(vector, query)).filter(rank__gte=0.03).order_by('-rank')
     return render(request, 'panel/samorzad/partials/candidates_select.html', context={
-        'candidates': candidates
+        'candidates': candidates,
+        'selected_candidate':None
     })
 
 # READ views
@@ -388,7 +398,8 @@ def update_candidature(request:HttpRequest, candidature_id:int):
             'votings':votings,
             'candidature_form':candidature_form,
             'electoral_form':electoral_form,
-            'selected_candidate':selected_candidate
+            'selected_candidate':selected_candidate,
+            'candidate_id':candidature.candidate.id
         })
     if request.method == 'POST':
         candidature_form = CandidateRegistrationForm(request.POST, instance=candidature)
