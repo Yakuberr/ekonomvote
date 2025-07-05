@@ -1,6 +1,9 @@
 from django.contrib.auth.models import AbstractUser
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
+from django.utils.translation import gettext_lazy as _
+
+import pytz
 
 
 class AzureUser(AbstractUser):
@@ -13,9 +16,9 @@ class AzureUser(AbstractUser):
 
 class ActionLog(models.Model):
     class ActionType(models.TextChoices):
-        CREATE = "C"
-        DELETE = "D"
-        UPDATE = "U"
+        CREATE = "C", _("Utworzenie")
+        DELETE = "D", _("Usunięcie")
+        UPDATE = "U", _("Edycja")
 
     user = models.ForeignKey(AzureUser, on_delete=models.CASCADE, related_name='actions')
     action_type = models.CharField(choices=ActionType, max_length=3)
@@ -23,6 +26,10 @@ class ActionLog(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()
+
+    def parse_created_at(self):
+        return self.created_at.astimezone(tz=pytz.timezone('Europe/Warsaw'))
+
 
     def __str__(self):
         return f'ActionLog(user={self.user.id}, action={self.action_type}, object_id={self.object_id})'
