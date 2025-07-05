@@ -17,6 +17,9 @@
           <a class="nav-link {% if current_page == 'samorząd' %}active{% endif %}" href="{{ url('panel:samorzad_index') }}">Samorząd</a>
         </li>
         <li class="nav-item">
+          <a class="nav-link {% if current_page == 'action_list' %}active{% endif %}" href="{{ url('panel:list_actions_main') }}">Lista akcji</a>
+        </li>
+        <li class="nav-item">
           <a class="nav-link {% if current_page == 'pomoc' %}active{% endif %}" href="#">Pomoc</a>
         </li>
       </ul>

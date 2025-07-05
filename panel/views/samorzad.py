@@ -8,7 +8,7 @@ from django.core.paginator import Paginator
 from django.utils import timezone
 from django.contrib import messages
 from django.contrib.postgres.search import SearchRank, SearchQuery, SearchVector, TrigramSimilarity
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
 
@@ -25,6 +25,7 @@ from .utils import get_changed_fields
 # CREATE views
 # TODO: Walidcja czy id danego obiektu w bazie danych istnieje
 
+# TODO: Pełna walidacja powiązń pomiędzy CandidatureRegistration i ElectoralProgram
 
 @require_http_methods(['GET', 'POST'])
 @login_required(login_url='office_auth:microsoft_login')
@@ -42,7 +43,7 @@ def add_empty_voting(request:HttpRequest):
                 voting = form.save()
                 ActionLog.objects.create(
                     user=request.user,
-                    action_type=ActionLog.ActionType.ADD,
+                    action_type=ActionLog.ActionType.CREATE,
                     altered_fields={},
                     content_type=ContentType.objects.get_for_model(Voting),
                     object_id=voting.id,
@@ -80,7 +81,7 @@ def samorzad_add_candidate(request:HttpRequest):
                 candidate = form.save()
                 ActionLog.objects.create(
                     user=request.user,
-                    action_type=ActionLog.ActionType.ADD,
+                    action_type=ActionLog.ActionType.CREATE,
                     altered_fields={},
                     content_type=ContentType.objects.get_for_model(Candidate),
                     object_id=candidate.id,
@@ -124,14 +125,14 @@ def samorzad_add_candidature(request:HttpRequest):
                 program.save()
                 ActionLog.objects.create(
                     user=request.user,
-                    action_type=ActionLog.ActionType.ADD,
+                    action_type=ActionLog.ActionType.CREATE,
                     altered_fields={},
                     content_type=ContentType.objects.get_for_model(CandidateRegistration),
                     object_id=candidature.id,
                 )
                 ActionLog.objects.create(
                     user=request.user,
-                    action_type=ActionLog.ActionType.ADD,
+                    action_type=ActionLog.ActionType.CREATE,
                     altered_fields={},
                     content_type=ContentType.objects.get_for_model(ElectoralProgram),
                     object_id=program.id,
@@ -406,7 +407,7 @@ def update_candidature(request:HttpRequest, candidature_id:int):
         electoral_form = ElectoralProgramForm(request.POST, instance=electoral_program)
         if candidature_form.is_valid() and electoral_form.is_valid():
             candidature_update_data = get_changed_fields(candidature_form)
-            program_update_data = get_changed_fields(electoral_program)
+            program_update_data = get_changed_fields(electoral_form)
             with transaction.atomic():
                 candidature = candidature_form.save()
                 program = electoral_form.save(commit=False)
@@ -525,7 +526,10 @@ def delete_candidature(request:HttpRequest):
         return redirect(reverse('panel:list_candidatures'))
     candidature = CandidateRegistration.objects.filter(id=candidature_id).first()
     if candidature:
-        program_id = candidature.electoral_program.id
+        try:
+            program_id = candidature.electoral_program.id
+        except ObjectDoesNotExist:
+            program_id = None
         with transaction.atomic():
             candidature.delete()
             ActionLog.objects.create(
@@ -535,13 +539,14 @@ def delete_candidature(request:HttpRequest):
                 content_type=ContentType.objects.get_for_model(CandidateRegistration),
                 object_id=candidature_id,
             )
-            ActionLog.objects.create(
-                user=request.user,
-                action_type=ActionLog.ActionType.DELETE,
-                altered_fields={},
-                content_type=ContentType.objects.get_for_model(ElectoralProgram),
-                object_id=program_id,
-            )
+            if program_id is not None:
+                ActionLog.objects.create(
+                    user=request.user,
+                    action_type=ActionLog.ActionType.DELETE,
+                    altered_fields={},
+                    content_type=ContentType.objects.get_for_model(ElectoralProgram),
+                    object_id=program_id,
+                )
         messages.success(
             request,
             f'Pomyślnie usunięto kandydaturę o ID: {candidature_id}'
@@ -557,5 +562,14 @@ def delete_candidature(request:HttpRequest):
     filtered_params = {k: v for k, v in params.items() if v}
     url = reverse('panel:list_candidates') + '?' + urlencode(filtered_params)
     return redirect(url)
+
+@require_http_methods(['GET'])
+@login_required(login_url='office_auth:microsoft_login')
+@opiekun_required()
+def redirect_to_candidature(request:HttpRequest, electoral_program_id:int):
+    candidature = get_object_or_404(CandidateRegistration, electoral_program=electoral_program_id)
+    return redirect(reverse('panel:update_candidature', kwargs={'candidature_id':candidature.id}))
+
+
 
 

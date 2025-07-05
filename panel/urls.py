@@ -1,6 +1,6 @@
 from django.urls import path
 
-from .views.panel import panel_login, panel_index
+from .views.panel import panel_login, panel_index, actions_list_main, partial_actions_list_table
 from .views.samorzad import (
     add_empty_voting,
     samorzad_index,
@@ -16,6 +16,7 @@ from .views.samorzad import (
     delete_voting,
     delete_candidate,
     delete_candidature,
+    redirect_to_candidature,
 )
 
 
@@ -24,6 +25,8 @@ app_name = 'panel'
 urlpatterns = [
     path('login/', panel_login, name='login'),
     path('index/', panel_index, name='index'),
+    path('akcje/', actions_list_main, name="list_actions_main"),
+    path('akcje-lista', partial_actions_list_table, name='list_actions_table'),
     #Samorząd
     path('samorzad/dodaj-glosowanie-puste', add_empty_voting, name='samorzad_add_empty_voting'),
     path('samorzad/dodaj-kandydata', samorzad_add_candidate, name="samorzad_add_candidate"),
@@ -37,6 +40,7 @@ urlpatterns = [
     path('samorzad/glosowania/usun', delete_voting, name="delete_voting"),
     path('samorzad/kandydaci/usun', delete_candidate, name="delete_candidate"),
     path('samorzad/kandydatury/usun', delete_candidature, name="delete_candidature"),
+    path('samorzad/program-przekieruj/<int:electoral_program_id>', redirect_to_candidature, name="redirect_to_candidature"),
     # Partials
     path('samorzad/szukaj/kandydaci', partial_candidates_search, name='partial_candidates_search')
 ]

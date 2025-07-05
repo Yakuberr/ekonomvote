@@ -1,0 +1,233 @@
+{% extends "panel/samorzad/samorzad_base.html" %}
+{% block title %}
+    Lista akcji
+{% endblock title %}
+{% block head_css_internal %}
+                        <style>
+                            .table-fixed {
+                                table-layout: fixed;
+                                width: 100%;
+                            }
+                        
+                            .table-fixed th,
+                            .table-fixed td {
+                                overflow: hidden;
+                                text-overflow: ellipsis;
+                                white-space: nowrap;
+                            }
+                        
+                            .table-fixed .period-column {
+                                white-space: normal;
+                            }
+                        
+                            .number-column {
+                                font-family: 'Courier New', monospace;
+                                font-weight: bold;
+                            }
+                        
+                            .table-container {
+                                flex-grow: 1;
+                                overflow-y: auto;
+                                max-height: calc(100vh - 200px);
+                            }
+                            .dropdown-item.active{
+                                background-color: #ffffff00;
+                                color: var(--bs-eco-light-cyan);
+                                text-decoration: underline;
+                            }
+                            .dropdown-item:active{
+                                background-color: var(--bs-dark);
+                            }
+                            .popover-body{
+                                padding-left: 0;
+                            }
+                            .dropdown-menu {
+                                min-width: 100%;
+                            }
+                        </style>
+{% endblock %}
+{% block body_navbar %}
+    {{ render_navbar(csrf_input, current_page='action_list') }}
+{% endblock %}
+{% block body_content %}
+<main class="container-fluid overflow-hidden">
+        <div class="row overflow-hidden">
+            <div class="col-12 bg-dark scrollable-column independent-scroll d-flex flex-column px-xxl-5 px-1">
+                <!-- Formularz wyszukiwania -->
+                <div class="card mt-3 bg-black bg-opacity-25 border-gray">
+                    <div class="card-body">
+                        <form method="get" class="row g-3" id="searchForm"
+                            hx-get="{{ url('panel:list_actions_table') }}"
+                            hx-target="#table-container"
+                            hx-trigger="change, keyup delay:300ms from:input, click from:.dropdown-item, submit"
+                            hx-push-url="false"
+                            hx-indicator="#tableSpinner"
+                        >
+                            <div class="col-md-8 col-12">
+                                <label for="candidatesSearch" class="form-label text-light">Wyszukaj użytkownika po jego loginie:</label>
+                                <div class="input-group">
+                                    <span class="input-group-text" id="basic-addon1">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
+                                            <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0"></path>
+                                        </svg>
+                                    </span>
+                                    <input 
+                                        class="form-control" 
+                                        id="candidatesSearch" 
+                                        placeholder="Poszukaj użytkownika..."
+                                        name="search"
+                                        value="{{ query | default('') }}"
+                                    >
+                                </div>
+                            </div>
+                            <div class="col-md-4 col-12">
+                                <label for="idSearch" class="form-label text-light">Wyszukaj po ID:</label>
+                                <div class="input-group">
+                                    <span class="input-group-text" id="basic-addon1">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
+                                            <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0"></path>
+                                        </svg>
+                                    </span>
+                                    <input 
+                                        class="form-control" 
+                                        id="idSearch" 
+                                        placeholder="Podaj ID obiektu..."
+                                        name="id_search"
+                                        value="{{ query | default('') }}"
+                                    >
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-6">
+                                <label for="sort" class="form-label text-light">Sortuj wg:</label>
+                                <select name="sort" id="sort" class="form-select">
+                                    <option selected value="name" {% if current_sort == 'name' %}selected{% endif %}>Nazwy</option>
+                                    <option value="created_at" {% if current_sort == 'created_at' %}selected{% endif %}>Data utworzenia</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3 col-6">
+                                <label for="order" class="form-label text-light">Kolejność:</label>
+                                <select name="order" id="order" class="form-select">
+                                    <option value="asc" {% if current_order == 'asc' %}selected{% endif %}>↑ Rosnąco</option>
+                                    <option value="desc" {% if current_order == 'desc' %}selected{% endif %}>↓ Malejąco</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3 col-6">
+                                <label for="actionFilter" class="form-label text-light">Filtr akcji:</label>
+                                <div class="btn-group d-block" id="actionFilter">
+                                    <button class="btn btn-secondary dropdown-toggle w-100 text-start" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+                                        Typy akcji
+                                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-eco-light-cyan" id="actionFiltrBadge" style="display: none;">
+                                            <span id="actionFiltrCounter">2</span>
+                                        <span class="visually-hidden">Aktywne filtry</span>
+                                        </span>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        {% for element in action_list %}
+                                        <li><button class="dropdown-item" type="button" data-bs-toggle="button" btn-data="{{ element }}" value="{{ element }}">{{ element.label }}</button></li>
+                                        {% endfor %}
+                                    </ul>
+                                    <input type="text" hidden id="actionInput" name="f_action" value="">
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-6">
+                                <label for="dataTypeFilter" class="form-label text-light">Filtr danych:</label>
+                                <div class="btn-group d-block" id="dataTypeFilter">
+                                    <button class="btn btn-secondary dropdown-toggle w-100 text-start position-relative" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+                                        Rodzaje danych
+                                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-eco-light-cyan" style="display: none;" id="dataFiltrBadge">
+                                            <span id="dataFiltrCounter">2</span>
+                                            <span class="visually-hidden">Aktywne filtry</span>
+                                        </span>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        {% for model in data_type_list %}
+                                        <li><button class="dropdown-item" type="button" data-bs-toggle="button" btn-data="{{ model }}" value="{{ model.id}}">{{ model.name }}</button></li>
+                                        {% endfor %}
+                                    </ul>
+                                    <input type="text" hidden id="dataTypeInput" name="f_data_type" value="">
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Tabela + paginacja (ładowane HTMX) -->
+                 
+                <div class="col-12 d-flex justify-content-center mt-1">
+                    <div class="spinner-border htmx-indicator" role="status" id="tableSpinner">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+                <div id="table-container"
+                    hx-get="{{ url('panel:list_actions_table') }}?{{ request.GET.urlencode() }}"
+                    hx-trigger="load"
+                    hx-target="#table-container"
+                    hx-swap="innerHTML"
+                    hx-indicator="#tableSpinner">
+                </div>
+            </div>
+        </div>
+    </main>
+    <script>
+        // Inicjalizacja popoverów
+        document.addEventListener('DOMContentLoaded', function () {
+            var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+            var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
+                return new bootstrap.Popover(popoverTriggerEl, {
+                    trigger: 'click',
+                    placement: 'top',
+                    html: true
+                });
+            });
+        });
+    </script>
+    <script>
+        let actionFilterCounter = 0
+        const searchForm = document.getElementById('searchForm')
+        const actionBadge = document.getElementById('actionFiltrBadge')
+        const actionCounterElement = document.getElementById('actionFiltrCounter')
+        const actionInput = document.getElementById('actionInput')
+        const actionInputValues = new Object()
+        document.getElementById('actionFilter').querySelectorAll('button[btn-data]').forEach(e=>{
+            e.addEventListener('click', event=>{
+                if(event.target.classList.contains('active')){
+                    actionFilterCounter++
+                    actionInputValues[event.target.value] = event.target.value
+                }else{
+                    actionFilterCounter--
+                    delete actionInputValues[event.target.value]
+                }
+                actionInput.value = Object.values(actionInputValues).join(',')
+                actionCounterElement.innerText=actionFilterCounter
+                if (actionFilterCounter > 0) {
+                    actionBadge.style.display = 'inline-block'
+                }else{
+                    actionBadge.style.display = 'none'
+                }
+            })
+        })
+        let dataFilterCounter = 0
+        const dataBadge = document.getElementById('dataFiltrBadge')
+        const dataCounterElement = document.getElementById('dataFiltrCounter')
+        const dataInput = document.getElementById('dataTypeInput')
+        const dataInputValues = new Object()
+        document.getElementById('dataTypeFilter').querySelectorAll('button[btn-data]').forEach(e=>{
+            e.addEventListener('click', event=>{
+                if(event.target.classList.contains('active')){
+                    dataFilterCounter++
+                    dataInputValues[event.target.value] = event.target.value
+                }else{
+                    dataFilterCounter--
+                    delete dataInputValues[event.target.value]
+                }
+                dataInput.value = Object.values(dataInputValues).join(',')
+                dataCounterElement.innerText=dataFilterCounter
+                if (dataFilterCounter > 0) {
+                    dataBadge.style.display = 'inline-block'
+                }else{
+                    dataBadge.style.display = 'none'
+                }
+            })
+        })
+    </script>
+{% endblock body_content %}
