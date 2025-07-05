@@ -26,6 +26,10 @@ class Voting(models.Model):
         verbose_name='głosów na użytkownika'
     )
 
+    class Meta:
+        verbose_name="Głosowanie"
+        verbose_name_plural = 'Głosowania'
+
     def parse_planned_start(self):
         """Zwraca planned_start w formacie polskiej strefy czasowej w postaci stringa"""
         return self.planned_start.astimezone(tz=pytz.timezone('Europe/Warsaw'))
@@ -72,6 +76,9 @@ class Candidate(models.Model):
     updated_at = models.DateTimeField(auto_now=True, verbose_name='data aktualizacji')
     school_class = models.CharField(max_length=20, verbose_name='klasa')
 
+    class Meta:
+        verbose_name="Kandydat"
+        verbose_name_plural = 'Kandydaci'
 
     def parse_created_at(self):
         return self.created_at.astimezone(tz=pytz.timezone('Europe/Warsaw'))
@@ -97,6 +104,10 @@ class ElectoralProgram(models.Model):
     info = models.TextField(null=False, verbose_name='program wyborczy')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='data utworzenia')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='data aktualizacji')
+
+    class Meta:
+        verbose_name="Program wyborczy"
+        verbose_name_plural = 'Programy wyborcze'
 
 
     def __str__(self):
@@ -129,6 +140,8 @@ class CandidateRegistration(models.Model):
             models.UniqueConstraint(fields=['candidate', 'voting'], name='unique_candidate_per_voting',
             violation_error_message="Kandydatura dla tego kandydata już istnieje w tym głosowaniu")
         ]
+        verbose_name="Kandydatura"
+        verbose_name_plural = 'Kandydatury'
 
     def __str__(self):
         return f'CandidateRegistration(candidate={self.candidate.pk}, voting={self.voting.pk})'
@@ -162,6 +175,10 @@ class Vote(models.Model):
     candidate_registration = models.ForeignKey(CandidateRegistration, on_delete=models.CASCADE, related_name='votes', verbose_name='kandydatura')
     microsoft_user = models.ForeignKey(AzureUser, on_delete=models.CASCADE, related_name='samorzad_votes', verbose_name='użytkownik')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='data utworzenia')
+
+    class Meta:
+        verbose_name="Głos"
+        verbose_name_plural = 'Głosy'
 
     def parse_created_at(self):
         return self.created_at.astimezone(tz=pytz.timezone('Europe/Warsaw')).strftime('%Y.%m.%d %H:%M:%S')
