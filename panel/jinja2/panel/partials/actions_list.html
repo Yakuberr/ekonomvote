@@ -1,0 +1,118 @@
+<div class="card mt-3 bg-black bg-opacity-25 border-gray flex-grow-1 d-flex flex-column">
+    <div class="card-body p-0 flex-grow-1 d-flex flex-column">
+        <div class="table-responsive table-container">
+            <table class="table table-dark table-striped table-hover mb-0 table-fixed">
+                <colgroup>
+                    <col style="width: 5%;">
+                    <col style="width: 20%;">
+                    <col style="width: 10%;">
+                    <col style="width: 15%;">
+                    <col style="width: 10%;">
+                    <col style="width: 10%;">
+                    <col style="width: 20%;">
+                </colgroup>
+                <thead class="table-dark">
+                    <tr>
+                        <th scope="col" class="text-center align-middle">ID</th>
+                        <th scope="col" class="text-center align-middle">Konto</th>
+                        <th scope="col" class="text-center align-middle">Typ akcji</th>
+                        <th scope="col" class="text-center align-middle">Rodzaj danych</th>
+                        <th scope="col" class="text-center align-middle">Zmiany</th>
+                        <th scope="col" class="text-center align-middle">ID obiektu</th>
+                        <th scope="col" class="text-center align-middle">Czas akcji</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if page_obj %}
+                        {% for a in page_obj %}
+                            <tr>
+                                <td class="text-center align-middle">{{ a.id }}</td>
+                                <td class="text-center align-middle">{{ a.user.username }}</td>
+                                <td class="text-center align-middle">{{ a.get_action_type_display() }}</td>
+                                <td class="text-center align-middle">{{ a.content_type.model_class()._meta.verbose_name }}</td>
+                                <td class="text-center align-middle">
+                                    {% if a.action_type == 'U' %}
+                                        <a class="link-light" style="cursor: pointer;" data-bs-toggle="popover" data-bs-title="Podgląd zmian" data-bs-content="
+                                        <ul>
+                                        {% for field in a.altered_fields %}
+                                        <li><strong>{{ field }}: </strong><br>{{ a.altered_fields[field]['old'] }} &rarr; {{ a.altered_fields[field]['new'] }}</li>
+                                        {% endfor %}
+                                        </ul>">
+                                            Podgląd
+                                        </a>
+                                    {% else %}
+                                        <span>-</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center align-middle">
+                                    {% if a.action_type == "D"%}
+                                    <span>{{ a.object_id }}</span>
+                                    {% else %}
+                                    <a class="link-light" href="{{ build_redirect_urls(a.content_type.model_class()._meta.verbose_name, a.object_id) }}">{{ a.object_id }}</a>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center align-middle">{{ a.parse_created_at().strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center text-muted py-4">
+                                <i class="fas fa-user-slash fa-2x mb-2"></i><br>
+                                {% if query %}
+                                    Nie znaleziono kont dla frazy: "{{ query }}"
+                                {% else %}
+                                    Brak wykonanych akcji
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Paginacja -->
+<nav aria-label="pagination" class="mt-5 mb-3">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous() %}
+            <li class="page-item">
+                <a class="page-link" hx-get="?page=1&{{ querystring }}">««</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" hx-get="?page={{ page_obj.previous_page_number() }}&{{ querystring }}">«</a>
+            </li>
+        {% else %}
+            <li class="page-item disabled"><a class="page-link">««</a></li>
+            <li class="page-item disabled"><a class="page-link">«</a></li>
+        {% endif %}
+
+        <li class="page-item active">
+            <a class="page-link">{{ page_obj.number }}</a>
+        </li>
+
+        {% if page_obj.has_next() %}
+            <li class="page-item">
+                <a class="page-link" hx-get="?page={{ page_obj.next_page_number() }}&{{ querystring }}">»</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" hx-get="?page={{ page_obj.paginator.num_pages }}&{{ querystring }}">»»</a>
+            </li>
+        {% else %}
+            <li class="page-item disabled"><a class="page-link">»</a></li>
+            <li class="page-item disabled"><a class="page-link">»»</a></li>
+        {% endif %}
+    </ul>
+</nav>
+
+<script>
+    // ponowna inicjalizacja popoverów po załadowaniu fragmentu
+    var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+    var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
+        return new bootstrap.Popover(popoverTriggerEl, {
+            trigger: 'click',
+            placement: 'top',
+            html: true
+        });
+    });
+</script>
