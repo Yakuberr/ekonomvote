@@ -68,10 +68,17 @@ def partial_list_old_votings(request:HttpRequest):
 def get_timeline_data(request, voting_id):
     voting = get_object_or_404(Voting, pk=voting_id)
     warsaw_tz = pytz.timezone('Europe/Warsaw')
+    print(voting.planned_start.astimezone(warsaw_tz))
+    print(voting.id)
 
     # Określenie pełnego zakresu czasowego
     start_time = voting.planned_start.astimezone(warsaw_tz).replace(minute=0, second=0, microsecond=0)
-    current_time = datetime.now(warsaw_tz).replace(minute=0, second=0, microsecond=0)
+    if voting.planned_end <= timezone.now():
+        current_time = voting.planned_end.astimezone(warsaw_tz).replace(minute=0, second=0, microsecond=0) + timedelta(
+            hours=1)
+    else:
+        current_time = datetime.now(warsaw_tz).replace(minute=0, second=0, microsecond=0)
+
 
     # Generowanie wszystkich godzin w zakresie (kluczowe dla Chart.js!)
     all_hours = []
@@ -115,7 +122,7 @@ def get_timeline_data(request, voting_id):
     for vote in votes:
         timestamp = vote.created_at.astimezone(warsaw_tz).replace(
             minute=0, second=0, microsecond=0
-        )
+        ) + timedelta(hours=1)
         candidate_id = vote.candidate_registration.candidate.id
         vote_buckets[timestamp][candidate_id] += 1
 
@@ -201,6 +208,7 @@ def get_voting_details(request:HttpRequest, voting_id:int):
             )
         ).order_by('candidate__first_name', 'candidate__second_name', 'candidate__last_name')
         # TODO: winner_id musi byc poprawiony (ma działać tylko po zakończeniu głosowania)
+        # TODO: Jeśli nie ma zrejestrowanych legalnych kandydatur to nie wysyłać requestów po wykresy
         # winner_id = CandidateRegistration.objects.filter(voting=voting.id).annotate(votes_count=Count('votes')).order_by(
         #     '-votes_count').only('id').first().id
         return render(request, 'samorzad/voting_details.html', context={
