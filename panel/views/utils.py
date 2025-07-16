@@ -23,11 +23,11 @@ def build_filter_kwargs(filter_map:dict, request_params:dict):
 
 
 def build_sort_list(sort_map:dict, request_params:dict):
-    sort_by = request_params.get('sort', 'name')
+    sort_by = request_params.get('sort', 'id')
     order = request_params.get('order', 'asc')
     allowed_sort_fields = sort_map.keys()
     if sort_by not in allowed_sort_fields:
-        sort_by = 'name'
+        sort_by = 'id'
     if order not in ['asc', 'desc']:
         order = 'asc'
     sort_fields = sort_map[sort_by]
