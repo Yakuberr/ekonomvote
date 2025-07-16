@@ -72,6 +72,7 @@ def partial_actions_list_table(request: HttpRequest):
     SORT_MAP = {
         'name': ['user__username'],
         'created_at': ['created_at'],
+        'id':['id'],
     }
     FILTER_MAP = {
         'f_action': {
@@ -115,7 +116,6 @@ def partial_actions_list_table(request: HttpRequest):
     querystring = params.urlencode()
     return render(request, 'panel/partials/actions_list.html', context={
         'page_obj': page_obj,
-        'query': query,
         'querystring':querystring,
         'build_redirect_urls':build_redirect_urls,
     })
