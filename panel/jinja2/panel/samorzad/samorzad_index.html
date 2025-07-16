@@ -30,6 +30,17 @@
                                 overflow-y: auto;
                                 max-height: calc(100vh - 200px);
                             }
+                            .dropdown-item.active{
+                                background-color: #ffffff00;
+                                color: var(--bs-eco-light-cyan);
+                                text-decoration: underline;
+                            }
+                            .dropdown-item:active{
+                                background-color: var(--bs-dark);
+                            }
+                            .dropdown-menu {
+                                min-width: 100%;
+                            }
                         </style>
 {% endblock %}
 {% block body_navbar %}
@@ -38,162 +49,70 @@
 {% block body_content %}
 <main class="container-fluid overflow-hidden">
         <div class="row overflow-hidden">
-            <div class="col-12 col-md-3 col-lg-2 border-4 border-eco-light-cyan independent-scroll">
-                <ul class="nav flex-row flex-md-column">
-                    <li class="nav-item dropdown">
-                        <a class="nav-link active link-eco-light-cyan dropdown-toggle" aria-current="page" data-bs-toggle="dropdown" href="#" role="button" aria-expanded="false">Lista</a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{{ url('panel:samorzad_index') }}">Głosowań</a></li>
-                            <li><a class="dropdown-item" href="{{ url('panel:list_candidates') }}">Kandydatów</a></li>
-                            <li><a class="dropdown-item" href="{{ url('panel:list_candidatures') }}">Kandydatur</a></li>
-                        </ul>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link link-eco-light-cyan" href="{{ url('panel:samorzad_add_empty_voting') }}">Dodaj głosowanie</a>
-                    </li>
-                    <hr class="d-none d-md-block m-2">
-                    <li class="nav-item d-none d-md-block">
-                        <a class="nav-link link-eco-light-cyan" href="{{ url('panel:samorzad_add_candidate') }}">Dodaj kandydata</a>
-                    </li>
-                    <li class="nav-item dropdown d-block d-md-none">
-                        <a class="nav-link link-eco-light-cyan dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-expanded="false">Kandydaci</a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{{ url('panel:samorzad_add_candidate') }}">Dodaj kandydata</a></li>
-                            <li><a class="dropdown-item" href="{{ url('panel:samorzad_add_candidature') }}">Dodaj kandydature</a></li>
-                        </ul>
-                    </li>
-                    <li class="nav-item d-none d-md-block">
-                        <a class="nav-link link-eco-light-cyan" href="{{ url('panel:samorzad_add_candidature') }}">Dodaj kandydature</a>
-                    </li>
-                </ul>
+            <div class="col-12 col-lg-2 border-4 border-eco-light-cyan independent-scroll">
+            {{ render_samorzad_sidebar(current_page='index') }}
             </div>
-            <div class="col-12 col-md-9 col-lg-10 bg-dark scrollable-column independent-scroll">
+            <div class="col-12 col-lg-10 bg-dark scrollable-column independent-scroll">
                 <div class="card mt-3 bg-black bg-opacity-25 border-gray">
                     <div class="card-body">
-                        <form method="get" class="row g-3">
-                            <div class="col-8">
+                        <form method="get" class="row g-3" id="filterForm"
+                            hx-get="{{ url('panel:partial_read_voting_list') }}"
+                            hx-target="#table-container"
+                            hx-trigger="change, keyup delay:300ms from:input, click from:.form-dropdown-item, submit"
+                            hx-push-url="false"
+                            hx-indicator="#tableSpinner">
+                            <div class="col-4">
                                 <label for="sort" class="form-label text-light">Sortuj według:</label>
-                                <select name="sort" id="sort" class="form-select w-auto" onchange="this.form.submit()">
-                                    <option selected value="planned_start" {% if current_sort == 'planned_start' %}selected{% endif %}>Data rozpoczęcia</option>
-                                    <option value="planned_end" {% if current_sort == 'planned_end' %}selected{% endif %}>Data zakończenia</option>
-                                    <option value="created_at" {% if current_sort == 'created_at' %}selected{% endif %}>Data utworzenia</option>
-                                    <option value="updated_at" {% if current_sort == 'updated_at' %}selected{% endif %}>Data edycji</option>
-                                    <option value="id" {% if current_sort == 'id' %}selected{% endif %}>ID</option>
+                                <select name="sort" id="sort" class="form-select">
+                                    <option value="id">ID</option>
+                                    <option selected value="planned_start">Data rozpoczęcia</option>
+                                    <option value="planned_end">Data zakończenia</option>
+                                    <option value="created_at">Data utworzenia</option>
+                                    <option value="updated_at">Data edycji</option>
                                 </select>
                             </div>
                             <div class="col-4">
                                 <label for="order" class="form-label text-light">Kolejność:</label>
-                                <select name="order" id="order" class="form-select" onchange="this.form.submit()">
-                                    <option value="asc" {% if current_order == 'asc' %}selected{% endif %}>↑ Rosnąco</option>
-                                    <option value="desc" {% if current_order == 'desc' %}selected{% endif %}>↓ Malejąco</option>
+                                <select name="order" id="order" class="form-select">
+                                    <option value="asc">↑ Rosnąco</option>
+                                    <option value="desc">↓ Malejąco</option>
                                 </select>
                             </div>
-                            <!-- Zachowaj aktualną stronę -->
-                            <input type="hidden" name="page" value="{{ page_obj.number }}">
+                            <div class="col-4">
+                                <label for="statusFilter" class="form-label text-light">Filtr statusu:</label>
+                                <div class="btn-group d-block" id="statusFilter">
+                                    <button class="btn btn-secondary dropdown-toggle w-100 text-start" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+                                        Rodzaje statusu
+                                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-eco-light-cyan" id="statusFiltrBadge" style="display: none;">
+                                            <span id="statusFiltrCounter">2</span>
+                                        <span class="visually-hidden">Aktywne filtry</span>
+                                        </span>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        {% for element in status_list %}
+                                        <li><button class="dropdown-item form-dropdown-item" type="button" data-bs-toggle="button" btn-data="{{ element }}" value="{{ element }}">{{ element }}</button></li>
+                                        {% endfor %}
+                                    </ul>
+                                    <input type="text" hidden id="statusInput" name="f_status" value="">
+                                </div>
+                            </div>
                         </form>
                     </div>
                 </div>
-
                 <!-- Tabela głosowań -->
-                <div class="card mt-3 bg-black bg-opacity-25 border-gray">
-                    <div class="card-body p-0">
-                        <div class="table-responsive table-container">
-                            <table class="table table-dark table-striped table-hover mb-0 table-fixed">
-                                <thead class="table-dark">
-                                    <tr>
-                                        <th scope="col" class="text-center align-middle">ID</th>
-                                        <th scope="col" class="text-center align-middle">Status</th>
-                                        <th scope="col" class="text-center align-middle">Okres głosowania</th>
-                                        <th scope="col" class="text-center align-middle">Utworzono</th>
-                                        <th scope="col" class="text-center align-middle">Edytowano</th>
-                                        <th scope="col" class="text-center align-middle">Głosy/użytkownik</th>
-                                        <th scope="col" class="text-center align-middle">Kandydaci</th>
-                                        <th scope="col" class="text-center align-middle">Akcje</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% if page_obj %}
-                                        {% for v in page_obj %}
-                                            <tr>
-                                                <td class="text-center align-middle">
-                                                    <span>{{ v.id }}</span>
-                                                </td>
-                                                <td class="text-center align-middle">
-                                                    {% if v.planned_start <= now() and v.planned_end > now() %}
-                                                        <span class="">Aktywne</span>
-                                                    {% elif v.planned_start > now() %}
-                                                        <span class="">Zaplanowane</span>
-                                                    {% else %}
-                                                        <span class="">Zakończone</span>
-                                                    {% endif %}
-                                                </td>
-                                                <td class="text-center align-middle">
-                                                    <div class="small">
-                                                        <strong>Od:</strong> {{ v.parse_planned_start().strftime('%d.%m.%Y %H:%M') }}<br>
-                                                        <strong>Do:</strong> {{ v.parse_planned_end().strftime('%d.%m.%Y %H:%M') }}
-                                                    </div>
-                                                </td>
-                                                <td class="text-center align-middle">
-                                                    <span class="small">{{ v.parse_created_at().strftime('%d.%m.%Y') }}</span>
-                                                </td>
-                                                <td class="text-center align-middle">
-                                                    <span class="small">
-                                                        {% if v.created_at != v.updated_at%}
-                                                            {{ v.parse_updated_at().strftime('%d.%m.%Y') }}
-                                                        {% else %}
-                                                            -
-                                                        {% endif %}
-                                                    </span>
-                                                </td>
-                                                <td class="text-center align-middle">
-                                                    <span class="">{{ v.votes_per_user }}</span>
-                                                </td>
-                                                <td class="text-center align-middle">
-                                                    <span class="">{{ v.candidate_registrations.count() }}</span>
-                                                </td>
-                                                <td class="text-center align-middle">
-                                                    <a href="#" class="btn btn-sm btn-outline-eco-light-cyan">Podgląd</a>
-                                                    <a href="{{ url('panel:update_voting', kwargs={'voting_id':v.pk}) }}" class="btn btn-sm btn-outline-eco-light-cyan">Edytuj</a>
-                                                    <button btn-type="delete" btn-data="{{ v.pk }}" class="btn btn-sm btn-outline-danger">Usuń</button>
-                                                </td>
-                                            </tr>
-                                        {% endfor %}
-                                    {% else %}
-                                        <tr>
-                                            <td colspan="8" class="text-center text-muted py-4">
-                                                <i class="fas fa-inbox fa-2x mb-2"></i><br>
-                                                Brak głosowań do wyświetlenia
-                                            </td>
-                                        </tr>
-                                    {% endif %}
-                                </tbody>
-                            </table>
-                        </div>
+                <div class="col-12 d-flex justify-content-center mt-1">
+                    <div class="spinner-border htmx-indicator" role="status" id="tableSpinner">
+                        <span class="visually-hidden">Loading...</span>
                     </div>
                 </div>
+                <div id="table-container"
+                    hx-get="{{ url('panel:partial_read_voting_list') }}?{{ request.GET.urlencode() }}"
+                    hx-trigger="load"
+                    hx-target="#table-container"
+                    hx-swap="innerHTML"
+                    hx-indicator="#tableSpinner">
 
-                <!-- Paginacja z zachowaniem sortowania -->
-                <nav aria-label="pagination" class="my-3">
-                    <ul class="pagination justify-content-center">
-                        {% if page_obj.has_previous() %}
-                        <li class="page-item"><a class="page-link" href="?page=1&sort={{ current_sort }}&order={{ current_order }}">&laquo;&laquo; </a></li>
-                        <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number() }}&sort={{ current_sort }}&order={{ current_order }}">&laquo;</a></li>
-                        {% else %}
-                        <li class="page-item disabled"><a class="page-link">&laquo;&laquo; </a></li>
-                        <li class="page-item disabled"><a class="page-link">&laquo;</a></li>
-                        {% endif %}
-                        <li class="page-item active">
-                        <a class="page-link" href="#" aria-current="page">{{ page_obj.number }}</a>
-                        </li>
-                        {% if page_obj.has_next() %}
-                        <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number() }}&sort={{ current_sort }}&order={{ current_order }}">&raquo;</a></li>
-                        <li class="page-item"><a class="page-link" href="?page={{ page_obj.paginator.num_pages }}&sort={{ current_sort }}&order={{ current_order }}">&raquo;&raquo;</a></li>
-                        {% else %}
-                        <li class="page-item disabled"><a class="page-link">&raquo;</a></li>
-                        <li class="page-item disabled"><a class="page-link">&raquo;&raquo;</a></li>
-                        {% endif %}
-                    </ul>
-                </nav>
+                </div>
             </div>
         </div>
     </main>
@@ -201,37 +120,64 @@
     <div class="modal fade" id="warningModal" tabindex="-1" aria-labelledby="warningModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
-            <div class="modal-header">
-                <h1 class="modal-title fs-5 text-danger" id="warningModalLabel">Uwaga</h1>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                Usunięcie głosowania sprawi trwałe usunięcie głosowania z systemu łącznie ze wszystkimi statystykami. <br>
-                <span class="text-danger fw-bold text-decoration-underline">
-                    Operacji nie można cofnąć.
-                </span>
-            </div>
-            <div class="modal-footer">
-                <form action="{{ url('panel:delete_voting') }}" method="post">
-                    <input hidden type="number" name="voting_id" id="votingIdInput">
-                    <input hidden type="text" name="sort" value="{{ current_sort }}">
-                    <input hidden type="text" name="order" value="{{ current_order }}">
-                    <input hidden type="text" name="page" value="{{ page_obj.number }}">
-                    {{ csrf_input }}
-                    <button type="submit" class="btn btn-danger">Usuń</button>
-                </form>
-            </div>
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5 text-danger" id="warningModalLabel">Uwaga</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Usunięcie głosowania sprawi trwałe usunięcie głosowania z systemu łącznie ze wszystkimi statystykami.
+                    <br>
+                    <span class="text-danger fw-bold text-decoration-underline">
+                        Operacji nie można cofnąć.
+                    </span>
+                </div>
+                <div class="modal-footer">
+                    <form action="{{ url('panel:delete_voting') }}" method="post">
+                        {{ csrf_input }}
+                        <button type="submit" class="btn btn-danger">Usuń</button>
+                        <input type="number" id="votingIdInput" hidden name="voting_id">
+                    </form>
+                </div>
             </div>
         </div>
     </div>
     <script>
-        const warningModal = new bootstrap.Modal(document.getElementById('warningModal'))
-        const votingIdInput = document.getElementById('votingIdInput')
-        document.querySelectorAll('button[btn-type="delete"]').forEach(btn=>{
-            btn.addEventListener('click', (e)=>{
-                warningModal.show()
-                votingIdInput.value = Number(e.currentTarget.getAttribute('btn-data'))
+        let statusFilterCounter = 0
+        const statusBadge = document.getElementById('statusFiltrBadge')
+        const statusCounterElement = document.getElementById('statusFiltrCounter')
+        const statusInput = document.getElementById('statusInput')
+        const statusInputValues = new Object()
+        document.getElementById('statusFilter').querySelectorAll('button[btn-data]').forEach(e=>{
+            e.addEventListener('click', event=>{
+                if(event.target.classList.contains('active')){
+                    statusFilterCounter++
+                    statusInputValues[event.target.value] = event.target.value
+                }else{
+                    statusFilterCounter--
+                    delete statusInputValues[event.target.value]
+                }
+                statusInput.value = Object.values(statusInputValues).join(',')
+                statusCounterElement.innerText=statusFilterCounter
+                if (statusFilterCounter > 0) {
+                    statusBadge.style.display = 'inline-block'
+                }else{
+                    statusBadge.style.display = 'none'
+                }
             })
+        })
+    </script>
+    <script>
+        const modalEl = document.getElementById('warningModal')
+        const warningModal = new bootstrap.Modal(document.getElementById('warningModal'))
+        document.addEventListener('click', (e) => {
+            const btn = e.target.closest('button[btn-type="delete"]')
+            if (btn) {
+                const votingIdInput = document.getElementById('votingIdInput')
+                if (modalEl && votingIdInput) {
+                    warningModal.show()
+                    votingIdInput.value = Number(btn.getAttribute('btn-data'))
+                }
+            }
         })
     </script>
 {% endblock body_content %}

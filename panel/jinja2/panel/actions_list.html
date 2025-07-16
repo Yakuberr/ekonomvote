@@ -76,7 +76,7 @@
                                         id="candidatesSearch" 
                                         placeholder="Poszukaj użytkownika..."
                                         name="search"
-                                        value="{{ query | default('') }}"
+                                        value=""
                                     >
                                 </div>
                             </div>
@@ -93,15 +93,16 @@
                                         id="idSearch" 
                                         placeholder="Podaj ID obiektu..."
                                         name="id_search"
-                                        value="{{ query | default('') }}"
+                                        value=""
                                     >
                                 </div>
                             </div>
                             <div class="col-md-3 col-6">
                                 <label for="sort" class="form-label text-light">Sortuj wg:</label>
                                 <select name="sort" id="sort" class="form-select">
-                                    <option selected value="name" {% if current_sort == 'name' %}selected{% endif %}>Nazwy</option>
-                                    <option value="created_at" {% if current_sort == 'created_at' %}selected{% endif %}>Data utworzenia</option>
+                                    <option value="id">ID</option>
+                                    <option selected value="name">Nazwy</option>
+                                    <option value="created_at">Data utworzenia</option>
                                 </select>
                             </div>
                             <div class="col-md-3 col-6">

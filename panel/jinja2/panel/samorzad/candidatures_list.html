@@ -1,276 +1,220 @@
 {% extends "panel/samorzad/samorzad_base.html" %}
 {% block title %}
-    Samorząd - lista kandydatów
+Samorząd - lista kandydatur
 {% endblock title %}
 {% block head_css_internal %}
-                        <style>
-                            .table-fixed {
-                                table-layout: fixed;
-                                width: 100%;
-                            }
-                        
-                            .table-fixed th,
-                            .table-fixed td {
-                                overflow: hidden;
-                                text-overflow: ellipsis;
-                                white-space: nowrap;
-                            }
-                        
-                            .table-fixed .period-column {
-                                white-space: normal;
-                            }
-                        
-                            .number-column {
-                                font-family: 'Courier New', monospace;
-                                font-weight: bold;
-                            }
-                        
-                            .table-container {
-                                flex-grow: 1;
-                                overflow-y: auto;
-                                max-height: calc(100vh - 200px);
-                            }
-                            .candidate-avatar {
-                                width: 50px;
-                                height: 50px;
-                                object-fit: cover;
-                                border-radius: 50%;
-                            }
-                        </style>
+<style>
+    .table-fixed {
+        table-layout: fixed;
+        width: 100%;
+    }
+
+    .table-fixed th,
+    .table-fixed td {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .table-fixed .period-column {
+        white-space: normal;
+    }
+
+    .number-column {
+        font-family: 'Courier New', monospace;
+        font-weight: bold;
+    }
+
+    .table-container {
+        flex-grow: 1;
+        overflow-y: auto;
+        max-height: calc(100vh - 200px);
+    }
+
+    .candidate-avatar {
+        width: 50px;
+        height: 50px;
+        object-fit: cover;
+        border-radius: 50%;
+    }
+
+    .dropdown-item.active {
+        background-color: #ffffff00;
+        color: var(--bs-eco-light-cyan);
+        text-decoration: underline;
+    }
+
+    .dropdown-item:active {
+        background-color: var(--bs-dark);
+    }
+
+    .popover-body {
+        padding-left: 0;
+    }
+
+    .dropdown-menu {
+        min-width: 100%;
+    }
+</style>
 {% endblock %}
 {% block body_navbar %}
-    {{ render_navbar(csrf_input, current_page='samorząd') }}
+{{ render_navbar(csrf_input, current_page='samorząd') }}
 {% endblock %}
 {% block body_content %}
 <main class="container-fluid overflow-hidden">
-        <div class="row overflow-hidden">
-            <div class="col-12 col-md-3 col-lg-2 border-4 border-eco-light-cyan independent-scroll">
-                <ul class="nav flex-row flex-md-column">
-                    <li class="nav-item dropdown">
-                        <a class="nav-link active link-eco-light-cyan dropdown-toggle" aria-current="page" data-bs-toggle="dropdown" href="#" role="button" aria-expanded="false">Lista</a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{{ url('panel:samorzad_index') }}">Głosowań</a></li>
-                            <li><a class="dropdown-item" href="{{ url('panel:list_candidates') }}">Kandydatów</a></li>
-                            <li><a class="dropdown-item" href="{{ url('panel:list_candidatures') }}">Kandydatur</a></li>
-                        </ul>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link link-eco-light-cyan" href="{{ url('panel:samorzad_add_empty_voting') }}">Dodaj głosowanie</a>
-                    </li>
-                    <hr class="d-none d-md-block m-2">
-                    <li class="nav-item d-none d-md-block">
-                        <a class="nav-link link-eco-light-cyan" href="{{ url('panel:samorzad_add_candidate') }}">Dodaj kandydata</a>
-                    </li>
-                    <li class="nav-item dropdown d-block d-md-none">
-                        <a class="nav-link link-eco-light-cyan dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-expanded="false">Kandydaci</a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{{ url('panel:samorzad_add_candidate') }}">Dodaj kandydata</a></li>
-                            <li><a class="dropdown-item" href="{{ url('panel:samorzad_add_candidature') }}">Dodaj kandydature</a></li>
-                        </ul>
-                    </li>
-                    <li class="nav-item d-none d-md-block">
-                        <a class="nav-link link-eco-light-cyan" href="{{ url('panel:samorzad_add_candidature') }}">Dodaj kandydature</a>
-                    </li>
-                </ul>
-            </div>
-            <div class="col-12 col-md-9 col-lg-10 bg-dark scrollable-column independent-scroll d-flex flex-column">
-                <!-- Formularz wyszukiwania -->
-                <div class="card mt-3 bg-black bg-opacity-25 border-gray">
-                    <div class="card-body">
-                        <form method="get" class="row g-3">
-                            <div class="col-lg-6 col-12">
-                                <label for="candidatesSearch" class="form-label text-light">Wyszukaj kandydata:</label>
-                                <div class="input-group">
-                                    <span class="input-group-text" id="basic-addon1">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
-                                            <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0"></path>
-                                        </svg>
-                                    </span>
-                                    <input 
-                                        class="form-control" 
-                                        id="candidatesSearch" 
-                                        placeholder="Poszukaj kandydatów..."
-                                        name="search"
-                                        value="{{ query | default('') }}"
-                                        hx-get="{{ url('panel:partial_candidates_search') }}"
-                                        hx-trigger="keyup delay:250ms"
-                                        hx-target="#selectCanidatePlaceholder"
-                                    >
-                                </div>
+    <div class="row overflow-hidden">
+        <div class="col-12 col-lg-2 border-4 border-eco-light-cyan independent-scroll">
+        {{ render_samorzad_sidebar(current_page='candidatures_list') }}
+        </div>
+        <div class="col-12 col-lg-10 bg-dark scrollable-column independent-scroll d-flex flex-column">
+            <!-- Formularz wyszukiwania -->
+            <div class="card mt-3 bg-black bg-opacity-25 border-gray">
+                <div class="card-body">
+                    <form method="get" class="row g-3" 
+                        hx-get="{{ url('panel:partial_list_candidatures') }}"
+                        hx-target="#table-container"
+                        hx-trigger="change, keyup delay:300ms from:input, click from:.dropdown-item, submit"
+                        hx-push-url="false" hx-indicator="#tableSpinner">
+                        <div class="col-lg-6 col-12">
+                            <label for="candidatesSearch" class="form-label text-light">Wyszukaj kandydata:</label>
+                            <div class="input-group">
+                                <span class="input-group-text" id="basic-addon1">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                        class="bi bi-search" viewBox="0 0 16 16">
+                                        <path
+                                            d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0">
+                                        </path>
+                                    </svg>
+                                </span>
+                                <input class="form-control" id="candidatesSearch" placeholder="Poszukaj kandydatów..."
+                                    name="search" value="{{ query | default('') }}"
+                                    hx-get="{{ url('panel:partial_candidates_search') }}" hx-trigger="keyup delay:250ms"
+                                    hx-target="#selectCanidatePlaceholder">
                             </div>
-                            <div class="col-lg-3 col-6">
-                                <label for="sort" class="form-label text-light">Sortuj według:</label>
-                                <select name="sort" id="sort" class="form-select" onchange="this.form.submit()">
-                                    <option selected value="name" {% if current_sort == 'name' %}selected{% endif %}>Imię kandydata</option>
-                                    <option value="planned_start" {% if current_sort == 'planned_start' %}selected{% endif %}>Data startu głosowania</option>
-                                    <option value="created_at" {% if current_sort == 'created_at' %}selected{% endif %}>Data utworzenia kandydatury</option>
-                                    <option value="updated_at" {% if current_sort == 'updated_at' %}selected{% endif %}>Data edycji kandydatury</option>
-                                    <option value="id" {% if current_sort == 'id' %}selected{% endif %}>ID</option>
-                                </select>
-                            </div>
-                            <div class="col-lg-3 col-6">
-                                <label for="order" class="form-label text-light">Kolejność:</label>
-                                <select name="order" id="order" class="form-select" onchange="this.form.submit()">
-                                    <option value="asc" {% if current_order == 'asc' %}selected{% endif %}>↑ Rosnąco</option>
-                                    <option value="desc" {% if current_order == 'desc' %}selected{% endif %}>↓ Malejąco</option>
-                                </select>
-                            </div>
-                            <!-- Zachowaj aktualną stronę -->
-                            <input type="hidden" name="page" value="{{ page_obj.number }}">
-                        </form>
-                    </div>
-                </div>
-
-                <!-- Tabela kandydatów -->
-                <div class="card mt-3 bg-black bg-opacity-25 border-gray flex-grow-1 d-flex flex-column">
-                    <div class="card-body p-0 flex-grow-1 d-flex flex-column">
-                        <div class="table-responsive table-container">
-                            <table class="table table-dark table-striped table-hover mb-0 table-fixed">
-                                <thead class="table-dark">
-                                    <tr>
-                                        <th scope="col" class="text-center align-middle">ID</th>
-                                        <th scope="col" class="text-center align-middle">Zdjęcie</th>
-                                        <th scope="col" class="text-center align-middle">Imię i nazwisko</th>
-                                        <th scope="col" class="text-center align-middle">Klasa</th>
-                                        <th scope="col" class="text-center align-middle">Głosowanie na dzień</th>
-                                        <th scope="col" class="text-center align-middle">Kandydatura dopuszczona</th>
-                                        <th scope="col" class="text-center align-middle">Data utworzenia</th>
-                                        <th scope="col" class="text-center align-middle">Data edycji</th>
-                                        <th scope="col" class="text-center align-middle">Akcje</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% if page_obj %}
-                                        {% for c in page_obj %}
-                                            <tr>
-                                                <td class="text-center align-middle">
-                                                    <span>{{ c.id }}</span>
-                                                </td>
-                                                <td class="text-center align-middle">
-                                                    {% if c.candidate.image %}
-                                                        <img src="{{ c.candidate.image.url }}" class="candidate-avatar" alt="kandydat">
-                                                    {% else %}
-                                                        <img src="{{ static('no-pfp.jpg') }}" class="candidate-avatar" alt="kandydat">
-                                                    {% endif %}
-                                                </td>
-                                                <td class="text-center align-middle">
-                                                    <a href="{{ url('panel:update_candidate', kwargs={'candidate_id':c.candidate.id}) }}" class="link-light">
-                                                        <span>{{ c.candidate.first_name }} {{ c.candidate.second_name }} {{ c.candidate.last_name }}</span>
-                                                    </a>
-                                                </td>
-                                                <td class="text-center align-middle">
-                                                    <span>{{ c.candidate.school_class }}</span>
-                                                </td>
-                                                <td class="text-center align-middle">
-                                                    <a href="{{ url('panel:update_voting', kwargs={'voting_id':c.voting.id}) }}" class="link-light">
-                                                        <span class="small">{{ c.voting.parse_planned_start().strftime('%d.%m.%Y') }}</span>
-                                                    </a>
-                                                </td>
-                                                <td class="text-center align-middle">
-                                                    {% if c.is_eligible == True %}
-                                                    <span class="">Tak</span>
-                                                    {% else %}
-                                                    <span class="">Nie</span>
-                                                    {% endif %}
-                                                </td>
-                                                <td class="text-center align-middle">
-                                                    <span class="small">{{ c.parse_created_at().strftime('%d.%m.%Y') }}</span>
-                                                </td>
-                                                <td class="text-center align-middle">
-                                                    <span class="small">
-                                                        {% if c.created_at != c.updated_at%}
-                                                            {{ c.parse_updated_at().strftime('%d.%m.%Y') }}
-                                                        {% else %}
-                                                            -
-                                                        {% endif %}
-                                                    </span>
-                                                </td>
-                                                <td class="text-center align-middle">
-                                                    <a href="#" class="btn btn-sm btn-outline-eco-light-cyan">Podgląd</a>
-                                                    <a href="{{ url('panel:update_candidature', kwargs={'candidature_id':c.pk}) }}" class="btn btn-sm btn-outline-eco-light-cyan">Edytuj</a>
-                                                    <button btn-type="delete" btn-data="{{ c.pk }}" class="btn btn-sm btn-outline-danger">Usuń</button>
-                                                </td>
-                                            </tr>
-                                        {% endfor %}
-                                    {% else %}
-                                        <tr>
-                                            <td colspan="9" class="text-center text-muted py-4">
-                                                <i class="fas fa-user-slash fa-2x mb-2"></i><br>
-                                                {% if query %}
-                                                    Nie znaleziono kandydatów dla frazy: "{{ query }}"
-                                                {% else %}
-                                                    Brak kandydatów do wyświetlenia
-                                                {% endif %}
-                                            </td>
-                                        </tr>
-                                    {% endif %}
-                                </tbody>
-                            </table>
                         </div>
-                    </div>
+                        <div class="col-lg-2 col-4">
+                            <label for="sort" class="form-label text-light">Sortuj według:</label>
+                            <select name="sort" id="sort" class="form-select">
+                                <option selected value="name" {% if current_sort=='name' %}selected{% endif %}>Imię
+                                    kandydata</option>
+                                <option value="planned_start" {% if current_sort=='planned_start' %}selected{% endif %}>
+                                    Data startu głosowania</option>
+                                <option value="created_at" {% if current_sort=='created_at' %}selected{% endif %}>Data
+                                    utworzenia kandydatury</option>
+                                <option value="updated_at" {% if current_sort=='updated_at' %}selected{% endif %}>Data
+                                    edycji kandydatury</option>
+                                <option value="id" {% if current_sort=='id' %}selected{% endif %}>ID</option>
+                            </select>
+                        </div>
+                        <div class="col-lg-2 col-4">
+                            <label for="order" class="form-label text-light">Kolejność:</label>
+                            <select name="order" id="order" class="form-select">
+                                <option value="asc" {% if current_order=='asc' %}selected{% endif %}>↑ Rosnąco</option>
+                                <option value="desc" {% if current_order=='desc' %}selected{% endif %}>↓ Malejąco
+                                </option>
+                            </select>
+                        </div>
+                        <div class="col-lg-2 col-4">
+                            <label for="eligibleFilter" class="form-label text-light">Filtr dopuszczenia:</label>
+                            <div class="btn-group d-block" id="eligibleFilter">
+                                <button class="btn btn-secondary dropdown-toggle w-100 text-start" type="button"
+                                    data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+                                    Dopuszczono
+                                    <span
+                                        class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-eco-light-cyan"
+                                        id="eligibleFiltrBadge" style="display: none;">
+                                        <span id="eligibleFiltrCounter">2</span>
+                                        <span class="visually-hidden">Aktywne filtry</span>
+                                    </span>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><button class="dropdown-item" type="button" data-bs-toggle="button" btn-data="1"
+                                            value="1">Tak</button>
+                                    </li>
+                                    <li><button class="dropdown-item" type="button" data-bs-toggle="button" btn-data="0"
+                                            value="0">Nie</button>
+                                    </li>
+                                </ul>
+                                <input type="text" hidden id="eligibleInput" name="f_eligible" value="">
+                            </div>
+                        </div>
+                    </form>
                 </div>
-
-                <!-- Paginacja z zachowaniem wyszukiwania -->
-                <nav aria-label="pagination" class="mt-3 mb-3">
-                    <ul class="pagination justify-content-center">
-                        {% if page_obj.has_previous() %}
-                        <li class="page-item"><a class="page-link" href="?page=1&query={{ query|default('') }}">&laquo;&laquo; </a></li>
-                        <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number() }}&query={{ query|default('') }}">&laquo;</a></li>
-                        {% else %}
-                        <li class="page-item disabled"><a class="page-link">&laquo;&laquo; </a></li>
-                        <li class="page-item disabled"><a class="page-link">&laquo;</a></li>
-                        {% endif %}
-                        <li class="page-item active">
-                        <a class="page-link" href="#" aria-current="page">{{ page_obj.number }}</a>
-                        </li>
-                        {% if page_obj.has_next() %}
-                        <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number() }}&query={{ query|default('') }}">&raquo;</a></li>
-                        <li class="page-item"><a class="page-link" href="?page={{ page_obj.paginator.num_pages }}&query={{ query|default('') }}">&raquo;&raquo;</a></li>
-                        {% else %}
-                        <li class="page-item disabled"><a class="page-link">&raquo;</a></li>
-                        <li class="page-item disabled"><a class="page-link">&raquo;&raquo;</a></li>
-                        {% endif %}
-                    </ul>
-                </nav>
+            </div>
+            <div class="col-12 d-flex justify-content-center mt-1">
+                <div class="spinner-border htmx-indicator" role="status" id="tableSpinner">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+            <!-- Tabela kandydatów -->
+            <div id="table-container" hx-get="{{ url('panel:partial_list_candidatures') }}" hx-trigger="load"
+                hx-target="#table-container" hx-swap="innerHTML" hx-indicator="#tableSpinner">
             </div>
         </div>
-    </main>
-            <!-- Modal -->
-    <div class="modal fade" id="warningModal" tabindex="-1" aria-labelledby="warningModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
+    </div>
+</main>
+<!-- Modal -->
+<div class="modal fade" id="warningModal" tabindex="-1" aria-labelledby="warningModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
             <div class="modal-header">
                 <h1 class="modal-title fs-5 text-danger" id="warningModalLabel">Uwaga</h1>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                Usunięcie kandydatury sprawi trwałe usunięcie kandydatury z systemu łącznie ze wszystkimi jej statystykami. <br>
+                Usunięcie kandydatury sprawi trwałe usunięcie kandydatury z systemu łącznie ze wszystkimi jej
+                statystykami. <br>
                 <span class="text-danger fw-bold text-decoration-underline">
                     Operacji nie można cofnąć.
                 </span>
             </div>
             <div class="modal-footer">
                 <form action="{{ url('panel:delete_candidature') }}" method="post">
-                    <input hidden type="number" name="candidature_id" id="votingIdInput">
-                    <input hidden type="text" name="search" value="{{ query }}">
-                    <input hidden type="text" name="sort" value="{{ current_sort }}">
-                    <input hidden type="text" name="order" value="{{ current_order }}">
-                    <input hidden type="text" name="page" value="{{ page_obj.number }}">
+                    <input hidden type="number" name="candidature_id" id="candidatureIdInput">
                     {{ csrf_input }}
                     <button type="submit" class="btn btn-danger">Usuń</button>
                 </form>
             </div>
-            </div>
         </div>
     </div>
-    <script>
-        const warningModal = new bootstrap.Modal(document.getElementById('warningModal'))
-        const votingIdInput = document.getElementById('votingIdInput')
-        document.querySelectorAll('button[btn-type="delete"]').forEach(btn=>{
-            btn.addEventListener('click', (e)=>{
+</div>
+<script>
+    const modalEl = document.getElementById('warningModal')
+    const warningModal = new bootstrap.Modal(document.getElementById('warningModal'))
+    document.addEventListener('click', (e) => {
+        const btn = e.target.closest('button[btn-type="delete"]')
+        if (btn) {
+            const candidatureIdInput = document.getElementById('candidatureIdInput')
+            if (modalEl && candidatureIdInput) {
                 warningModal.show()
-                votingIdInput.value = Number(e.currentTarget.getAttribute('btn-data'))
-            })
+                candidatureIdInput.value = Number(btn.getAttribute('btn-data'))
+            }
+        }
+    })
+</script>
+<script>
+    let eligibleFilterCounter = 0
+    const eligibleBadge = document.getElementById('eligibleFiltrBadge')
+    const eligibleCounterElement = document.getElementById('eligibleFiltrCounter')
+    const eligibleInput = document.getElementById('eligibleInput')
+    const eligibleInputValues = new Object()
+    document.getElementById('eligibleFilter').querySelectorAll('button[btn-data]').forEach(e => {
+        e.addEventListener('click', event => {
+            if (event.target.classList.contains('active')) {
+                eligibleFilterCounter++
+                eligibleInputValues[event.target.value] = event.target.value
+            } else {
+                eligibleFilterCounter--
+                delete eligibleInputValues[event.target.value]
+            }
+            eligibleInput.value = Object.values(eligibleInputValues).join(',')
+            eligibleCounterElement.innerText = eligibleFilterCounter
+            if (eligibleFilterCounter > 0) {
+                eligibleBadge.style.display = 'inline-block'
+            } else {
+                eligibleBadge.style.display = 'none'
+            }
         })
-    </script>
+    })
+</script>
 {% endblock body_content %}

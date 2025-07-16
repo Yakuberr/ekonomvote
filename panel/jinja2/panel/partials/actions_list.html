@@ -58,11 +58,7 @@
                         <tr>
                             <td colspan="7" class="text-center text-muted py-4">
                                 <i class="fas fa-user-slash fa-2x mb-2"></i><br>
-                                {% if query %}
-                                    Nie znaleziono kont dla frazy: "{{ query }}"
-                                {% else %}
-                                    Brak wykonanych akcji
-                                {% endif %}
+                                    Brak wykonanych akcji dla podanych kryteriów
                             </td>
                         </tr>
                     {% endif %}
@@ -77,30 +73,30 @@
     <ul class="pagination justify-content-center">
         {% if page_obj.has_previous() %}
             <li class="page-item">
-                <a class="page-link" hx-get="?page=1&{{ querystring }}">««</a>
+                <a class="page-link" hx-get="{{ url('panel:list_actions_table') }}?page=1&{{ querystring }}" href="#">««</a>
             </li>
             <li class="page-item">
-                <a class="page-link" hx-get="?page={{ page_obj.previous_page_number() }}&{{ querystring }}">«</a>
+                <a class="page-link" hx-get="{{ url('panel:list_actions_table') }}?page={{ page_obj.previous_page_number() }}&{{ querystring }}" href="#">«</a>
             </li>
         {% else %}
-            <li class="page-item disabled"><a class="page-link">««</a></li>
-            <li class="page-item disabled"><a class="page-link">«</a></li>
+            <li class="page-item disabled"><a class="page-link" href="#">««</a></li>
+            <li class="page-item disabled"><a class="page-link" href="#">«</a></li>
         {% endif %}
 
         <li class="page-item active">
-            <a class="page-link">{{ page_obj.number }}</a>
+            <a class="page-link" href="#">{{ page_obj.number }}</a>
         </li>
 
         {% if page_obj.has_next() %}
             <li class="page-item">
-                <a class="page-link" hx-get="?page={{ page_obj.next_page_number() }}&{{ querystring }}">»</a>
+                <a class="page-link" hx-get="{{ url('panel:list_actions_table') }}?page={{ page_obj.next_page_number() }}&{{ querystring }}" href="#">»</a>
             </li>
             <li class="page-item">
-                <a class="page-link" hx-get="?page={{ page_obj.paginator.num_pages }}&{{ querystring }}">»»</a>
+                <a class="page-link" hx-get="{{ url('panel:list_actions_table') }}?page={{ page_obj.paginator.num_pages }}&{{ querystring }}" href="#">»»</a>
             </li>
         {% else %}
-            <li class="page-item disabled"><a class="page-link">»</a></li>
-            <li class="page-item disabled"><a class="page-link">»»</a></li>
+            <li class="page-item disabled"><a class="page-link" href="#">»</a></li>
+            <li class="page-item disabled"><a class="page-link" href="#">»»</a></li>
         {% endif %}
     </ul>
 </nav>

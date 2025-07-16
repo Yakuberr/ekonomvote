@@ -25,36 +25,10 @@
 </style>
 <main class="container-fluid overflow-hidden">
         <div class="row overflow-hidden">
-            <div class="col-12 col-md-3 col-lg-2 border-4 border-eco-light-cyan independent-scroll">
-                <ul class="nav flex-row flex-md-column">
-                    <li class="nav-item dropdown">
-                        <a class="nav-link link-eco-light-cyan dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-expanded="false">Lista</a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{{ url('panel:samorzad_index') }}">Głosowań</a></li>
-                            <li><a class="dropdown-item" href="{{ url('panel:list_candidates') }}">Kandydatów</a></li>
-                            <li><a class="dropdown-item" href="{{ url('panel:list_candidatures') }}">Kandydatur</a></li>
-                        </ul>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link link-eco-light-cyan" href="{{ url('panel:samorzad_add_empty_voting') }}">Dodaj głosowanie</a>
-                    </li>
-                    <hr class="d-none d-md-block m-2">
-                    <li class="nav-item d-none d-md-block">
-                        <a class="nav-link link-eco-light-cyan" href="{{ url('panel:samorzad_add_candidate') }}">Dodaj kandydata</a>
-                    </li>
-                    <li class="nav-item dropdown d-block d-md-none">
-                        <a class="nav-link active link-eco-light-cyan dropdown-toggle" aria-current="page" data-bs-toggle="dropdown" href="#" role="button" aria-expanded="false">Kandydaci</a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{{ url('panel:samorzad_add_candidate') }}">Dodaj kandydata</a></li>
-                            <li><a class="dropdown-item" href="{{ url('panel:samorzad_add_candidature') }}">Dodaj kandydature</a></li>
-                        </ul>
-                    </li>
-                    <li class="nav-item d-none d-md-block">
-                        <a class="nav-link active link-eco-light-cyan" aria-current="page" href="{{ url('panel:samorzad_add_candidature') }}">Dodaj kandydature</a>
-                    </li>
-                </ul>
+            <div class="col-12 col-lg-2 border-4 border-eco-light-cyan independent-scroll">
+            {{ render_samorzad_sidebar(current_page='add_candidature') }}
             </div>
-            <div class="col-12 col-md-9 col-lg-10 bg-dark scrollable-column d-flex justify-content-center flex-row independent-scroll">
+            <div class="col-12 col-lg-10 bg-dark scrollable-column d-flex justify-content-center flex-row independent-scroll">
                 {% if candidature_form.instance.pk %}
                 <form data-step-form class="multi-step-form flex-fill ms-md-5 me-md-5" action="{{ url('panel:update_candidature', kwargs={'candidature_id':candidature_form.instance.pk }) }}" method="post">
                      <fieldset data-step="0" class="mt-5 ms-sm-5 me-sm-5 bg-black bg-opacity-25 ps-5 pe-5 pt-4 pb-4 border border-2 border-eco-light-cyan rounded-3 no-animation mb-5">

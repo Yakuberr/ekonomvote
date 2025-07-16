@@ -11,6 +11,7 @@ from django.contrib.postgres.search import SearchRank, SearchQuery, SearchVector
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
+from django.db.models import Case, When, Value, CharField
 
 import pytz
 from urllib.parse import urlencode
@@ -19,7 +20,14 @@ from samorzad.models import Voting, Candidate, CandidateRegistration, ElectoralP
 from panel.forms import SamorzadAddEmptyVotingForm, SamorzadAddCandidateForm, CandidateRegistrationForm, ElectoralProgramForm
 from office_auth.auth_utils import opiekun_required
 from office_auth.models import ActionLog
-from .utils import get_changed_fields
+from .utils import get_changed_fields, build_sort_list, build_filter_kwargs
+
+def _create_voting_status(voting:Voting):
+    if voting.planned_start <= timezone.now() and voting.planned_end >= timezone.now():
+        return 'Aktywne'
+    elif voting.planned_end > timezone.now():
+        return 'Zaplanowane'
+    else:return 'Zakończone'
 
 
 # CREATE views
@@ -185,61 +193,87 @@ def partial_candidates_search(request:HttpRequest):
 @login_required(login_url='office_auth:microsoft_login')
 @opiekun_required()
 def samorzad_index(request:HttpRequest):
-    sort_by = request.GET.get('sort', 'planned_start')
-    order = request.GET.get('order', 'desc')
-    allowed_sort_fields = ['planned_start', 'planned_end', 'created_at', 'updated_at', 'id']
-    if sort_by not in allowed_sort_fields:
-        sort_by = 'planned_start'
-    if order not in ['asc', 'desc']:
-        order = 'desc'
-    if order == 'desc':
-        order_by = f'-{sort_by}'
-    else:
-        order_by = sort_by
+    status_list = ['Aktywne', 'Zaplanowane', 'Zakończone']
+    return render(request, 'panel/samorzad/samorzad_index.html', context={
+        'status_list': status_list,
+    })
+
+@require_http_methods(['GET'])
+@login_required(login_url='office_auth:microsoft_login')
+@opiekun_required()
+def partial_read_voting_list(request:HttpRequest):
+    SORT_MAP = {
+        'planned_start':['planned_start'],
+        'planned_end':['planned_end'],
+        'created_at':['created_at'],
+        'updated_at':['updated_at'],
+        'id':['id']
+    }
+    FILTER_MAP = {
+        'f_status': {
+            'field': 'status__in',
+            'allowed_values': ['Zaplanowane', "Aktywne", "Zakończone"],
+        },
+    }
+    sort_data = build_sort_list(SORT_MAP, request.GET)
     try:
         page_number = int(request.GET.get('page', 1))
     except ValueError:
         page_number = 1
-    votings = Voting.objects.prefetch_related('candidate_registrations').order_by(order_by)
+    now = timezone.now()
+    votings = Voting.objects.prefetch_related('candidate_registrations').order_by(*sort_data['sort_fields'])
+    votings = votings.annotate(
+        status=Case(
+            When(planned_start__lte=now, planned_end__gte=now, then=Value('Aktywne')),
+            When(planned_start__gt=now, then=Value('Zaplanowane')),
+            default=Value('Zakończone'),
+            output_field=CharField(),
+        )
+    )
+    filter_kwargs = build_filter_kwargs(FILTER_MAP, request.GET)
+    if filter_kwargs:
+        votings = votings.filter(**filter_kwargs)
     paginator = Paginator(votings, 25)
     if page_number > paginator.num_pages:
         page_number = paginator.num_pages
     page_obj = paginator.get_page(page_number)
-    return render(request, 'panel/samorzad/samorzad_index.html', context={
+    params = request.GET.copy()
+    params.pop('page', None)
+    querystring = params.urlencode()
+    return render(request, 'panel/samorzad/partials/voting_list.html', context={
         'page_obj':page_obj,
-        'current_sort': sort_by,
-        'current_order': order,
-        'allowed_fields': allowed_sort_fields
+        'querystring':querystring,
     })
 
 @login_required(login_url='office_auth:microsoft_login')
 @require_http_methods(['GET'])
 @opiekun_required()
 def list_candidates(request:HttpRequest):
+    return render(request, 'panel/samorzad/candidates_list.html', context={
+    })
+
+@login_required(login_url='office_auth:microsoft_login')
+@require_http_methods(['GET'])
+@opiekun_required()
+def partial_list_candidates(request:HttpRequest):
     SORT_MAP = {
         'name': ['first_name', 'second_name', 'last_name'],
         'created_at': ['created_at'],
         'updated_at': ['updated_at'],
         'id':['id'],
     }
-    sort_by = request.GET.get('sort', 'name')
-    order = request.GET.get('order', 'asc')
-    allowed_sort_fields = SORT_MAP.keys()
-    if sort_by not in allowed_sort_fields:
-        sort_by = 'name'
-    if order not in ['asc', 'desc']:
-        order = 'asc'
-    sort_fields = SORT_MAP[sort_by]
-    if order == 'desc':
-        sort_fields = [f'-{field}' for field in sort_fields]
+    sort_data = build_sort_list(SORT_MAP, request.GET)
     query = request.GET.get('search')
     if query is None or query == '':
-        candidates = Candidate.objects.all().order_by(*sort_fields)
+        candidates = Candidate.objects.all().order_by(*sort_data['sort_fields'])
         query = ''
     else:
         vector = SearchVector('first_name', 'second_name', 'last_name')
         search = SearchQuery(query, search_type='plain')
-        candidates = Candidate.objects.annotate(rank=SearchRank(vector, search)).filter(rank__gte=0.03).order_by('-rank', *sort_fields)
+        candidates = Candidate.objects.annotate(rank=SearchRank(vector, search)).filter(rank__gte=0.03).order_by('-rank', *sort_data['sort_fields'])
+    class_query = request.GET.get('search_class', '')
+    if class_query != '':
+        candidates = candidates.filter(school_class=class_query)
     try:
         page_number = int(request.GET.get('page', 1))
     except ValueError:
@@ -248,18 +282,24 @@ def list_candidates(request:HttpRequest):
     if page_number > paginator.num_pages:
         page_number = paginator.num_pages
     page_obj = paginator.get_page(page_number)
-    return render(request, 'panel/samorzad/candidates_list.html', context={
-        'page_obj':page_obj,
-        'query':query,
-        'current_sort': sort_by,
-        'current_order': order,
-        'allowed_fields': allowed_sort_fields
+    params = request.GET.copy()
+    params.pop('page', None)
+    querystring = params.urlencode()
+    return render(request, 'panel/samorzad/partials/candidates_list.html', context={
+        'page_obj': page_obj,
+        'querystring':querystring,
     })
 
 @login_required(login_url='office_auth:microsoft_login')
 @require_http_methods(['GET'])
 @opiekun_required()
 def list_candidatures(request:HttpRequest):
+    return render(request, 'panel/samorzad/candidatures_list.html', context={})
+
+@login_required(login_url='office_auth:microsoft_login')
+@require_http_methods(['GET'])
+@opiekun_required()
+def partial_list_candidatures(request:HttpRequest):
     query = request.GET.get('search')
     SORT_MAP = {
         'name': ['candidate__first_name', 'candidate__second_name', 'candidate__last_name'],
@@ -268,23 +308,27 @@ def list_candidatures(request:HttpRequest):
         'updated_at': ['updated_at'],
         'id':['id']
     }
-    sort_by = request.GET.get('sort', 'name')
-    order = request.GET.get('order', 'asc')
-    allowed_sort_fields = SORT_MAP.keys()
-    if sort_by not in allowed_sort_fields:
-        sort_by = 'name'
-    if order not in ['asc', 'desc']:
-        order = 'asc'
-    sort_fields = SORT_MAP[sort_by]
-    if order == 'desc':
-        sort_fields = [f'-{field}' for field in sort_fields]
+    FILTER_MAP = {
+        'f_eligible': {
+            'field': 'is_eligible',
+            'allowed_values': ['0', '1'],
+        },
+    }
+    filter_data = None
+    if request.GET.get('f_eligible') is not None:
+        if request.GET.get('f_eligible') in FILTER_MAP['f_eligible']['allowed_values']:
+            filter_data = {}
+            filter_data[FILTER_MAP['f_eligible']['field']] = bool(int(request.GET.get('f_eligible')))
+    sort_data = build_sort_list(SORT_MAP, request.GET)
     if query is None or query == '':
-        candidatures = CandidateRegistration.objects.select_related('candidate', 'voting').order_by(*sort_fields)
+        candidatures = CandidateRegistration.objects.select_related('candidate', 'voting').order_by(*sort_data['sort_fields'])
         query = ''
     else:
         vector = SearchVector('candidate__first_name', 'candidate__second_name', 'candidate__last_name')
         search = SearchQuery(query, search_type='plain')
-        candidatures = CandidateRegistration.objects.select_related('candidate', 'voting').annotate(rank=SearchRank(vector, search)).filter(rank__gte=0.03).order_by('-rank', *sort_fields)
+        candidatures = CandidateRegistration.objects.select_related('candidate', 'voting').annotate(rank=SearchRank(vector, search)).filter(rank__gte=0.03).order_by('-rank', *sort_data['sort_fields'])
+    if filter_data is not None:
+        candidatures = candidatures.filter(**filter_data)
     try:
         page_number = int(request.GET.get('page', 1))
     except ValueError:
@@ -293,12 +337,12 @@ def list_candidatures(request:HttpRequest):
     if page_number > paginator.num_pages:
         page_number = paginator.num_pages
     page_obj = paginator.get_page(page_number)
-    return render(request, 'panel/samorzad/candidatures_list.html', context={
+    params = request.GET.copy()
+    params.pop('page', None)
+    querystring = params.urlencode()
+    return render(request, 'panel/samorzad/partials/candidatures_list.html', context={
         'page_obj':page_obj,
-        'query':query,
-        'current_sort': sort_by,
-        'current_order': order,
-        'allowed_fields': allowed_sort_fields
+        'querystring':querystring,
     })
 
 # UPDATE views
@@ -569,6 +613,8 @@ def delete_candidature(request:HttpRequest):
 def redirect_to_candidature(request:HttpRequest, electoral_program_id:int):
     candidature = get_object_or_404(CandidateRegistration, electoral_program=electoral_program_id)
     return redirect(reverse('panel:update_candidature', kwargs={'candidature_id':candidature.id}))
+
+# TODO: Timelinechart powinien wyświetlać dane DO momentu zakończenia głosowania
 
 
 
