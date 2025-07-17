@@ -68,8 +68,6 @@ def partial_list_old_votings(request:HttpRequest):
 def get_timeline_data(request, voting_id):
     voting = get_object_or_404(Voting, pk=voting_id)
     warsaw_tz = pytz.timezone('Europe/Warsaw')
-    print(voting.planned_start.astimezone(warsaw_tz))
-    print(voting.id)
 
     # Określenie pełnego zakresu czasowego
     start_time = voting.planned_start.astimezone(warsaw_tz).replace(minute=0, second=0, microsecond=0)
