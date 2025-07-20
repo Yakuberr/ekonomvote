@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from django.db import models
 from django.core.validators import MinValueValidator
 from django.utils.translation import gettext_lazy as _
@@ -8,12 +10,17 @@ import pytz
 
 from office_auth.models import AzureUser
 
+WARSAW_TZ = pytz.timezone('Europe/Warsaw')
 
 class Oscar(models.Model):
     name = models.CharField(max_length=2048, null=False)
     info = models.CharField(max_length=12000, null=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    @staticmethod
+    def localize_dt(dt:datetime):
+        return dt.astimezone(tz=WARSAW_TZ)
 
     def __str__(self):
         return f'Oscar(name={self.name})'
@@ -27,24 +34,45 @@ class Teacher(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    @staticmethod
+    def localize_dt(dt:datetime):
+        return dt.astimezone(tz=WARSAW_TZ)
+
     def __str__(self):
         return f'Teacher(first_name={self.first_name}, last_name={self.last_name})'
 
 
-class Voting(models.Model):
+class Competition (models.Model):
+    """Model reprezentujący pojedyńczą rywalizację w kontekście: nauczyciel-oscar-nominacja"""
+    oscar = models.ForeignKey(Oscar, on_delete=models.CASCADE, related_name='competitions')
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='competitions')
+    voting_round = models.ForeignKey('VotingRound', on_delete=models.CASCADE, related_name='competitions')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['teacher', 'oscar', 'voting_round'],
+                name='unique_comp_per_teacher_per_oscar_per_round',
+                violation_error_message="Nauczyciel w ramach pojedyńczej rywalizacji może istnieć tylko raz w ramach całego kontekstu rundy głosowania"
+            )
+        ]
+
+    def __str__(self):
+        return f'Competition(voting_round={self.voting_round}, oscar={self.oscar}, teacher={self.teacher})'
+
+    @staticmethod
+    def localize_dt(dt:datetime):
+        return dt.astimezone(tz=WARSAW_TZ)
+
+class VotingEvent(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    planned_start = models.DateTimeField(null=False, unique=True)
-    planned_end = models.DateTimeField(null=False, unique=True)
     with_nominations = models.BooleanField(default=False)
 
-    def parse_planned_start(self):
-        """Zwraca planned_start w formacie polskiej strefy czasowej w postaci stringa"""
-        return self.planned_start.astimezone(tz=pytz.timezone('Europe/Warsaw')).strftime('%Y.%m.%d %H:%M:%S')
-
-    def parse_planned_end(self):
-        """Zwraca planned_end w formacie polskiej strefy czasowej w postaci stringa"""
-        return self.planned_end.astimezone(tz=pytz.timezone('Europe/Warsaw')).strftime('%Y.%m.%d %H:%M:%S')
+    @staticmethod
+    def localize_dt(dt:datetime):
+        return dt.astimezone(tz=WARSAW_TZ)
 
     def clean(self):
         if self.planned_start <= timezone.now():
@@ -57,15 +85,15 @@ class Voting(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f'Voting(start={self.parse_planned_start()}, end={self.parse_planned_end()})'
+        return f'VotingEvent(start={self.localize_dt(self.planned_start.strftime('%Y.%m.%d %H:%M:%S'))}, end={self.localize_dt(self.planned_end.strftime('%Y.%m.%d %H:%M:%S'))})'
 
 
-class Nomination(models.Model):
-    class NominationRole(models.TextChoices):
+class VotingRound(models.Model):
+    class VotingRoundType(models.TextChoices):
         NOMINATION = 'N', _('Nominacja')
         FINAL = 'F', _('Finał')
 
-    voting = models.ForeignKey(Voting, on_delete=models.CASCADE, related_name='nominations')
+    voting_event = models.ForeignKey(VotingEvent, on_delete=models.CASCADE, related_name='voting_rounds')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     planned_start = models.DateTimeField(null=False, unique=True)
@@ -74,42 +102,32 @@ class Nomination(models.Model):
         default=1,
         validators=[MinValueValidator(1, 'Wartość musi być większa od 0')]
     )
-    role = models.CharField(choices=NominationRole.choices, default=NominationRole.FINAL)
+    round_type = models.CharField(choices=VotingRoundType.choices, default=VotingRoundType.FINAL)
 
-    def parse_planned_start(self):
-        """Zwraca planned_start w formacie polskiej strefy czasowej w postaci stringa"""
-        return self.planned_start.astimezone(tz=pytz.timezone('Europe/Warsaw')).strftime('%Y.%m.%d %H:%M:%S')
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['voting_event', 'round_type'],
+                name='unique_round_type_per_event',
+                violation_error_message="Typ rundy głosowania nie może się powtarzać w kontekście wydarzenia",
+            )
+        ]
 
-    def parse_planned_end(self):
-        """Zwraca planned_end w formacie polskiej strefy czasowej w postaci stringa"""
-        return self.planned_end.astimezone(tz=pytz.timezone('Europe/Warsaw')).strftime('%Y.%m.%d %H:%M:%S')
+    @staticmethod
+    def localize_dt(dt:datetime):
+        return dt.astimezone(tz=WARSAW_TZ)
 
     def clean(self):
         if self.planned_start <= timezone.now():
-            raise ValidationError("planned_start musi być większe niż obecna data i godzina.")
+            raise ValidationError("Początek głosowania musi być w przyszłości")
         if self.planned_start >= self.planned_end:
-            raise ValidationError("planned_start musi być mniejsze niż planned_end.")
-        voting = self.voting
-        nominations_count = voting.nominations.count()
-        # Sprawdzanie jeśli głosowanie ma WYŁĄCZONE nominacje
-        if not voting.with_nominations:
-            if self.role == self.NominationRole.NOMINATION:
-                raise ValidationError("Głosowanie nie może zawierać nominacji")
-            if nominations_count == 1:
-                raise ValidationError("Głosowanie nie może składać się tylko z rundy finałowej")
-        # Sprawdzanie jeśli głosowanie ma WŁĄCZONE nominacje
-        elif voting.with_nominations:
-            if nominations_count == 2:
-                raise ValidationError('Głosowanie może mieć tylko 2 etapy: nominacje i rundę finałową')
-            if nominations_count == 1 and self.role == self.NominationRole.NOMINATION:
-                raise ValidationError("2 rundą głosowania może być tylko głosowanie finałowe")
-            if nominations_count == 0 and self.role == self.NominationRole.FINAL:
-                raise ValidationError('1 rundą głosowania może być tylko głosowanie nominacyjne')
-        # Sprawdzanie zgodności pól role i max_tearchers_for_end
-        if self.role == self.NominationRole.NOMINATION and self.max_tearchers_for_end < 2:
-            raise ValidationError('Nominacja powinna mieć minimum 2 finałowych kandydatów')
-        if self.role == self.NominationRole.FINAL and self.max_tearchers_for_end > 1:
-            raise ValidationError("Finałowe głosowanie powinno mieć tylko 1 finałowego kandydata")
+            raise ValidationError("Początek musi być wcześniejszy niż koniec")
+
+        # Sprawdzenie logiki nominacji/finału
+        if self.round_type == self.RoundType.NOMINATION and self.max_winners < 2:
+            raise ValidationError('Nominacja musi mieć minimum 2 zwycięzców')
+        if self.round_type == self.RoundType.FINAL and self.max_winners != 1:
+            raise ValidationError('Finał może mieć tylko 1 zwycięzcę')
 
 
     def save(self, *args, **kwargs):
@@ -117,32 +135,44 @@ class Nomination(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f'Nomination(voting={self.voting.pk}, start={self.parse_planned_start()}, end={self.parse_planned_end()})'
+        return f'VotingRound(voting_event={self.voting_event.pk}, start={self.localize_dt(self.planned_start.strftime('%Y.%m.%d %H:%M:%S'))}, end={self.localize_dt(self.planned_end.strftime('%Y.%m.%d %H:%M:%S'))})'
 
 
 class Vote(models.Model):
-    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='votes')
-    oscar = models.ForeignKey(Oscar, on_delete=models.CASCADE, related_name='votes')
-    user = models.ForeignKey(AzureUser, on_delete=models.CASCADE, related_name='oscar_votes')
-    voting_round = models.ForeignKey(Nomination, on_delete=models.CASCADE, related_name='votes')
+    competition = models.ForeignKey(Competition, on_delete=models.CASCADE, related_name='votes')
+    microsoft_user = models.ForeignKey(AzureUser, on_delete=models.CASCADE, related_name='oscar_votes')
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         constraints = [
+            # Ograniczenie: użytkownik może głosować tylko raz na daną rywalizację
             models.UniqueConstraint(
-                fields=['user', 'oscar', 'voting_round'],
-                name='unique_vote_per_user_per_oscar_per_round'
+                fields=['microsoft_user', 'competition'],
+                name='unique_vote_per_competition',
+                violation_error_message="Użytkownik może zagłosować tylko raz na daną rywalizację"
             )
         ]
+
+    @staticmethod
+    def localize_dt(dt:datetime):
+        return dt.astimezone(tz=WARSAW_TZ)
 
     def __str__(self):
         return f'Vote(user={self.user.pk}, voting_round={self.voting_round.pk})'
 
     def clean(self):
-        vote_count = Vote.objects.filter(user=self.user, voting_round=self.voting_round).count()
-        oscar_count = Oscar.objects.all().count()
-        if vote_count >= oscar_count:
-            raise ValidationError(f"Można oddać tyle głosów ile jest oskarów ({oscar_count})")
+        existing = Vote.objects.filter(
+            microsoft_user=self.microsoft_user,
+            competition__oscar=self.competition.oscar,
+            competition__voting_round=self.competition.voting_round
+        )
+        if self.pk:
+            existing = existing.exclude(pk=self.pk)
+
+        if existing.exists():
+            raise ValidationError(
+                "Użytkownik może głosować tylko raz na tego samego oscara w tej samej rundzie."
+            )
 
     def save(self, *args, **kwargs):
         self.full_clean()
