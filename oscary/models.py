@@ -18,6 +18,10 @@ class Oscar(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    class Meta:
+        verbose_name = 'Oskar'
+        verbose_name_plural = 'Oskary'
+
     @staticmethod
     def localize_dt(dt:datetime):
         return dt.astimezone(tz=WARSAW_TZ)
@@ -34,6 +38,10 @@ class Teacher(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    class Meta:
+        verbose_name = 'Nauczyciel'
+        verbose_name_plural = 'Nauczyciele'
+
     @staticmethod
     def localize_dt(dt:datetime):
         return dt.astimezone(tz=WARSAW_TZ)
@@ -42,12 +50,13 @@ class Teacher(models.Model):
         return f'Teacher(first_name={self.first_name}, last_name={self.last_name})'
 
 
-class Competition (models.Model):
+class Candidature (models.Model):
     """Model reprezentujący pojedyńczą rywalizację w kontekście: nauczyciel-oscar-nominacja"""
-    oscar = models.ForeignKey(Oscar, on_delete=models.CASCADE, related_name='competitions')
-    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='competitions')
-    voting_round = models.ForeignKey('VotingRound', on_delete=models.CASCADE, related_name='competitions')
+    oscar = models.ForeignKey(Oscar, on_delete=models.CASCADE, related_name='candidatures')
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='candidatures')
+    voting_round = models.ForeignKey('VotingRound', on_delete=models.CASCADE, related_name='candidatures')
     created_at = models.DateTimeField(auto_now_add=True)
+
 
     class Meta:
         constraints = [
@@ -57,9 +66,11 @@ class Competition (models.Model):
                 violation_error_message="Nauczyciel w ramach pojedyńczej rywalizacji może istnieć tylko raz w ramach całego kontekstu rundy głosowania"
             )
         ]
+        verbose_name = "Kandydatura"
+        verbose_name_plural = "Kandydatury"
 
     def __str__(self):
-        return f'Competition(voting_round={self.voting_round}, oscar={self.oscar}, teacher={self.teacher})'
+        return f'Candidature(voting_round={self.voting_round}, oscar={self.oscar}, teacher={self.teacher})'
 
     @staticmethod
     def localize_dt(dt:datetime):
@@ -69,6 +80,10 @@ class VotingEvent(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     with_nominations = models.BooleanField(default=False)
+
+    class Meta:
+        verbose_name = 'Głosowanie'
+        verbose_name_plural = 'Głosowania'
 
     @staticmethod
     def localize_dt(dt:datetime):
@@ -112,6 +127,8 @@ class VotingRound(models.Model):
                 violation_error_message="Typ rundy głosowania nie może się powtarzać w kontekście wydarzenia",
             )
         ]
+        verbose_name = "Runda głosowania"
+        verbose_name_plural = "Rundy głosowań"
 
     @staticmethod
     def localize_dt(dt:datetime):
@@ -139,7 +156,7 @@ class VotingRound(models.Model):
 
 
 class Vote(models.Model):
-    competition = models.ForeignKey(Competition, on_delete=models.CASCADE, related_name='votes')
+    candidature = models.ForeignKey(Candidature, on_delete=models.CASCADE, related_name='votes', null=True)
     microsoft_user = models.ForeignKey(AzureUser, on_delete=models.CASCADE, related_name='oscar_votes')
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -147,11 +164,13 @@ class Vote(models.Model):
         constraints = [
             # Ograniczenie: użytkownik może głosować tylko raz na daną rywalizację
             models.UniqueConstraint(
-                fields=['microsoft_user', 'competition'],
-                name='unique_vote_per_competition',
+                fields=['microsoft_user', 'candidature'],
+                name='unique_vote_per_candidature',
                 violation_error_message="Użytkownik może zagłosować tylko raz na daną rywalizację"
             )
         ]
+        verbose_name = "Głos"
+        verbose_name_plural = "Głosy"
 
     @staticmethod
     def localize_dt(dt:datetime):
@@ -163,8 +182,8 @@ class Vote(models.Model):
     def clean(self):
         existing = Vote.objects.filter(
             microsoft_user=self.microsoft_user,
-            competition__oscar=self.competition.oscar,
-            competition__voting_round=self.competition.voting_round
+            candidature__oscar=self.candidature.oscar,
+            candidature__voting_round=self.candidature.voting_round
         )
         if self.pk:
             existing = existing.exclude(pk=self.pk)
