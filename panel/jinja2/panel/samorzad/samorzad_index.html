@@ -1,183 +1,195 @@
 {% extends "panel/samorzad/samorzad_base.html" %}
 {% block title %}
-    Samorząd - lista głosowań
+Samorząd - lista głosowań
 {% endblock title %}
 {% block head_css_internal %}
-                        <style>
-                            .table-fixed {
-                                table-layout: fixed;
-                                width: 100%;
-                            }
-                        
-                            .table-fixed th,
-                            .table-fixed td {
-                                overflow: hidden;
-                                text-overflow: ellipsis;
-                                white-space: nowrap;
-                            }
-                        
-                            .table-fixed .period-column {
-                                white-space: normal;
-                            }
-                        
-                            .number-column {
-                                font-family: 'Courier New', monospace;
-                                font-weight: bold;
-                            }
-                        
-                            .table-container {
-                                flex-grow: 1;
-                                overflow-y: auto;
-                                max-height: calc(100vh - 200px);
-                            }
-                            .dropdown-item.active{
-                                background-color: #ffffff00;
-                                color: var(--bs-eco-light-cyan);
-                                text-decoration: underline;
-                            }
-                            .dropdown-item:active{
-                                background-color: var(--bs-dark);
-                            }
-                            .dropdown-menu {
-                                min-width: 100%;
-                            }
-                        </style>
+<style>
+    .table-fixed {
+        table-layout: fixed;
+        width: 100%;
+    }
+
+    .table-fixed th,
+    .table-fixed td {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .table-fixed .period-column {
+        white-space: normal;
+    }
+
+    .number-column {
+        font-family: 'Courier New', monospace;
+        font-weight: bold;
+    }
+
+    .table-container {
+        flex-grow: 1;
+        overflow-y: auto;
+        max-height: calc(100vh - 200px);
+    }
+
+    .dropdown-item.active {
+        background-color: #ffffff00;
+        color: var(--bs-eco-light-cyan);
+        text-decoration: underline;
+    }
+
+    .dropdown-item:active {
+        background-color: var(--bs-dark);
+    }
+
+    .dropdown-menu {
+        min-width: 100%;
+    }
+</style>
 {% endblock %}
 {% block body_navbar %}
-    {{ render_navbar(csrf_input, current_page='samorząd') }}
+{{ render_navbar(csrf_input, current_page='samorząd') }}
 {% endblock %}
 {% block body_content %}
 <main class="container-fluid overflow-hidden">
-        <div class="row overflow-hidden">
-            <div class="col-12 col-lg-2 border-4 border-eco-light-cyan independent-scroll">
+    <div class="row overflow-hidden">
+        <div class="col-12 col-lg-2 border-4 border-eco-light-cyan independent-scroll">
             {{ render_samorzad_sidebar(current_page='index') }}
-            </div>
-            <div class="col-12 col-lg-10 bg-dark scrollable-column independent-scroll">
-                <div class="card mt-3 bg-black bg-opacity-25 border-gray">
-                    <div class="card-body">
-                        <form method="get" class="row g-3" id="filterForm"
-                            hx-get="{{ url('panel:partial_read_voting_list') }}"
-                            hx-target="#table-container"
-                            hx-trigger="change, keyup delay:300ms from:input, click from:.form-dropdown-item, submit"
-                            hx-push-url="false"
-                            hx-indicator="#tableSpinner">
-                            <div class="col-4">
-                                <label for="sort" class="form-label text-light">Sortuj według:</label>
-                                <select name="sort" id="sort" class="form-select">
-                                    <option value="id">ID</option>
-                                    <option selected value="planned_start">Data rozpoczęcia</option>
-                                    <option value="planned_end">Data zakończenia</option>
-                                    <option value="created_at">Data utworzenia</option>
-                                    <option value="updated_at">Data edycji</option>
-                                </select>
-                            </div>
-                            <div class="col-4">
-                                <label for="order" class="form-label text-light">Kolejność:</label>
-                                <select name="order" id="order" class="form-select">
-                                    <option value="asc">↑ Rosnąco</option>
-                                    <option value="desc">↓ Malejąco</option>
-                                </select>
-                            </div>
-                            <div class="col-4">
-                                <label for="statusFilter" class="form-label text-light">Filtr statusu:</label>
-                                <div class="btn-group d-block" id="statusFilter">
-                                    <button class="btn btn-secondary dropdown-toggle w-100 text-start" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
-                                        Rodzaje statusu
-                                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-eco-light-cyan" id="statusFiltrBadge" style="display: none;">
-                                            <span id="statusFiltrCounter">2</span>
-                                        <span class="visually-hidden">Aktywne filtry</span>
-                                        </span>
-                                    </button>
-                                    <ul class="dropdown-menu">
-                                        {% for element in status_list %}
-                                        <li><button class="dropdown-item form-dropdown-item" type="button" data-bs-toggle="button" btn-data="{{ element }}" value="{{ element }}">{{ element }}</button></li>
-                                        {% endfor %}
-                                    </ul>
-                                    <input type="text" hidden id="statusInput" name="f_status" value="">
-                                </div>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-                <!-- Tabela głosowań -->
-                <div class="col-12 d-flex justify-content-center mt-1">
-                    <div class="spinner-border htmx-indicator" role="status" id="tableSpinner">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                </div>
-                <div id="table-container"
-                    hx-get="{{ url('panel:partial_read_voting_list') }}?{{ request.GET.urlencode() }}"
-                    hx-trigger="load"
-                    hx-target="#table-container"
-                    hx-swap="innerHTML"
-                    hx-indicator="#tableSpinner">
-
-                </div>
-            </div>
         </div>
-    </main>
-    <!-- Modal -->
-    <div class="modal fade" id="warningModal" tabindex="-1" aria-labelledby="warningModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h1 class="modal-title fs-5 text-danger" id="warningModalLabel">Uwaga</h1>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    Usunięcie głosowania sprawi trwałe usunięcie głosowania z systemu łącznie ze wszystkimi statystykami.
-                    <br>
-                    <span class="text-danger fw-bold text-decoration-underline">
-                        Operacji nie można cofnąć.
-                    </span>
-                </div>
-                <div class="modal-footer">
-                    <form action="{{ url('panel:delete_voting') }}" method="post">
-                        {{ csrf_input }}
-                        <button type="submit" class="btn btn-danger">Usuń</button>
-                        <input type="number" id="votingIdInput" hidden name="voting_id">
+        <div class="col-12 col-lg-10 bg-dark scrollable-column independent-scroll">
+            <div class="card mt-3 mt-lg-4 bg-black bg-opacity-25 border-gray shadow-lg">
+                <div class="card-body">
+                    <form method="get" class="row g-3" id="filterForm"
+                        hx-get="{{ url('panel:partial_read_voting_list') }}" hx-target="#table-container"
+                        hx-trigger="change, keyup delay:300ms from:input, click from:.form-dropdown-item, submit"
+                        hx-push-url="false" hx-indicator="#tableSpinner">
+                        <div class="col-6 col-sm-4">
+                            <label for="sort" class="form-label text-light">Sortuj według:</label>
+                            <select name="sort" id="sort" class="form-select">
+                                <option value="id">ID</option>
+                                <option selected value="planned_start">Data rozpoczęcia</option>
+                                <option value="planned_end">Data zakończenia</option>
+                                <option value="created_at">Data utworzenia</option>
+                                <option value="updated_at">Data edycji</option>
+                            </select>
+                        </div>
+                        <div class="col-6 col-sm-4">
+                            <label for="order" class="form-label text-light">Kolejność:</label>
+                            <select name="order" id="order" class="form-select">
+                                <option value="asc">↑ Rosnąco</option>
+                                <option value="desc">↓ Malejąco</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-sm-4">
+                            <label for="statusFilter" class="form-label text-light">Filtr statusu:</label>
+                            <div class="btn-group d-block" id="statusFilter">
+                                <button class="btn btn-secondary dropdown-toggle w-100 text-start" type="button"
+                                    data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+                                    Rodzaje statusu
+                                    <span
+                                        class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-eco-light-cyan"
+                                        id="statusFiltrBadge" style="display: none;">
+                                        <span id="statusFiltrCounter">2</span>
+                                        <span class="visually-hidden">Aktywne filtry</span>
+                                    </span>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    {% for element in status_list %}
+                                    <li><button class="dropdown-item form-dropdown-item" type="button"
+                                            data-bs-toggle="button" btn-data="{{ element }}" value="{{ element }}">{{
+                                            element }}</button></li>
+                                    {% endfor %}
+                                </ul>
+                                <input type="text" hidden id="statusInput" name="f_status" value="">
+                            </div>
+                        </div>
                     </form>
                 </div>
             </div>
+            <!-- Tabela głosowań -->
+            <div class="col-12 d-flex justify-content-center pt-3">
+                <div class="spinner-border htmx-indicator" role="status" id="tableSpinner">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+            <div id="table-container" hx-get="{{ url('panel:partial_read_voting_list') }}?{{ request.GET.urlencode() }}"
+                hx-trigger="load" hx-target="#table-container" hx-swap="innerHTML" hx-indicator="#tableSpinner">
+
+            </div>
         </div>
     </div>
-    <script>
-        let statusFilterCounter = 0
-        const statusBadge = document.getElementById('statusFiltrBadge')
-        const statusCounterElement = document.getElementById('statusFiltrCounter')
-        const statusInput = document.getElementById('statusInput')
-        const statusInputValues = new Object()
-        document.getElementById('statusFilter').querySelectorAll('button[btn-data]').forEach(e=>{
-            e.addEventListener('click', event=>{
-                if(event.target.classList.contains('active')){
-                    statusFilterCounter++
-                    statusInputValues[event.target.value] = event.target.value
-                }else{
-                    statusFilterCounter--
-                    delete statusInputValues[event.target.value]
-                }
-                statusInput.value = Object.values(statusInputValues).join(',')
-                statusCounterElement.innerText=statusFilterCounter
-                if (statusFilterCounter > 0) {
-                    statusBadge.style.display = 'inline-block'
-                }else{
-                    statusBadge.style.display = 'none'
-                }
-            })
-        })
-    </script>
-    <script>
-        const modalEl = document.getElementById('warningModal')
-        const warningModal = new bootstrap.Modal(document.getElementById('warningModal'))
-        document.addEventListener('click', (e) => {
-            const btn = e.target.closest('button[btn-type="delete"]')
-            if (btn) {
-                const votingIdInput = document.getElementById('votingIdInput')
-                if (modalEl && votingIdInput) {
-                    warningModal.show()
-                    votingIdInput.value = Number(btn.getAttribute('btn-data'))
-                }
+</main>
+<!-- Modal -->
+<div class="modal fade" id="warningModal" tabindex="-1" aria-labelledby="warningModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5 text-danger" id="warningModalLabel">Uwaga</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Usunięcie głosowania sprawi trwałe usunięcie głosowania z systemu łącznie ze wszystkimi statystykami.
+                <br>
+                <span class="text-danger fw-bold text-decoration-underline">
+                    Operacji nie można cofnąć.
+                </span>
+            </div>
+            <div class="modal-footer">
+                <form hx-post="{{ url('panel:delete_voting') }}" hx-target="">
+                    {{ csrf_input }}
+                    <button type="submit" class="btn btn-danger">Usuń</button>
+                    <input type="number" id="votingIdInput" hidden name="voting_id">
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    let statusFilterCounter = 0
+    const statusBadge = document.getElementById('statusFiltrBadge')
+    const statusCounterElement = document.getElementById('statusFiltrCounter')
+    const statusInput = document.getElementById('statusInput')
+    const statusInputValues = new Object()
+    document.getElementById('statusFilter').querySelectorAll('button[btn-data]').forEach(e => {
+        e.addEventListener('click', event => {
+            if (event.target.classList.contains('active')) {
+                statusFilterCounter++
+                statusInputValues[event.target.value] = event.target.value
+            } else {
+                statusFilterCounter--
+                delete statusInputValues[event.target.value]
+            }
+            statusInput.value = Object.values(statusInputValues).join(',')
+            statusCounterElement.innerText = statusFilterCounter
+            if (statusFilterCounter > 0) {
+                statusBadge.style.display = 'inline-block'
+            } else {
+                statusBadge.style.display = 'none'
             }
         })
-    </script>
+    })
+</script>
+<script>
+    const modalEl = document.getElementById('warningModal')
+    const warningModal = new bootstrap.Modal(document.getElementById('warningModal'))
+    const modalForm = modalEl.querySelector('form')
+    document.addEventListener('click', (e) => {
+        const btn = e.target.closest('button[btn-type="delete"]')
+        if (btn) {
+            const votingIdInput = document.getElementById('votingIdInput')
+            if (modalEl && votingIdInput) {
+                warningModal.show()
+                votingIdInput.value = Number(btn.getAttribute('btn-data'))
+                modalForm.setAttribute('hx-target', `#tableRow${btn.getAttribute('btn-row')}`)
+            }
+        }
+    })
+</script>
+<script>
+    document.body.addEventListener('htmx:afterRequest', function (event) {
+        const modal = bootstrap.Modal.getInstance(document.getElementById('warningModal'));
+        if (modal) {
+            modal.hide();
+        }
+    });
+</script>
 {% endblock body_content %}

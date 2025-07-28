@@ -39,18 +39,21 @@
 {% macro render_messages(request) %}
 {% set messages = get_messages(request) %}
 {% if messages %}
-<div class="fixed-top" style="top: 0px; z-index: 1050;">
-  {% for message in messages %}
-  <div class="alert
+<div class="fixed-top d-flex justify-content-center" style="top: 20px; z-index: 1050; pointer-events: none;">
+  <div style="pointer-events: auto; max-width: 650px; width: auto; min-width: 450px;">
+    {% for message in messages %}
+    <div class="alert
              {% if message.tags == 'error' %}alert-danger
              {% elif message.tags == 'warning' %}alert-warning
              {% elif message.tags == 'info' %}alert-info
              {% else %}alert-success{% endif %}
-             alert-dismissible fade show m-3" role="alert" data-auto-dismiss="4000">
-    {{ message }}
-    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+             alert-dismissible fade show mb-2" role="alert" data-auto-dismiss="3000"
+      style="border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+      {{ message }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
   </div>
-  {% endfor %}
 </div>
 <style>
   .alert {
@@ -61,13 +64,13 @@
 {% endmacro %}
 
 {% macro render_samorzad_sidebar(current_page=None) %}
-<ul class="nav flex-row flex-lg-column">
+<ul class="nav flex-row flex-lg-column mt-3 mt-lg-4">
   <li class="nav-item dropdown d-block d-lg-none">
-    {% if current_page == 'index' %}
-      <a class="nav-link active link-eco-light-cyan dropdown-toggle" aria-current="page" data-bs-toggle="dropdown"
+    {% if current_page == 'index' or current_page == 'candidates_list' or current_page == 'candidatures_list' %}
+      <a class="nav-link link-eco-light-cyan dropdown-toggle" aria-current="page" data-bs-toggle="dropdown"
       href="#" role="button" aria-expanded="false">Lista</a>
     {% else %}
-      <a class="nav-link link-eco-light-cyan dropdown-toggle" data-bs-toggle="dropdown"
+      <a class="nav-link sidebar-link dropdown-toggle" data-bs-toggle="dropdown"
       href="#" role="button" aria-expanded="false">Lista</a>
     {% endif %}
     <ul class="dropdown-menu">
@@ -78,46 +81,46 @@
   </li>
   <li class="nav-item d-none d-lg-block">
     {% if current_page == 'index' %}
-    <a class="nav-link active link-eco-light-cyan" href="{{ url('panel:samorzad_index') }}" aria-current="page">Lista głosowań</a>
+    <a class="nav-link link-eco-light-cyan" href="{{ url('panel:samorzad_index') }}" aria-current="page">Lista głosowań</a>
     {% else %}
-    <a class="nav-link link-eco-light-cyan" href="{{ url('panel:samorzad_index') }}">Lista głosowań</a>
+    <a class="nav-link sidebar-link" href="{{ url('panel:samorzad_index') }}">Lista głosowań</a>
     {% endif %}
   </li>
   <li class="nav-item d-none d-lg-block">
     {% if current_page == 'candidates_list' %}
-    <a class="nav-link active link-eco-light-cyan" href="{{ url('panel:list_candidates') }}" aria-current="page">Lista kandydatów</a>
+    <a class="nav-link link-eco-light-cyan" href="{{ url('panel:list_candidates') }}" aria-current="page">Lista kandydatów</a>
     {% else %}
-    <a class="nav-link link-eco-light-cyan" href="{{ url('panel:list_candidates') }}">Lista kandydatów</a>
+    <a class="nav-link sidebar-link" href="{{ url('panel:list_candidates') }}">Lista kandydatów</a>
     {% endif %}
   </li>
   <li class="nav-item d-none d-lg-block">
     {% if current_page == 'candidatures_list' %}
-    <a class="nav-link active link-eco-light-cyan" href="{{ url('panel:list_candidatures') }}" aria-current="page">Lista kandydatur</a>
+    <a class="nav-link link-eco-light-cyan" href="{{ url('panel:list_candidatures') }}" aria-current="page">Lista kandydatur</a>
     {% else %}
-    <a class="nav-link link-eco-light-cyan" href="{{ url('panel:list_candidatures') }}">Lista kandydatur</a>
+    <a class="nav-link sidebar-link" href="{{ url('panel:list_candidatures') }}">Lista kandydatur</a>
     {% endif %}
   </li>
   <hr class="d-none d-lg-block m-2">
   <li class="nav-item ">
     {% if current_page == 'add_voting' %}
-    <a class="nav-link active link-eco-light-cyan" href="{{ url('panel:samorzad_add_empty_voting') }}" aria-current="page">Dodaj głosowanie</a>
+    <a class="nav-link link-eco-light-cyan" href="{{ url('panel:samorzad_add_empty_voting') }}" aria-current="page">Dodaj głosowanie</a>
     {% else %}
-    <a class="nav-link link-eco-light-cyan" href="{{ url('panel:samorzad_add_empty_voting') }}">Dodaj głosowanie</a>
+    <a class="nav-link sidebar-link" href="{{ url('panel:samorzad_add_empty_voting') }}">Dodaj głosowanie</a>
     {% endif %}
   </li>
   <li class="nav-item d-none d-lg-block">
     {% if current_page == 'add_candidate' %}
-    <a class="nav-link active link-eco-light-cyan" href="{{ url('panel:samorzad_add_candidate') }}" aria-current="page">Dodaj kandydata</a>
+    <a class="nav-link link-eco-light-cyan" href="{{ url('panel:samorzad_add_candidate') }}" aria-current="page">Dodaj kandydata</a>
     {% else %}
-    <a class="nav-link link-eco-light-cyan" href="{{ url('panel:samorzad_add_candidate') }}">Dodaj kandydata</a>
+    <a class="nav-link sidebar-link" href="{{ url('panel:samorzad_add_candidate') }}">Dodaj kandydata</a>
     {% endif %}
   </li>
   <li class="nav-item dropdown d-block d-lg-none">
     {% if current_page == 'add_candidate' or current_page == 'add_candidature' %}
-    <a class="nav-link active link-eco-light-cyan dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button"
+    <a class="nav-link link-eco-light-cyan dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button"
     aria-expanded="false" aria-current="page">Kandydaci</a>
     {% else %}
-    <a class="nav-link link-eco-light-cyan dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button"
+    <a class="nav-link sidebar-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button"
     aria-expanded="false">Kandydaci</a>
     {% endif %}
     <ul class="dropdown-menu">
@@ -127,9 +130,9 @@
   </li>
   <li class="nav-item d-none d-lg-block">
     {% if current_page == 'add_candidature' %}
-    <a class="nav-link active link-eco-light-cyan" href="{{ url('panel:samorzad_add_candidature') }}" aria-current="page">Dodaj kandydature</a>
+    <a class="nav-link link-eco-light-cyan" href="{{ url('panel:samorzad_add_candidature') }}" aria-current="page">Dodaj kandydature</a>
     {% else %}
-    <a class="nav-link link-eco-light-cyan" href="{{ url('panel:samorzad_add_candidature') }}">Dodaj kandydature</a>
+    <a class="nav-link sidebar-link" href="{{ url('panel:samorzad_add_candidature') }}">Dodaj kandydature</a>
     {% endif %}
   </li>
 </ul>

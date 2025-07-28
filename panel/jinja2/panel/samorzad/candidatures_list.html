@@ -35,7 +35,7 @@ Samorząd - lista kandydatur
         width: 50px;
         height: 50px;
         object-fit: cover;
-        border-radius: 50%;
+        border-radius: 10%;
     }
 
     .dropdown-item.active {
@@ -68,7 +68,7 @@ Samorząd - lista kandydatur
         </div>
         <div class="col-12 col-lg-10 bg-dark scrollable-column independent-scroll d-flex flex-column">
             <!-- Formularz wyszukiwania -->
-            <div class="card mt-3 bg-black bg-opacity-25 border-gray">
+            <div class="card mt-3 mt-lg-4 bg-black bg-opacity-25 border-gray shadow lg">
                 <div class="card-body">
                     <form method="get" class="row g-3" 
                         hx-get="{{ url('panel:partial_list_candidatures') }}"
@@ -141,7 +141,7 @@ Samorząd - lista kandydatur
                     </form>
                 </div>
             </div>
-            <div class="col-12 d-flex justify-content-center mt-1">
+            <div class="col-12 d-flex justify-content-center pt-3">
                 <div class="spinner-border htmx-indicator" role="status" id="tableSpinner">
                     <span class="visually-hidden">Loading...</span>
                 </div>

@@ -1,13 +1,14 @@
 {% from 'office_auth/macros.html' import render_navbar, render_messages %}
 <!DOCTYPE html>
 <html lang="pl" data-bs-theme="dark">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Głosowanie numer {{ voting.id }}</title>
     <link rel="stylesheet" href="{{ static('css/custom-boostrap.min.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
-    <link rel="shortcut icon" type="image/png" href="{{ static('logo.ico') }}" >
+    <link rel="shortcut icon" type="image/png" href="{{ static('logo.ico') }}">
     <style>
         .navbar-toggler,
         .navbar-toggler:focus,
@@ -25,23 +26,28 @@
             font-size: 0.9rem;
             color: var(--bs-secondary-color);
         }
-        .accordion{
-                --bs-accordion-active-color: rgb(235, 235, 235);
-                --bs-accordion-active-bg: #077a7400;
+
+        .accordion {
+            --bs-accordion-active-color: rgb(235, 235, 235);
+            --bs-accordion-active-bg: #077a7400;
         }
-        .accordion-button:focus{
+
+        .accordion-button:focus {
             box-shadow: none;
         }
-        .accordion-voted{
+
+        .accordion-voted {
             color: white;
             background-color: #077a75 !important;
         }
-        .accordion-voted-pernament{
+
+        .accordion-voted-pernament {
             color: white;
             background-color: #05645e96 !important;
         }
     </style>
 </head>
+
 <body>
     <script src="{{ static('bootstrap/bootstrap.bundle.min.js') }}"></script>
     <script src="{{ static('htmx/htmx.min.js') }}"></script>
@@ -49,13 +55,13 @@
     {{ render_messages(request) }}
     {{ render_navbar(csrf_input) }}
     <main class="container mt-5">
-        <div class="row mb-4">
+        <div class="row mb-3">
             <div class="col d-flex justify-content-center">
                 <h2 class="d-none d-md-block">Głosowanie na przewodniczącego samorządu uczniowskiego</h2>
                 <h2 class="d-md-none text-center">Głosowanie na przewodniczącego</h2>
             </div>
         </div>
-        <div class="row mb-4">
+        <div class="row mb-3">
             <div class="col d-flex justify-content-center fs-5">
                 Do końca głosowania zostało:&nbsp;<div id="countdownHolder"></div>
             </div>
@@ -67,28 +73,37 @@
         </div>
         <div class="row mb-4">
             <div class="col">
-                <div class="accordion" id="candidatesAccordion">
+                <div class="accordion shadow-lg" id="candidatesAccordion">
                     {% for reg in registrations %}
                     <div class="accordion-item" id="accordionItem{{ reg.id }}">
                         <h2 class="accordion-header">
-                            <button class="accordion-button d-flex flex-row gap-3 align-items-center collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{loop.index}}" aria-expanded="false" aria-controls="collapseOne" style="min-height: 44px;">
-                                <img src="{% if reg.candidate.image %} {{ reg.candidate.image.url }} {% else %}  {{ static('no-pfp.jpg') }} {% endif %}" style="width: 75px; max-width: 100%;" alt="Zdjęcie kandydata: {{ reg.candidate.first_name }} {{ reg.candidate.second_name }} {{ reg.candidate.last_name }}" class="rounded img-fluid">
+                            <button class="accordion-button d-flex flex-row gap-3 align-items-center collapsed"
+                                type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{loop.index}}"
+                                aria-expanded="false" aria-controls="collapseOne" style="min-height: 44px;">
+                                <img src="{% if reg.candidate.image %} {{ reg.candidate.image.url }} {% else %}  {{ static('no-pfp.jpg') }} {% endif %}"
+                                    style="width: 75px; max-width: 100%;"
+                                    alt="Zdjęcie kandydata: {{ reg.candidate.first_name }} {{ reg.candidate.second_name }} {{ reg.candidate.last_name }}"
+                                    class="rounded img-fluid">
                                 <div class="">
-                                    <strong>{{ reg.candidate.first_name }} {{ reg.candidate.second_name }} {{ reg.candidate.last_name }}</strong>
+                                    <strong>{{ reg.candidate.first_name }} {{ reg.candidate.second_name }} {{
+                                        reg.candidate.last_name }}</strong>
                                     {% if reg.has_voted %}
                                     <i class="fa-solid fa-xmark text-eco-light-cyan"></i>
                                     {% endif %}
                                     <br>
-                                    <small class="text-muted">Klasa: {{ reg.candidate.school_class }}</small>
+                                    <small class="text-muted">{{ reg.candidate.school_class }}</small>
                                 </div>
                             </button>
                         </h2>
-                        <div id="collapse{{loop.index}}" class="accordion-collapse collapse" data-bs-parent="#candidatesAccordion">
+                        <div id="collapse{{loop.index}}" class="accordion-collapse collapse"
+                            data-bs-parent="#candidatesAccordion">
                             <div class="accordion-body">
                                 <div>{{ reg.electoral_program.info|safe }}</div>
                                 {% if can_vote and not user_has_voted %}
-                                <input type="checkbox" class="btn-check" reg-data="{{ reg.id }}" btn-role="vote" id="candidateCheck{{ reg.id }}" autocomplete="off"></input>
-                                <label for="candidateCheck{{ reg.id }}" class="btn btn-eco-light-cyan" id="candidateCheckLabel{{ reg.id }}">Zagłosuj</label>
+                                <input type="checkbox" class="btn-check" reg-data="{{ reg.id }}" btn-role="vote"
+                                    id="candidateCheck{{ reg.id }}" autocomplete="off"></input>
+                                <label for="candidateCheck{{ reg.id }}" class="btn btn-eco-light-cyan"
+                                    id="candidateCheckLabel{{ reg.id }}">Zagłosuj</label>
                                 {% endif %}
                             </div>
                         </div>
@@ -113,15 +128,10 @@
                 </div>
             </div>
             <div class="col">
-                <div 
-                class="trigger"
-                hx-get="{{ url('samorzad:get_chart_data', kwargs={'voting_id':voting.id}) }}"
-                hx-trigger="load"
-                hx-target="main"
-                hx-swap="afterend"
-                hx-indicator="#chartSpinner">
+                <div class="trigger" hx-get="{{ url('samorzad:get_chart_data', kwargs={'voting_id':voting.id}) }}"
+                    hx-trigger="load" hx-target="main" hx-swap="afterend" hx-indicator="#chartSpinner">
                 </div>
-                <div style="height: 600px; width: 100%;">
+                <div style="height: 600px; width: 100%;" class="shadow-lg">
                     <canvas id="resultsChart"></canvas>
                 </div>
             </div>
@@ -133,15 +143,10 @@
                 </div>
             </div>
             <div class="col">
-                <div 
-                class="trigger"
-                hx-get="{{ url('samorzad:get_timeline_data', kwargs={'voting_id':voting.id}) }}"
-                hx-trigger="load"
-                hx-target="main"
-                hx-swap="afterend"
-                hx-indicator="#timelineSpinner">
+                <div class="trigger" hx-get="{{ url('samorzad:get_timeline_data', kwargs={'voting_id':voting.id}) }}"
+                    hx-trigger="load" hx-target="main" hx-swap="afterend" hx-indicator="#timelineSpinner">
                 </div>
-                <div style="height: 600px; width: 100%;">
+                <div style="height: 600px; width: 100%;" class="shadow-lg">
                     <canvas id="timelineChart"></canvas>
                 </div>
             </div>
@@ -156,7 +161,8 @@
                     <input type="hidden" name="form-INITIAL_FORMS" value="0">
                     <input type="hidden" name="form-MIN_NUM_FORMS" value="{{ voting.votes_per_user }}">
                     <input type="hidden" name="form-MAX_NUM_FORMS" value="{{ voting.votes_per_user }}">
-                    <button id="sendVotesButton" type="submit" class="btn btn-eco-light-cyan w-75 disabled" disabled>
+                    <button id="sendVotesButton" type="submit" class="btn btn-eco-light-cyan w-75 disabled shadow"
+                        disabled>
                         <i class="fa-solid fa-check"></i>
                         <strong>Prześlij formularz</strong>
                         <i class="fa-solid fa-check"></i>
@@ -181,25 +187,12 @@
     <script>
         // Counter
         const votingEndDate = new Date('{{voting.parse_planned_end().isoformat()}}').getTime()
-         const now = new Date().getTime();
+        const now = new Date().getTime();
         let remainingTime = votingEndDate - now
         if (remainingTime < 0) {
-            document.getElementById('countdownHolder').parentElement.remove()
+            document.getElementById('countdownHolder').parentElement.parentElement.remove()
         }
-        let remainingHours = Math.floor(remainingTime / (1000 * 60 * 60))
-        let remainingMinutes = Math.floor((remainingTime % (1000 * 60 * 60)) / (1000 * 60));
-        let remainingSeconds = Math.floor((remainingTime % (1000 * 60)) / 1000);
-        if (remainingHours < 10) remainingHours = `0${remainingHours}`
-        if (remainingMinutes < 10) remainingMinutes = `0${remainingMinutes}`
-        if (remainingSeconds < 10) remainingSeconds = `0${remainingSeconds}`
-        document.getElementById('countdownHolder').innerText = `${remainingHours}:${remainingMinutes}:${remainingSeconds}`
-        if (remainingTime < 0){
-            clearInterval(intervalID)
-            document.getElementById('countdownHolder').innerText = ""
-        }
-        intervalID = setInterval(function(){
-            const now = new Date().getTime();
-            let remainingTime = votingEndDate - now
+        else {
             let remainingHours = Math.floor(remainingTime / (1000 * 60 * 60))
             let remainingMinutes = Math.floor((remainingTime % (1000 * 60 * 60)) / (1000 * 60));
             let remainingSeconds = Math.floor((remainingTime % (1000 * 60)) / 1000);
@@ -207,28 +200,43 @@
             if (remainingMinutes < 10) remainingMinutes = `0${remainingMinutes}`
             if (remainingSeconds < 10) remainingSeconds = `0${remainingSeconds}`
             document.getElementById('countdownHolder').innerText = `${remainingHours}:${remainingMinutes}:${remainingSeconds}`
-            if (remainingTime < 0){
+            if (remainingTime < 0) {
                 clearInterval(intervalID)
                 document.getElementById('countdownHolder').innerText = ""
             }
-        }, 1000)
+            intervalID = setInterval(function () {
+                const now = new Date().getTime();
+                let remainingTime = votingEndDate - now
+                let remainingHours = Math.floor(remainingTime / (1000 * 60 * 60))
+                let remainingMinutes = Math.floor((remainingTime % (1000 * 60 * 60)) / (1000 * 60));
+                let remainingSeconds = Math.floor((remainingTime % (1000 * 60)) / 1000);
+                if (remainingHours < 10) remainingHours = `0${remainingHours}`
+                if (remainingMinutes < 10) remainingMinutes = `0${remainingMinutes}`
+                if (remainingSeconds < 10) remainingSeconds = `0${remainingSeconds}`
+                document.getElementById('countdownHolder').innerText = `${remainingHours}:${remainingMinutes}:${remainingSeconds}`
+                if (remainingTime < 0) {
+                    clearInterval(intervalID)
+                    document.getElementById('countdownHolder').innerText = ""
+                }
+            }, 1000)
+        }
     </script>
-    
+
     {% if user_has_voted or not can_vote %}
     {% else %}
-        <script>
+    <script>
         // voting counter
-        function submitFormHandler(){
-            if (votesCounter == maxVotingCounter){
+        function submitFormHandler() {
+            if (votesCounter == maxVotingCounter) {
                 submitButton.classList.remove('disabled')
                 submitButton.disabled = false
-            }else{
+            } else {
                 submitButton.classList.add('disabled')
                 submitButton.disabled = true
             }
         }
 
-        function createInput(value, counter){
+        function createInput(value, counter) {
             let newInputElement = document.createElement('input')
             newInputElement.hidden = true
             newInputElement.setAttribute('type', 'number')
@@ -237,7 +245,7 @@
             return newInputElement
         }
 
-        function removeInput(value){
+        function removeInput(value) {
             document.querySelector(`input[name="vote_${value}"]`).remove()
         }
 
@@ -246,8 +254,8 @@
         const counterDiv = document.getElementById('votesCounterDiv')
         const submitButton = document.getElementById('sendVotesButton');
         const form = document.getElementById('votingForm')
-        document.querySelectorAll('input[reg-data]').forEach(element =>{
-            element.addEventListener('click', event=>{
+        document.querySelectorAll('input[reg-data]').forEach(element => {
+            element.addEventListener('click', event => {
                 let label = document.querySelector(`label[for="${event.target.id}"]`)
                 let accordionItem = document.getElementById(`accordionItem${event.target.getAttribute('reg-data')}`).children[0].children[0]
                 if (event.target.getAttribute('btn-role') == 'vote' && votesCounter < maxVotingCounter) {
@@ -257,11 +265,11 @@
                     counterDiv.children[0].innerText = `Oddane głosy: ${votesCounter}/{{ voting.votes_per_user }}`
                     submitFormHandler()
                     accordionItem.classList.add('accordion-voted')
-                    let element = createInput(event.target.getAttribute('reg-data'), votesCounter-1)
+                    let element = createInput(event.target.getAttribute('reg-data'), votesCounter - 1)
                     form.appendChild(element)
-                    return 
+                    return
                 }
-                if(event.target.getAttribute('btn-role') != 'vote'){
+                if (event.target.getAttribute('btn-role') != 'vote') {
                     votesCounter--
                     event.target.setAttribute('btn-role', 'vote')
                     label.innerText = "Zagłosuj"
@@ -276,4 +284,5 @@
     </script>
     {% endif %}
 </body>
+
 </html>

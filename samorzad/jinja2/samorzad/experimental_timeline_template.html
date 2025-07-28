@@ -10,7 +10,9 @@
             ];
             const datasets = [];
             let colorIndex = 0;
-            for (const [candidateId, candidateData] of Object.entries(timelineData.candidates)) {
+            const sortedCandidates = Object.entries(timelineData.candidates)
+            .sort((a, b) => a[1].name.localeCompare(b[1].name));
+            for (const [candidateId, candidateData] of sortedCandidates) {
                 console.log(candidateData.name)
                 datasets.push({
                     label: candidateData.name,

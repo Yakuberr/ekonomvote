@@ -11,9 +11,9 @@
             <div class="col-12 col-lg-2 border-4 border-eco-light-cyan">
             {{ render_samorzad_sidebar(current_page='add_voting') }}
             </div>
-            <div class="col-12 col-lg-10 bg-dark scrollable-column d-flex align-items-center flex-column">
+            <div class="col-12 col-lg-10 bg-dark scrollable-column d-flex justify-content-center align-items-center mt-5">
                 {% if form.instance.pk %}
-                <form class="mt-5 bg-black bg-opacity-25 ps-5 pe-5 pt-4 pb-4 border border-2 border-eco-light-cyan rounded-3 w-75 mb-5" action="{{ url('panel:update_voting', kwargs={'voting_id':form.instance.pk}) }}" method="post">
+                <form class="bg-black bg-opacity-25 border rounded shadow-lg p-4 flex-shrink-1 w-100" style="max-width: 750px;" action="{{ url('panel:update_voting', kwargs={'voting_id':form.instance.pk}) }}" method="post">
                     <legend class="mb-3 text-eco-light-cyan">Edytuj głosowanie</legend>
                     <div class="mb-3">
                         <label for="votingPlannedStart" class="form-label">Data rozpoczęcia</label>
@@ -28,7 +28,7 @@
                         <input name="votes_per_user" type="number" class="form-control bg-black bg-opacity-25 w-25" id="votingVotesPerUser" required value="{{ form.instance.votes_per_user }}">
                     </div>
                     {{ csrf_input }}    
-                    <div class="mb-4 d-flex flex-lg-row flex-column gap-1 gap-lg-none">
+                    <div class="d-flex flex-lg-row flex-column gap-1 gap-lg-none">
                         <div class="col-12 col-lg-10 d-flex flex-lg-row flex-column justify-content-lg-start gap-lg-3 gap-1">
                             <button type="submit" class="btn btn-outline-eco-light-cyan" name="redirect_to" value="list">Zapisz</button>
                             <button type="submit" class="btn btn-outline-eco-light-cyan" name="redirect_to" value="add_new">Zapisz i dodaj nowe</button>
@@ -40,7 +40,7 @@
                     </div>
                 </form>
                 {% else %}
-                <form class="mt-5 bg-black bg-opacity-25 ps-5 pe-5 pt-4 pb-4 border border-2 border-eco-light-cyan rounded-3 w-75 mb-5" action="{{ url('panel:samorzad_add_empty_voting') }}" method="post">
+                <form class="bg-black bg-opacity-25 border rounded shadow-lg p-4 flex-shrink-1 w-100" style="max-width: 750px;" action="{{ url('panel:samorzad_add_empty_voting') }}" method="post">
                     <legend class="mb-3 text-eco-light-cyan">Dodaj głosowanie</legend>
                     <div class="mb-3">
                         <label for="votingPlannedStart" class="form-label">Data rozpoczęcia</label>
@@ -55,7 +55,7 @@
                         <input name="votes_per_user" type="number" class="form-control bg-black bg-opacity-25 w-25" id="votingVotesPerUser" required>
                     </div>
                     {{ csrf_input }}
-                    <div class="mb-4 d-flex flex-lg-row flex-column gap-1 gap-lg-none">
+                    <div class="d-flex flex-lg-row flex-column gap-1 gap-lg-none">
                         <div class="col-12 col-lg-10 d-flex flex-lg-row flex-column justify-content-lg-start gap-lg-3 gap-1">
                             <button type="submit" class="btn btn-outline-eco-light-cyan" name="redirect_to" value="list">Zapisz</button>
                             <button type="submit" class="btn btn-outline-eco-light-cyan" name="redirect_to" value="add_new">Zapisz i dodaj nowe</button>

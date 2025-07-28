@@ -1,4 +1,4 @@
-<div class="card mt-3 bg-black bg-opacity-25 border-gray">
+<div class="card mt-3 bg-black bg-opacity-25 border-gray shadow-lg">
     <div class="card-body p-0">
         <div class="table-responsive table-container">
             <table class="table table-dark table-striped table-hover mb-0 table-fixed">
@@ -27,7 +27,7 @@
                 <tbody>
                     {% if page_obj %}
                     {% for v in page_obj %}
-                    <tr>
+                    <tr id="tableRow{{ loop.index0 }}">
                         <td class="text-center align-middle">
                             <span>{{ v.id }}</span>
                         </td>
@@ -62,7 +62,7 @@
                             <a href="{{ url('samorzad:get_voting_details', kwargs={'voting_id':v.pk}) }}" class="btn btn-sm btn-outline-eco-light-cyan">Podgląd</a>
                             <a href="{{ url('panel:update_voting', kwargs={'voting_id':v.pk}) }}"
                                 class="btn btn-sm btn-outline-eco-light-cyan">Edytuj</a>
-                            <button btn-type="delete" btn-data="{{ v.pk }}"
+                            <button btn-type="delete" btn-data="{{ v.pk }}" btn-row="{{ loop.index0 }}"
                                 class="btn btn-sm btn-outline-danger">Usuń</button>
                         </td>
                     </tr>
@@ -82,7 +82,7 @@
 </div>
 
 <!-- Paginacja z zachowaniem sortowania -->
-<nav aria-label="pagination" class="my-3">
+<nav aria-label="pagination" class="mt-5 mb-3">
     <ul class="pagination justify-content-center">
         {% if page_obj.has_previous() %}
         <li class="page-item"><a class="page-link"

@@ -54,7 +54,7 @@
         <div class="row overflow-hidden">
             <div class="col-12 bg-dark scrollable-column independent-scroll d-flex flex-column px-xxl-5 px-1">
                 <!-- Formularz wyszukiwania -->
-                <div class="card mt-3 bg-black bg-opacity-25 border-gray">
+                <div class="card mt-3 mt-lg-4 bg-black bg-opacity-25 border-gray shadow-lg">
                     <div class="card-body">
                         <form method="get" class="row g-3" id="searchForm"
                             hx-get="{{ url('panel:list_actions_table') }}"
@@ -154,7 +154,7 @@
 
                 <!-- Tabela + paginacja (ładowane HTMX) -->
                  
-                <div class="col-12 d-flex justify-content-center mt-1">
+                <div class="col-12 d-flex justify-content-center pt-3">
                     <div class="spinner-border htmx-indicator" role="status" id="tableSpinner">
                         <span class="visually-hidden">Loading...</span>
                     </div>
