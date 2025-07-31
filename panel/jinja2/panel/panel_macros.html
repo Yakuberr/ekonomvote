@@ -1,4 +1,4 @@
-{% macro render_navbar(csrf_input, current_page='') %}
+{% macro render_navbar(current_page='') %}
 <nav class="navbar navbar-expand-lg sticky-top bg-body-tertiary">
   <div class="container-fluid">
     <a class="navbar-brand ms-1" href="{{ url('panel:index') }}">
@@ -27,7 +27,7 @@
         </li>
       </ul>
       <form class="d-flex justify-content-start" method="post" action="{{ url('office_auth:logout') }}">
-        {{ csrf_input }}
+        {% csrf_token %}
         <button class="btn btn-outline-eco-light-cyan" type="submit">Wyloguj się</button>
       </form>
     </div>

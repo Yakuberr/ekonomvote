@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django_jinja',
 ]
 
 
@@ -72,11 +73,23 @@ ROOT_URLCONF = 'ekonomvote.urls'
 
 TEMPLATES = [
 {
-        'BACKEND': 'django.template.backends.jinja2.Jinja2',
+        'BACKEND': 'django_jinja.backend.Jinja2',
         'DIRS': [],
         'APP_DIRS': True,
         'OPTIONS': {
-            'environment':'ekonomvote.jinja2.environment'
+            'environment': 'ekonomvote.jinja2.environment',
+            'match_extension': '.html',
+            'match_regex': None,
+            'app_dirname': 'jinja2',  # folder w aplikacjach
+            'context_processors': [
+                'django.template.context_processors.csrf',
+                'django.contrib.auth.context_processors.auth',
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.messages.context_processors.messages',
+                'django.template.context_processors.media',
+                'django.template.context_processors.static',
+            ],
         },
     },
     {

@@ -39,7 +39,7 @@
                         </style>
 {% endblock %}
 {% block body_navbar %}
-    {{ render_navbar(csrf_input, current_page='samorząd') }}
+    {{ render_navbar(current_page='samorząd') }}
 {% endblock %}
 {% block body_content %}
 <main class="container-fluid overflow-hidden">
@@ -143,7 +143,7 @@
             <div class="modal-footer">
                 <form action="{{ url('panel:delete_candidate') }}" method="post">
                     <input hidden type="number" name="candidate_id" id="candidateIdInput">
-                    {{ csrf_input }}
+                    {% csrf_token %}
                     <button type="submit" class="btn btn-danger">Usuń</button>
                 </form>
             </div>

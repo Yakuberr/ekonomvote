@@ -53,7 +53,7 @@
     <script src="{{ static('htmx/htmx.min.js') }}"></script>
     <script src="{{ static('chart/chart.js') }}"></script>
     {{ render_messages(request) }}
-    {{ render_navbar(csrf_input) }}
+    {{ render_navbar() }}
     <main class="container mt-5">
         <div class="row mb-3">
             <div class="col d-flex justify-content-center">
@@ -156,7 +156,7 @@
         <div class="row mb-3">
             <div class="col">
                 <form method="post" class="d-flex justify-content-center" id="votingForm">
-                    {{ csrf_input }}
+                    {% csrf_token %}
                     <input type="hidden" name="form-TOTAL_FORMS" value="3">
                     <input type="hidden" name="form-INITIAL_FORMS" value="0">
                     <input type="hidden" name="form-MIN_NUM_FORMS" value="{{ voting.votes_per_user }}">

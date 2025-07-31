@@ -58,7 +58,7 @@ Samorząd - lista kandydatur
 </style>
 {% endblock %}
 {% block body_navbar %}
-{{ render_navbar(csrf_input, current_page='samorząd') }}
+{{ render_navbar(current_page='samorząd') }}
 {% endblock %}
 {% block body_content %}
 <main class="container-fluid overflow-hidden">
@@ -171,7 +171,7 @@ Samorząd - lista kandydatur
             <div class="modal-footer">
                 <form action="{{ url('panel:delete_candidature') }}" method="post">
                     <input hidden type="number" name="candidature_id" id="candidatureIdInput">
-                    {{ csrf_input }}
+                    {% csrf_token %}
                     <button type="submit" class="btn btn-danger">Usuń</button>
                 </form>
             </div>

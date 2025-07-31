@@ -3,7 +3,7 @@
     Samorząd - lista głosowań
 {% endblock title %}
 {% block body_navbar %}
-    {{ render_navbar(csrf_input, current_page='samorząd') }}
+    {{ render_navbar(current_page='samorząd') }}
 {% endblock %}
 {% block body_content %}
 <main class="container-fluid">
@@ -27,7 +27,7 @@
                         <label for="votingVotesPerUser" class="form-label">Ilość głosów do oddania</label>
                         <input name="votes_per_user" type="number" class="form-control bg-black bg-opacity-25 w-25" id="votingVotesPerUser" required value="{{ form.instance.votes_per_user }}">
                     </div>
-                    {{ csrf_input }}    
+                    {% csrf_token %}
                     <div class="d-flex flex-lg-row flex-column gap-1 gap-lg-none">
                         <div class="col-12 col-lg-10 d-flex flex-lg-row flex-column justify-content-lg-start gap-lg-3 gap-1">
                             <button type="submit" class="btn btn-outline-eco-light-cyan" name="redirect_to" value="list">Zapisz</button>
@@ -54,7 +54,7 @@
                         <label for="votingVotesPerUser" class="form-label">Ilość głosów do oddania</label>
                         <input name="votes_per_user" type="number" class="form-control bg-black bg-opacity-25 w-25" id="votingVotesPerUser" required>
                     </div>
-                    {{ csrf_input }}
+                    {% csrf_token %}
                     <div class="d-flex flex-lg-row flex-column gap-1 gap-lg-none">
                         <div class="col-12 col-lg-10 d-flex flex-lg-row flex-column justify-content-lg-start gap-lg-3 gap-1">
                             <button type="submit" class="btn btn-outline-eco-light-cyan" name="redirect_to" value="list">Zapisz</button>
@@ -84,7 +84,7 @@
             <div class="modal-footer">
                 <form action="{{ url('panel:delete_voting') }}" method="post">
                     <input hidden type="number" name="voting_id" id="votingIdInput">
-                    {{ csrf_input }}
+                    {% csrf_token %}
                     <button type="submit" class="btn btn-danger">Usuń</button>
                 </form>
             </div>
