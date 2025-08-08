@@ -1,0 +1,234 @@
+{% extends "panel/samorzad/samorzad_base.html" %}
+{% block title %}
+Samorząd - lista kandydatur
+{% endblock title %}
+{% block head_css_internal %}
+<style>
+    .table-fixed {
+        table-layout: fixed;
+        width: 100%;
+    }
+
+    .table-fixed th,
+    .table-fixed td {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .table-fixed .period-column {
+        white-space: normal;
+    }
+
+    .number-column {
+        font-family: 'Courier New', monospace;
+        font-weight: bold;
+    }
+
+    .table-container {
+        flex-grow: 1;
+        overflow-y: auto;
+        max-height: calc(100vh - 200px);
+    }
+
+    .candidate-avatar {
+        width: 50px;
+        height: 50px;
+        object-fit: cover;
+        border-radius: 10%;
+    }
+
+    .dropdown-item.active {
+        background-color: #ffffff00;
+        color: var(--bs-eco-light-cyan);
+        text-decoration: underline;
+    }
+
+    .dropdown-item:active {
+        background-color: var(--bs-dark);
+    }
+
+    .popover-body {
+        padding-left: 0;
+    }
+
+    .dropdown-menu {
+        min-width: 100%;
+    }
+</style>
+{% endblock %}
+{% block body_navbar %}
+{{ render_navbar(current_page='samorząd') }}
+{% endblock %}
+{% block body_content %}
+<main class="container-fluid overflow-hidden">
+    <div class="row overflow-hidden">
+        <div class="col-12 col-lg-2 border-4 border-eco-light-cyan independent-scroll">
+        {{ render_samorzad_sidebar(current_page='candidatures_list') }}
+        </div>
+        <div class="col-12 col-lg-10 bg-dark scrollable-column independent-scroll d-flex flex-column">
+            <!-- Formularz wyszukiwania -->
+            <div class="card mt-3 mt-lg-4 bg-black bg-opacity-25 border-gray shadow-lg">
+                <div class="card-body">
+                    <form method="get" class="row g-3" 
+                        hx-get="{{ url('panel:partial_list_candidatures') }}"
+                        hx-target="#table-container"
+                        hx-trigger="change, keyup delay:300ms from:input, click from:.dropdown-item, submit"
+                        hx-push-url="false" hx-indicator="#tableSpinner">
+                        <div class="col-lg-6 col-12">
+                            <label for="candidatesSearch" class="form-label text-light">Wyszukaj kandydata:</label>
+                            <div class="input-group">
+                                <span class="input-group-text" id="basic-addon1">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                        class="bi bi-search" viewBox="0 0 16 16">
+                                        <path
+                                            d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0">
+                                        </path>
+                                    </svg>
+                                </span>
+                                <input class="form-control" id="candidatesSearch" placeholder="Poszukaj kandydatów..."
+                                    name="search" value="{{ query | default('') }}"
+                                    hx-get="{{ url('panel:partial_candidates_search') }}" hx-trigger="keyup delay:250ms"
+                                    hx-target="#selectCanidatePlaceholder">
+                            </div>
+                        </div>
+                        <div class="col-lg-2 col-4">
+                            <label for="sort" class="form-label text-light">Sortuj według:</label>
+                            <select name="sort" id="sort" class="form-select">
+                                <option selected value="name" {% if current_sort=='name' %}selected{% endif %}>Imię
+                                    kandydata</option>
+                                <option value="planned_start" {% if current_sort=='planned_start' %}selected{% endif %}>
+                                    Data startu głosowania</option>
+                                <option value="created_at" {% if current_sort=='created_at' %}selected{% endif %}>Data
+                                    utworzenia kandydatury</option>
+                                <option value="updated_at" {% if current_sort=='updated_at' %}selected{% endif %}>Data
+                                    edycji kandydatury</option>
+                                <option value="id" {% if current_sort=='id' %}selected{% endif %}>ID</option>
+                            </select>
+                        </div>
+                        <div class="col-lg-2 col-4">
+                            <label for="order" class="form-label text-light">Kolejność:</label>
+                            <select name="order" id="order" class="form-select">
+                                <option value="asc" {% if current_order=='asc' %}selected{% endif %}>↑ Rosnąco</option>
+                                <option value="desc" {% if current_order=='desc' %}selected{% endif %}>↓ Malejąco
+                                </option>
+                            </select>
+                        </div>
+                        <div class="col-lg-2 col-4">
+                            <label for="eligibleFilter" class="form-label text-light">Filtr dopuszczenia:</label>
+                            <div class="btn-group d-block" id="eligibleFilter">
+                                <button class="btn btn-secondary dropdown-toggle w-100 text-start" type="button"
+                                    data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+                                    Dopuszczono
+                                    <span
+                                        class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-eco-light-cyan"
+                                        id="eligibleFiltrBadge" style="display: none;">
+                                        <span id="eligibleFiltrCounter">2</span>
+                                        <span class="visually-hidden">Aktywne filtry</span>
+                                    </span>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><button class="dropdown-item" type="button" data-bs-toggle="button" btn-data="1"
+                                            value="1">Tak</button>
+                                    </li>
+                                    <li><button class="dropdown-item" type="button" data-bs-toggle="button" btn-data="0"
+                                            value="0">Nie</button>
+                                    </li>
+                                </ul>
+                                <input type="text" hidden id="eligibleInput" name="f_eligible" value="">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="col-12 d-flex justify-content-center pt-3">
+                <div class="spinner-border htmx-indicator" role="status" id="tableSpinner">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+            <!-- Tabela kandydatów -->
+            <div id="table-container" hx-get="{{ url('panel:partial_list_candidatures') }}" hx-trigger="load"
+                hx-target="#table-container" hx-swap="innerHTML" hx-indicator="#tableSpinner">
+            </div>
+        </div>
+    </div>
+</main>
+<!-- Modal -->
+<div class="modal fade" id="warningModal" tabindex="-1" aria-labelledby="warningModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5 text-danger" id="warningModalLabel">Uwaga</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Usunięcie kandydatury sprawi trwałe usunięcie kandydatury z systemu łącznie ze wszystkimi jej
+                statystykami. <br>
+                <span class="text-danger fw-bold text-decoration-underline">
+                    Operacji nie można cofnąć.
+                </span>
+            </div>
+            <div class="modal-footer">
+                <form hx-post="{{ url('panel:delete_candidature') }}" hx-target="#alertContainer" hx-swap="afterbegin" hx-on:htmx:after-request="deleteResponseHandler(event)">
+                    <input hidden type="number" name="candidature_id" id="candidatureIdInput">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Usuń</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    const modalEl = document.getElementById('warningModal')
+    const warningModal = new bootstrap.Modal(document.getElementById('warningModal'))
+    let tableRow = 0
+    document.addEventListener('click', (e) => {
+        const btn = e.target.closest('button[btn-type="delete"]')
+        if (btn) {
+            tableRow = btn.getAttribute('table-row')
+            const candidatureIdInput = document.getElementById('candidatureIdInput')
+            if (modalEl && candidatureIdInput) {
+                warningModal.show()
+                candidatureIdInput.value = Number(btn.getAttribute('btn-data'))
+            }
+        }
+    })
+
+    function deleteResponseHandler(event){
+        warningModal.hide()
+        const alertContainer = document.getElementById('alertContainer')
+        console.log(alertContainer.children)
+        const hasError = [...alertContainer.children].some(node => node.getAttribute('type') == 'danger')
+        if (!hasError){
+            document.getElementById(`tableRow${tableRow}`).remove()            
+        }
+        console.log(event)
+    }
+
+</script>
+<script>
+    let eligibleFilterCounter = 0
+    const eligibleBadge = document.getElementById('eligibleFiltrBadge')
+    const eligibleCounterElement = document.getElementById('eligibleFiltrCounter')
+    const eligibleInput = document.getElementById('eligibleInput')
+    const eligibleInputValues = new Object()
+    document.getElementById('eligibleFilter').querySelectorAll('button[btn-data]').forEach(e => {
+        e.addEventListener('click', event => {
+            if (event.target.classList.contains('active')) {
+                eligibleFilterCounter++
+                eligibleInputValues[event.target.value] = event.target.value
+            } else {
+                eligibleFilterCounter--
+                delete eligibleInputValues[event.target.value]
+            }
+            eligibleInput.value = Object.values(eligibleInputValues).join(',')
+            eligibleCounterElement.innerText = eligibleFilterCounter
+            if (eligibleFilterCounter > 0) {
+                eligibleBadge.style.display = 'inline-block'
+            } else {
+                eligibleBadge.style.display = 'none'
+            }
+        })
+    })
+</script>
+{% endblock body_content %}

@@ -1,0 +1,167 @@
+{% extends "panel/samorzad/samorzad_base.html" %}
+{% block title %}
+    Samorząd - lista kandydatów
+{% endblock title %}
+{% block head_css_internal %}
+                        <style>
+                            .table-fixed {
+                                table-layout: fixed;
+                                width: 100%;
+                            }
+                        
+                            .table-fixed th,
+                            .table-fixed td {
+                                overflow: hidden;
+                                text-overflow: ellipsis;
+                                white-space: nowrap;
+                            }
+                        
+                            .table-fixed .period-column {
+                                white-space: normal;
+                            }
+                        
+                            .number-column {
+                                font-family: 'Courier New', monospace;
+                                font-weight: bold;
+                            }
+                        
+                            .table-container {
+                                flex-grow: 1;
+                                overflow-y: auto;
+                                max-height: calc(100vh - 200px);
+                            }
+                            .candidate-avatar {
+                                width: 50px;
+                                height: 50px;
+                                object-fit: cover;
+                                border-radius: 10%;
+                            }
+                        </style>
+{% endblock %}
+{% block body_navbar %}
+    {{ render_navbar(current_page='samorząd') }}
+{% endblock %}
+{% block body_content %}
+<main class="container-fluid overflow-hidden">
+        <div class="row overflow-hidden">
+            <div class="col-12 col-lg-2 border-4 border-eco-light-cyan independent-scroll">
+            {{ render_samorzad_sidebar(current_page='candidates_list') }}
+            </div>
+            <div class="col-12 col-lg-10 bg-dark scrollable-column independent-scroll d-flex flex-column">
+                <!-- Formularz wyszukiwania -->
+                <div class="card mt-3 mt-lg-4 bg-black bg-opacity-25 border-gray shadow-lg">
+                    <div class="card-body">
+                        <form method="get" class="row g-3"
+                            hx-get="{{ url('panel:partial_list_candidates') }}"
+                            hx-target="#table-container"
+                            hx-trigger="change, keyup delay:300ms from:input, click from:.form-dropdown-item, submit"
+                            hx-push-url="false"
+                            hx-indicator="#tableSpinner">
+                            <div class="col-lg-4 col-12">
+                                <label for="candidatesSearch" class="form-label text-light">Wyszukaj kandydata:</label>
+                                <div class="input-group">
+                                    <span class="input-group-text" id="basic-addon1">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
+                                            <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0"></path>
+                                        </svg>
+                                    </span>
+                                    <input 
+                                        class="form-control" 
+                                        id="candidatesSearch" 
+                                        placeholder="Poszukaj kandydatów..."
+                                        name="search"
+                                        value=""
+                                    >
+                                </div>
+                            </div>
+                            <div class="col-lg-2 col-12">
+                                <label for="candidatesSearch" class="form-label text-light text-break">Wyszukaj po klasie:</label>
+                                <div class="input-group">
+                                    <span class="input-group-text" id="basic-addon1">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
+                                            <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0"></path>
+                                        </svg>
+                                    </span>
+                                    <input 
+                                        class="form-control" 
+                                        id="candidatesSearch" 
+                                        placeholder="Wyszukaj po klasie..."
+                                        name="search_class"
+                                        value=""
+                                    >
+                                </div>
+                            </div>
+                            <div class="col-lg-3 col-6">
+                                <label for="sort" class="form-label text-light">Sortuj według:</label>
+                                <select name="sort" id="sort" class="form-select">
+                                    <option selected value="name">Imienia</option>
+                                    <option value="created_at">Data utworzenia</option>
+                                    <option value="updated_at">Data edycji</option>
+                                    <option value="id">ID</option>
+                                </select>
+                            </div>
+                            <div class="col-lg-3 col-6">
+                                <label for="order" class="form-label text-light">Kolejność:</label>
+                                <select name="order" id="order" class="form-select">
+                                    <option value="asc">↑ Rosnąco</option>
+                                    <option value="desc">↓ Malejąco</option>
+                                </select>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                <div class="col-12 d-flex justify-content-center pt-3">
+                    <div class="spinner-border htmx-indicator" role="status" id="tableSpinner">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+                <div id="table-container"
+                    hx-get="{{ url('panel:partial_list_candidates') }}"
+                    hx-trigger="load"
+                    hx-target="#table-container"
+                    hx-swap="innerHTML"
+                    hx-indicator="#tableSpinner">
+                </div>
+            </div>
+            
+        </div>
+    </main>
+        <!-- Modal -->
+    <div class="modal fade" id="warningModal" tabindex="-1" aria-labelledby="warningModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5 text-danger" id="warningModalLabel">Uwaga</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Usunięcie kandydata sprawi trwałe usunięcie kandydata z systemu łącznie ze wszystkimi jego statystykami. <br>
+                <span class="text-danger fw-bold text-decoration-underline">
+                    Operacji nie można cofnąć.
+                </span>
+            </div>
+            <div class="modal-footer">
+                <form action="{{ url('panel:delete_candidate') }}" method="post">
+                    <input hidden type="number" name="candidate_id" id="candidateIdInput">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Usuń</button>
+                </form>
+            </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        const modalEl = document.getElementById('warningModal')
+        const warningModal = new bootstrap.Modal(document.getElementById('warningModal'))
+        document.addEventListener('click', (e) => {
+            const btn = e.target.closest('button[btn-type="delete"]')
+            if (btn) {
+                const candidateIdInput = document.getElementById('candidateIdInput')
+                if (modalEl && candidateIdInput) {
+                    warningModal.show()
+                    candidateIdInput.value = Number(btn.getAttribute('btn-data'))
+                }
+            }
+        })
+    </script>
+{% endblock body_content %}

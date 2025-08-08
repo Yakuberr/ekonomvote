@@ -21,7 +21,6 @@ load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
@@ -38,7 +37,6 @@ INTERNAL_IPS = [
     "127.0.0.1",
     # ...
 ]
-
 
 # Application definition
 
@@ -57,7 +55,6 @@ INSTALLED_APPS = [
     'django_jinja',
 ]
 
-
 MIDDLEWARE = [
     "debug_toolbar.middleware.DebugToolbarMiddleware",
     'django.middleware.security.SecurityMiddleware',
@@ -72,7 +69,20 @@ MIDDLEWARE = [
 ROOT_URLCONF = 'ekonomvote.urls'
 
 TEMPLATES = [
-{
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+            ],
+        },
+    },
+    {
         'BACKEND': 'django_jinja.backend.Jinja2',
         'DIRS': [],
         'APP_DIRS': True,
@@ -92,23 +102,9 @@ TEMPLATES = [
             ],
         },
     },
-    {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
-            ],
-        },
-    },
 ]
 
 WSGI_APPLICATION = 'ekonomvote.wsgi.application'
-
 
 DATABASES = {
     'default': {
@@ -120,7 +116,6 @@ DATABASES = {
         'PORT': os.getenv('DB_PORT'),
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
@@ -140,7 +135,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
 
@@ -152,12 +146,11 @@ USE_I18N = True
 
 USE_TZ = True
 
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = 'static/'
-STATICFILES_DIRS  = [BASE_DIR / "static"]
+STATICFILES_DIRS = [BASE_DIR / "static"]
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'uploads'
@@ -167,19 +160,15 @@ MEDIA_ROOT = BASE_DIR / 'uploads'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-
 MICROSOFT_CLIENT_ID = os.getenv('MICROSOFT_CLIENT_ID')
 MICROSOFT_CLIENT_SECRET = os.getenv('MICROSOFT_CLIENT_SECRET')
 MICROSOFT_TENANT_ID = os.getenv('MICROSOFT_TENANT_ID')
 MICROSOFT_REDIRECT = os.getenv('MICROSOFT_REDIRECT')
 MICROSOFT_LOGOUT = os.getenv('MICROSOFT_LOGOUT')
-LOGIN_URL='/microsoft-authentication/login'
+LOGIN_URL = '/microsoft-authentication/login'
 
 # Wskazanie domyślnego modelu użytkownika
 AUTH_USER_MODEL = 'office_auth.AzureUser'
 
 # Ukryty endpoint do panelu administracyjnego Django
 ADMIN_URL = os.getenv('DJANGO_ADMIN_URL') + '/'
-
-
-
