@@ -329,7 +329,7 @@ class Command(BaseCommand):
     help = "Tworzy fixturę z fałszywymi danymi dla celów testowych. Po wygenerowaniu fixtury należy ją załadować do bazy danych za pomocą python manage.py loaddata"
 
     def add_arguments(self, parser):
-        parser.add_argument('--output', type=str, default='fixture.json', help='Nazwa pliku wyjściowego')
+        parser.add_argument('--output', type=str, default='samorzad_dummy_fixture.json', help='Nazwa pliku wyjściowego')
         parser.add_argument('--users', type=int, default=800, help='Liczba użytkowników do wygenerowania')
         parser.add_argument('--candidates', type=int, default=50, help='Liczba kandydatów do wygenerowania')
 
