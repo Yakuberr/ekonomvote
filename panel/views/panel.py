@@ -120,7 +120,3 @@ def partial_actions_list_table(request: HttpRequest):
         'build_redirect_urls':build_redirect_urls,
     })
 
-
-# TODO: Dane w panelu opiekuna mają być ładowane dynamicznie (listy na bazie filtrów)
-# TODO: Stworzyć uniwersalną funkcję do aplikowania sortowania tak jak z filtrami
-

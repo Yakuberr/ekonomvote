@@ -1,0 +1,242 @@
+{% extends "panel/oscary/base.html" %}
+{% block title %}
+    {% if voting_event_id %}
+    Edytuj głosowanie {{ voting_event_id }}
+    {% else %}
+    Utwórz wydarzenie
+    {% endif %}
+{% endblock title %}
+{% block body_navbar %}
+{{ render_navbar(current_page='oscary') }}
+{% endblock %}
+{% block body_content %}
+<main class="container-fluid">
+    <div class="row">
+        <div class="col-12 col-lg-2 border-4 border-eco-light-cyan">
+            {{ render_samorzad_sidebar(current_page='add_voting') }}
+        </div>
+        <div
+            class="col-12 col-lg-10 bg-dark scrollable-column d-flex justify-content-center align-items-center mt-5 mb-5">
+            {% if voting_event_id %}
+            <form class="add-object-form normal-sized-form"
+                action="{{ url('panel:update_voting_event', kwargs={'voting_event_id':voting_event_id}) }}"
+                method="post">
+                <div class="form-secondary-buttons">
+                    <button type="button" btn-type="delete" btn-data="{{ voting_event_id }}"
+                        class="form-secondary-button btn btn-sm"><i class="fa-solid fa-trash"></i></button>
+                    <a tabindex="0" class="form-secondary-button btn btn-sm" role="button" data-bs-toggle="popover"
+                        data-bs-trigger="focus" data-bs-placement="bottom" data-bs-html="true"
+                        data-bs-title="Reguły dodawania głosowania" data-bs-content="<ul style='margin:0;padding-left:1rem;'>
+                        {% for t in tips %}
+                       <li>{{ t }}</li>
+                       {% endfor %}
+                    </ul>">
+                        <i class="fa-solid fa-circle-info"></i>
+                    </a>
+                </div>
+                <legend class="mb-3 text-eco-light-cyan">Edytuj głosowanie nr {{ voting_event_id }}</legend>
+                <fieldset id="mainEvent">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" value="1" id="nominationCheck" {% if
+                            form.with_nominations.value() %} checked {% endif %} disabled>
+                        <label class="form-check-label" for="nominationCheck">
+                            Zawiera nominacje
+                        </label>
+                    </div>
+                </fieldset>
+                <hr>
+                <fieldset id="fRound" class="d-none">
+                    <legend class="mb-3">Runda nominacji</legend>
+                    <div class="mb-3">
+                        <label for="votingPlannedStart" class="form-label">Data rozpoczęcia</label>
+                        <input name="f_round_start" type="datetime-local" class="text-based-input-form form-control"
+                            id="votingPlannedStart" value="{{ form.f_round_start.value() }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="votingPlannedEnd" class="form-label">Data zakończenia</label>
+                        <input name="f_round_end" type="datetime-local" class="text-based-input-form form-control"
+                            id="votingPlannedEnd" value="{{ form.f_round_end.value() }}">
+                    </div>
+                    <div class="mb-4">
+                        <label for="teachersForEndNomination" class="form-label">Liczba zwycięzców</label>
+                        <input name="f_round_t_count" type="number" class="text-based-input-form form-control"
+                            id="teachersForEndNomination" value="{{ form.f_round_t_count.value() }}">
+                    </div>
+                    <hr>
+                </fieldset>
+                <fieldset id="lRound">
+                    <legend class="mb-3">Runda finałowa</legend>
+                    <div class="mb-3">
+                        <label for="votingPlannedStart" class="form-label">Data rozpoczęcia</label>
+                        <input name="l_round_start" type="datetime-local" class="text-based-input-form form-control"
+                            id="votingPlannedStart" value="{{ form.l_round_start.value() }}">
+                    </div>
+                    <div class="mb-4">
+                        <label for="votingPlannedEnd" class="form-label">Data zakończenia</label>
+                        <input name="l_round_end" type="datetime-local" class="text-based-input-form form-control"
+                            id="votingPlannedEnd" value="{{ form.l_round_end.value() }}">
+                    </div>
+                </fieldset>
+                {% csrf_token %}
+                <div class="d-flex flex-lg-row flex-column gap-1 gap-lg-none">
+                    <div
+                        class="col-12 col-lg-10 d-flex flex-lg-row flex-column justify-content-lg-start gap-lg-3 gap-1">
+                        <button type="submit" class="btn btn-outline-eco-light-cyan" name="redirect_to"
+                            value="list">Zapisz</button>
+                        <button type="submit" class="btn btn-outline-eco-light-cyan" name="redirect_to"
+                            value="add_new">Zapisz i dodaj nowe</button>
+                        <button type="submit" class="btn btn-outline-eco-light-cyan" name="redirect_to"
+                            value="edit">Zapisz i kontynuuj edycję</button>
+                    </div>
+                </div>
+            </form>
+            {% else %}
+            <form class="add-object-form normal-sized-form" action="{{ url('panel:create_voting_event') }}"
+                method="post">
+                <div class="form-secondary-buttons">
+                    <a tabindex="0" class="form-secondary-button btn btn-sm" role="button" data-bs-toggle="popover"
+                        data-bs-trigger="focus" data-bs-placement="bottom" data-bs-html="true"
+                        data-bs-title="Reguły dodawania głosowania" data-bs-content="<ul style='margin:0;padding-left:1rem;'>
+                        {% for t in tips %}
+                       <li>{{ t }}</li>
+                       {% endfor %}
+                    </ul>">
+                        <i class="fa-solid fa-circle-info"></i>
+                    </a>
+                </div>
+                <legend class="mb-3 text-eco-light-cyan">Dodaj głosowanie</legend>
+                <fieldset id="mainEvent">
+                    <div class="form-check">
+                        <input name="with_nominations" class="form-check-input" type="checkbox" value="1"
+                            id="nominationCheck">
+                        <label class="form-check-label" for="nominationCheck">
+                            Zawiera nominacje
+                        </label>
+                    </div>
+                </fieldset>
+                <hr>
+                <fieldset id="fRound" class="d-none">
+                    <legend class="mb-3">Runda nominacji</legend>
+                    <div class="mb-3">
+                        <label for="votingPlannedStart" class="form-label">Data rozpoczęcia</label>
+                        <input name="f_round_start" type="datetime-local" class="text-based-input-form form-control"
+                            id="votingPlannedStart">
+                    </div>
+                    <div class="mb-3">
+                        <label for="votingPlannedEnd" class="form-label">Data zakończenia</label>
+                        <input name="f_round_end" type="datetime-local" class="text-based-input-form form-control"
+                            id="votingPlannedEnd">
+                    </div>
+                    <div class="mb-4">
+                        <label for="teachersForEndNomination" class="form-label">Liczba zwycięzców</label>
+                        <input name="f_round_t_count" type="number" class="text-based-input-form form-control"
+                            id="teachersForEndNomination">
+                    </div>
+                    <hr>
+                </fieldset>
+                <fieldset id="lRound">
+                    <legend class="mb-3">Runda finałowa</legend>
+                    <div class="mb-3">
+                        <label for="votingPlannedStart" class="form-label">Data rozpoczęcia</label>
+                        <input name="l_round_start" type="datetime-local" class="text-based-input-form form-control"
+                            id="votingPlannedStart" required>
+                    </div>
+                    <div class="mb-4">
+                        <label for="votingPlannedEnd" class="form-label">Data zakończenia</label>
+                        <input name="l_round_end" type="datetime-local" class="text-based-input-form form-control"
+                            id="votingPlannedEnd" required>
+                    </div>
+                </fieldset>
+                {% csrf_token %}
+                <div class="d-flex flex-lg-row flex-column gap-1 gap-lg-none">
+                    <div
+                        class="col-12 col-lg-10 d-flex flex-lg-row flex-column justify-content-lg-start gap-lg-3 gap-1">
+                        <button type="submit" class="btn btn-outline-eco-light-cyan" name="redirect_to"
+                            value="list">Zapisz</button>
+                        <button type="submit" class="btn btn-outline-eco-light-cyan" name="redirect_to"
+                            value="add_new">Zapisz i dodaj nowe</button>
+                        <button type="submit" class="btn btn-outline-eco-light-cyan" name="redirect_to"
+                            value="edit">Zapisz i kontynuuj edycję</button>
+                    </div>
+                </div>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+</main>
+<!-- Modal -->
+<div class="modal fade" id="warningModal" tabindex="-1" aria-labelledby="warningModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5 text-danger" id="warningModalLabel">Uwaga</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Usunięcie głosowania sprawi trwałe usunięcie głosowania z systemu łącznie ze wszystkimi statystykami.
+                <br>
+                <span class="text-danger fw-bold text-decoration-underline">
+                    Operacji nie można cofnąć.
+                </span>
+            </div>
+            <div class="modal-footer">
+                <form action="{{ url('panel:delete_voting_event') }}" method="post">
+                    <input hidden type="number" name="voting_event_id" id="votingIdInput">
+                    <input hidden type="text" name="red">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Usuń</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    function renderRequiredLabelStar(parent) {
+        parent.querySelectorAll('label + input[required]').forEach(input => {
+            const label = input.previousElementSibling;
+            if (label && label.tagName.toLowerCase() === "label") {
+                label.innerHTML += ' <span class="required-label-star" style="color: rgb(213, 13, 13)">*</span>';
+            }
+        });
+    }
+    function destroyRequiredLabelStar(parent) {
+        parent.querySelectorAll('span.required-label-star').forEach(e => e.remove())
+    }
+    renderRequiredLabelStar(document)
+</script>
+<script>
+    const warningModal = new bootstrap.Modal(document.getElementById('warningModal'))
+    const votingIdInput = document.getElementById('votingIdInput')
+    document.querySelectorAll('button[btn-type="delete"]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            warningModal.show()
+            votingIdInput.value = Number(e.currentTarget.getAttribute('btn-data'))
+        })
+    })
+</script>
+{% if voting_event_id %}
+<script>
+    const nFieldset = document.getElementById('fRound')
+    document.getElementById('nominationCheck').checked ? nFieldset.classList.remove('d-none') : nFieldset.classList.add('d-none')
+</script>
+{% else %}
+<script>
+    const nFieldset = document.getElementById('fRound')
+    document.getElementById('nominationCheck').addEventListener('change', event => {
+        nFieldset.classList.toggle('d-none')
+        if (nFieldset.classList.contains('d-none')) {
+            nFieldset.querySelectorAll('input').forEach(e => {
+                e.removeAttribute('required')
+            })
+            destroyRequiredLabelStar(nFieldset)
+        }
+        else {
+            nFieldset.querySelectorAll('input').forEach(e => {
+                e.setAttribute('required', true)
+            })
+            renderRequiredLabelStar(nFieldset)
+        }
+    })
+</script>
+{% endif %}
+{% endblock body_content %}

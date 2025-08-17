@@ -1,0 +1,95 @@
+/* Komponenty związane z formularzem dodawania/edycji obiektów */
+
+form.add-object-form {
+    position: relative;
+    background-color: #181c1e;
+    border-radius: var(--bs-border-radius) !important;
+    padding: 1.5rem !important;
+    box-shadow: var(--bs-box-shadow-lg) !important;
+    flex-shrink: 1 !important;
+    width: 100% !important;
+}
+
+.normal-sized-form {
+    max-width: 750px;
+}
+
+.form-secondary-buttons {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+    display: flex;
+    flex-direction: row;
+}
+
+.form-secondary-button {
+    border-color: transparent !important;
+}
+
+.form-secondary-button:active {
+    border-color: transparent !important;
+}
+
+.text-based-input-form {
+    background-color: #121516;
+}
+
+.text-based-input-form:focus {
+    background-color: #121516;
+}
+
+form.add-object-form input[type="number"] {
+    width: 80px;
+}
+
+/* Tabela danych */
+
+.table-fixed {
+    min-width: 1200px;
+    /* minimalna szerokość, suma szerokości kolumn */
+}
+
+.table-fixed th,
+.table-fixed td {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.table-fixed .period-column {
+    white-space: normal;
+}
+
+.number-column {
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+}
+
+.table-container {
+    flex-grow: 1;
+    overflow-y: auto;
+    overflow-x: auto;
+    max-height: 680px;
+}
+
+/* Dropdowns */
+
+.dropdown-item.active {
+    background-color: #ffffff00;
+    color: var(--bs-eco-light-cyan);
+    text-decoration: underline;
+}
+
+.dropdown-item:active {
+    background-color: var(--bs-dark);
+}
+
+.dropdown-menu {
+    min-width: 100%;
+}
+
+/* filter form */
+.filter-form-button-group{
+    display: flex;
+    flex-direction: row;
+}

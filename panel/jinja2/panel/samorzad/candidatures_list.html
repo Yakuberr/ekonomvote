@@ -68,12 +68,12 @@ Samorząd - lista kandydatur
         </div>
         <div class="col-12 col-lg-10 bg-dark scrollable-column independent-scroll d-flex flex-column">
             <!-- Formularz wyszukiwania -->
-            <div class="card mt-3 mt-lg-4 bg-black bg-opacity-25 border-gray shadow lg">
+            <div class="card mt-3 mt-lg-4 bg-black bg-opacity-25 border-gray shadow-lg">
                 <div class="card-body">
                     <form method="get" class="row g-3" 
                         hx-get="{{ url('panel:partial_list_candidatures') }}"
                         hx-target="#table-container"
-                        hx-trigger="change, keyup delay:300ms from:input, click from:.dropdown-item, submit"
+                        hx-trigger="change, keyup delay:300ms from:input, click from:.form-dropdown-item, submit"
                         hx-push-url="false" hx-indicator="#tableSpinner">
                         <div class="col-lg-6 col-12">
                             <label for="candidatesSearch" class="form-label text-light">Wyszukaj kandydata:</label>
@@ -128,10 +128,10 @@ Samorząd - lista kandydatur
                                     </span>
                                 </button>
                                 <ul class="dropdown-menu">
-                                    <li><button class="dropdown-item" type="button" data-bs-toggle="button" btn-data="1"
+                                    <li><button class="dropdown-item form-dropdown-item" type="button" data-bs-toggle="button" btn-data="1"
                                             value="1">Tak</button>
                                     </li>
-                                    <li><button class="dropdown-item" type="button" data-bs-toggle="button" btn-data="0"
+                                    <li><button class="dropdown-item form-dropdown-item" type="button" data-bs-toggle="button" btn-data="0"
                                             value="0">Nie</button>
                                     </li>
                                 </ul>
@@ -169,7 +169,7 @@ Samorząd - lista kandydatur
                 </span>
             </div>
             <div class="modal-footer">
-                <form action="{{ url('panel:delete_candidature') }}" method="post">
+                <form hx-post="{{ url('panel:delete_candidature') }}" hx-target="#alertContainer" hx-swap="afterbegin" hx-on:htmx:after-request="deleteResponseHandler(event)">
                     <input hidden type="number" name="candidature_id" id="candidatureIdInput">
                     {% csrf_token %}
                     <button type="submit" class="btn btn-danger">Usuń</button>
@@ -181,9 +181,11 @@ Samorząd - lista kandydatur
 <script>
     const modalEl = document.getElementById('warningModal')
     const warningModal = new bootstrap.Modal(document.getElementById('warningModal'))
+    let tableRow = 0
     document.addEventListener('click', (e) => {
         const btn = e.target.closest('button[btn-type="delete"]')
         if (btn) {
+            tableRow = btn.getAttribute('table-row')
             const candidatureIdInput = document.getElementById('candidatureIdInput')
             if (modalEl && candidatureIdInput) {
                 warningModal.show()
@@ -191,6 +193,18 @@ Samorząd - lista kandydatur
             }
         }
     })
+
+    function deleteResponseHandler(event){
+        warningModal.hide()
+        const alertContainer = document.getElementById('alertContainer')
+        console.log(alertContainer.children)
+        const hasError = [...alertContainer.children].some(node => node.getAttribute('type') == 'danger')
+        if (!hasError){
+            document.getElementById(`tableRow${tableRow}`).remove()            
+        }
+        console.log(event)
+    }
+
 </script>
 <script>
     let eligibleFilterCounter = 0

@@ -19,7 +19,7 @@
                 <tbody>
                     {% if page_obj %}
                     {% for c in page_obj %}
-                    <tr>
+                    <tr id="tableRow{{loop.index0}}">
                         <td class="text-center align-middle">
                             <span>{{ c.id }}</span>
                         </td>
@@ -70,7 +70,7 @@
                                 class="btn btn-sm btn-outline-eco-light-cyan">Podgląd</a>
                             <a href="{{ url('panel:update_candidature', kwargs={'candidature_id':c.pk}) }}"
                                 class="btn btn-sm btn-outline-eco-light-cyan">Edytuj</a>
-                            <button btn-type="delete" btn-data="{{ c.pk }}"
+                            <button btn-type="delete" btn-data="{{ c.pk }}" table-row="{{ loop.index0 }}"
                                 class="btn btn-sm btn-outline-danger">Usuń</button>
                         </td>
                     </tr>

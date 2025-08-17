@@ -21,6 +21,13 @@ from .views.samorzad import (
     partial_list_candidates,
     partial_list_candidatures
 )
+from .views.oscary import (
+    create_voting_event,
+    update_voting_event,
+    delete_voting_event,
+    list_voting_events,
+    partial_list_voting_events,
+)
 
 
 app_name = 'panel'
@@ -48,5 +55,29 @@ urlpatterns = [
     path('samorzad/kandydatury/usun', delete_candidature, name="delete_candidature"),
     path('samorzad/program-przekieruj/<int:electoral_program_id>', redirect_to_candidature, name="redirect_to_candidature"),
     # Partials
-    path('samorzad/szukaj/kandydaci', partial_candidates_search, name='partial_candidates_search')
+    path('samorzad/szukaj/kandydaci', partial_candidates_search, name='partial_candidates_search'),
+    # Oscary
+    path('oscary/dodaj/glosowanie', create_voting_event, name='create_voting_event'),
+    path('oscary/edytuj/glosowanie/<int:voting_event_id>', update_voting_event, name='update_voting_event'),
+    path('oscary/usun/glosowanie', delete_voting_event, name='delete_voting_event'),
+    path('oscary/lista/glosowania', list_voting_events, name='list_voting_events'),
+    path('oscary/partials/lista/glosowania', partial_list_voting_events, name='partial_list_voting_events')
+    # path('oscary/dodaj-nauczyciela', create_teacher, name="create_teacher"),
+    # path('oscary/dodaj-kandydature', create_candidature, name='create_candidature'),
+    # path('oscary/', read_voting_event_list, name='read_voting_event_list'),
+    # path('oscary/p', partial_read_voting_list_event, name='partial_read_voting_list'),
+    # path('oscary/lista-nauczycieli', partial_list_teachers, name='partial_list_teachers'),
+    # path('samorzad/lista-nauczycieli-p', partial_list_candidates, name='partial_list_candidates'),
+    # path('samorzad/lista-kandydatur', list_candidatures, name="list_candidatures"),
+    # path('samorzad/lista-kandydatur-search', partial_list_candidatures, name="partial_list_candidatures"),
+    # path('samorzad/glosowania/edytuj/<int:voting_id>', update_voting, name="update_voting"),
+    # path('samorzad/kandydaci/edytuj/<int:candidate_id>', update_candidate, name="update_candidate"),
+    # path('samorzad/kandydatury/edytuj/<int:candidature_id>', update_candidature, name="update_candidature"),
+    # path('samorzad/glosowania/usun', delete_voting, name="delete_voting"),
+    # path('samorzad/kandydaci/usun', delete_candidate, name="delete_candidate"),
+    # path('samorzad/kandydatury/usun', delete_candidature, name="delete_candidature"),
+    # path('samorzad/program-przekieruj/<int:electoral_program_id>', redirect_to_candidature,
+    #      name="redirect_to_candidature"),
+    # # Partials
+    # path('samorzad/szukaj/kandydaci', partial_candidates_search, name='partial_candidates_search')
 ]

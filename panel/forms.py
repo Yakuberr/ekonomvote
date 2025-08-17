@@ -10,9 +10,18 @@ import re
 import bleach
 
 from samorzad.models import Voting, Candidate, CandidateRegistration, ElectoralProgram
+from oscary.models import VotingEvent
 from .bleach_config import ALLOWED_TAGS, ALLOWED_ATTRIBUTES, css_sanitizer
 
 MAX_IMAGE_SIZE_MB = 2
+
+def _convert_tz(value):
+    if value is not None:
+        value: timezone.datetime
+        naive_value = value.replace(tzinfo=None)
+        warsaw = pytz.timezone('Europe/Warsaw')
+        aware_value = warsaw.localize(naive_value)
+        return aware_value.astimezone(pytz.UTC)
 
 class PanelLoginForm(forms.Form):
     login = forms.CharField(min_length=1, max_length=1024, empty_value='N/A')
@@ -44,19 +53,11 @@ class SamorzadAddEmptyVotingForm(forms.ModelForm):
 
     def clean_planned_start(self):
         value = self.cleaned_data.get('planned_start')
-        value:timezone.datetime
-        naive_value = value.replace(tzinfo=None)
-        warsaw = pytz.timezone('Europe/Warsaw')
-        aware_value = warsaw.localize(naive_value)
-        return aware_value.astimezone(pytz.UTC)
+        return _convert_tz(value)
 
     def clean_planned_end(self):
         value = self.cleaned_data.get('planned_end')
-        value:timezone.datetime
-        naive_value = value.replace(tzinfo=None)
-        warsaw = pytz.timezone('Europe/Warsaw')
-        aware_value = warsaw.localize(naive_value)
-        return aware_value.astimezone(pytz.UTC)
+        return _convert_tz(value)
 
 
 class SamorzadAddCandidateForm(forms.ModelForm):
@@ -115,6 +116,129 @@ class ElectoralProgramForm(forms.ModelForm):
         )
         cleaned = bleach.linkify(cleaned)
         return cleaned
+
+# Oscary
+
+class OscaryAddWholeVotingEventForm(forms.Form):
+    with_nominations = forms.BooleanField(required=False, error_messages={
+        'invalid':"Błedna wartość dla pola określającego nominację"
+    })
+    f_round_t_count = forms.IntegerField(min_value=1, required=False, error_messages={
+        'invalid':"Błędna wartość pola zwycięzkich nauczycieli"
+    })
+    f_round_start = forms.DateTimeField(required=False, error_messages={
+        'invalid':"Błędna wartość dla daty startu nominacji"
+    })
+    f_round_end = forms.DateTimeField(required=False, error_messages={
+        'invalid':"Błędna wartość dla daty końca nominacji"
+    })
+    l_round_start = forms.DateTimeField(required=True, error_messages={
+        'invalid':"Błędna wartość dla daty startu rundy finałowej",
+        'required':"Data startu rundy finałowej musi być podana"
+    })
+    l_round_end = forms.DateTimeField(required=True, error_messages={
+        'invalid':"Błędna wartość dla daty końca rundy finałowej",
+        'required': "Data końca rundy finałowej musi być podana"
+    })
+
+    def clean_with_nominations(self):
+        val = self.cleaned_data.get('with_nominations')
+        if type(val) is not bool:
+            raise ValidationError("Nieprawidłowy typ danych.", code='bad_data_type')
+        return val
+
+    def clean_f_round_start(self):
+        value = self.cleaned_data.get('f_round_start')
+        try:
+            return _convert_tz(value)
+        except (AttributeError, ValueError):
+            raise ValidationError("Nie udało się przekonwertować daty", code='bad_data_type')
+
+    def clean_f_round_end(self):
+        value = self.cleaned_data.get('f_round_end')
+        try:
+            return _convert_tz(value)
+        except (AttributeError, ValueError):
+            raise ValidationError("Nie udało się przekonwertować daty", code='bad_data_type')
+
+    def clean_l_round_start(self):
+        value = self.cleaned_data.get('l_round_start')
+        try:
+            return _convert_tz(value)
+        except (AttributeError, ValueError):
+            raise ValidationError("Nie udało się przekonwertować daty", code='bad_data_type')
+
+    def clean_l_round_end(self):
+        value = self.cleaned_data.get('l_round_end')
+        try:
+            return _convert_tz(value)
+        except (AttributeError, ValueError):
+            raise ValidationError("Nie udało się przekonwertować daty", code='bad_data_type')
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if cleaned_data.get('with_nominations') and None in [cleaned_data.get('f_round_t_count'), cleaned_data.get('f_round_start'), cleaned_data.get('f_round_end')]:
+            raise ValidationError("Brak pól związanych z nominacją", code='fields_required')
+
+
+class OscaryListVotingsForm(forms.Form):
+    sort_by = forms.ChoiceField(choices=[
+        ('id', 'ID'),
+        ('nomination_start', 'Start nominacji'),
+        ('final_start', 'Start finału'),
+        ('creation', 'Data utworzenia'),
+        ('update', 'Data aktualizacji')
+    ], initial='id', required=False)
+
+    sort_order = forms.ChoiceField(choices=[
+        ('asc', 'Rosnąco'),
+        ('desc', 'Malejąco')
+    ], initial='asc', required=False)
+
+    event_status = forms.CharField(required=False)
+
+    nominations = forms.ChoiceField(choices=[
+        ('yes', 'Tak'),
+        ('no', 'Nie')
+    ], required=False)
+
+    def clean_sort_by(self):
+        value = self.cleaned_data.get('sort_by')
+        if value not in [choice[0] for choice in self.fields['sort_by'].choices]:
+            value = 'id'
+        return value
+
+    def clean_sort_order(self):
+        value = self.cleaned_data.get('sort_order')
+        if value not in [choice[0] for choice in self.fields['sort_order'].choices]:
+            value = 'asc'
+        return value
+
+    def clean_event_status(self):
+        ALLOWED_VALUES =  ['Zaplanowane', "Aktywne", "Zakończone"]
+        values = self.cleaned_data.get('event_status', '').split(',')
+        for param in values:
+            if param not in ALLOWED_VALUES:
+                return None
+        return values
+
+
+    def clean_nominations(self):
+        CONVERT_MAP = {
+            'yes':True,
+            'no':False
+        }
+        value = self.cleaned_data.get('nominations')
+        if value not in [choice[0] for choice in self.fields['nominations'].choices]:
+            value = None
+        else:
+            try:
+                value = CONVERT_MAP[value]
+            except KeyError:
+                value = None
+        return value
+
+
 
 
 

@@ -17,7 +17,8 @@ form.multi-step-form{
 }
 
 .hide{
-    display: none;
+  visibility: hidden;
+  position: absolute;
 }
 
 @keyframes form-slide {

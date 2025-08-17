@@ -11,19 +11,21 @@ from django.contrib.postgres.search import SearchRank, SearchQuery, SearchVector
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
-from django.db.models import Case, When, Value, CharField
+from django.db.models import Case, When, Value, CharField, OuterRef, Subquery, DateTimeField, IntegerField
 from django.template.loader import render_to_string
+from django.contrib.messages.constants import ERROR, SUCCESS, WARNING, INFO
 
 import pytz
 from urllib.parse import urlencode
 
-from samorzad.models import Voting, Candidate, CandidateRegistration, ElectoralProgram
-from panel.forms import SamorzadAddEmptyVotingForm, SamorzadAddCandidateForm, CandidateRegistrationForm, ElectoralProgramForm
+from oscary.models import VotingEvent,VotingRound, Vote, Candidature, Oscar, Teacher
+from panel.forms import OscaryAddWholeVotingEventForm, SamorzadAddCandidateForm, CandidateRegistrationForm, ElectoralProgramForm, OscaryListVotingsForm
 from office_auth.auth_utils import opiekun_required
 from office_auth.models import ActionLog
-from .utils import get_changed_fields, build_sort_list, build_filter_kwargs
+from .utils import get_changed_fields, build_sort_list, build_filter_kwargs, build_delete_feedback_response
+from .helpers import create_event_voting_db_helper, update_event_voting_db_helper
 
-def _create_voting_status(voting:Voting):
+def _create_voting_status(voting:VotingRound):
     if voting.planned_start <= timezone.now() and voting.planned_end >= timezone.now():
         return 'Aktywne'
     elif voting.planned_end > timezone.now():
@@ -37,45 +39,223 @@ def _create_voting_status(voting:Voting):
 @require_http_methods(['GET', 'POST'])
 @login_required(login_url='office_auth:microsoft_login')
 @opiekun_required()
-def add_empty_voting(request:HttpRequest):
+def create_voting_event(request:HttpRequest):
+    """Widok do tworzenia za jednym zamachem wydarzenia głosowania oraz nominacji i głosowania finałowego"""
+    REQUIREMENTS_TIPS = [
+        'Zawiera nominacje: Ustawia czy wydarzenie zawiera nominacje. Uwaga pola nie można edytować',
+        'Pola z datami muszą wskazywać na przyszłe daty',
+        "Jeśli wydarzenie zawiera nominację to musi ona skończyć się przed rozpoczęciem rundy finałowej",
+        "Liczba zwycięzców: Liczba nauczycieli którzy przechodzą do rundy finałowej dla danego oscara. W finale wygrywa tylko 1 nauczyciel na oscara"
+    ]
     if request.method == 'GET':
-        form = SamorzadAddEmptyVotingForm()
-        return render(request, 'panel/samorzad/samorzad_add_empty_voting.html', context={
-            'form': form
+        form = OscaryAddWholeVotingEventForm()
+        return render(request, 'panel/oscary/add_voting.html', context={
+            'form': form,
+            'tips':REQUIREMENTS_TIPS
         })
     if request.method == 'POST':
-        form = SamorzadAddEmptyVotingForm(request.POST)
+        form = OscaryAddWholeVotingEventForm(request.POST)
         if form.is_valid():
-            with transaction.atomic():
-                voting = form.save()
-                ActionLog.objects.create(
-                    user=request.user,
-                    action_type=ActionLog.ActionType.CREATE,
-                    altered_fields={},
-                    content_type=ContentType.objects.get_for_model(Voting),
-                    object_id=voting.id,
-                )
-            messages.success(request, f'Dodano pomyślnie nowe głosowanie o ID: {voting.id}')
+            cleaned_data = form.cleaned_data
+            try:
+                voting_event = create_event_voting_db_helper(cleaned_data, request=request)
+            except ValidationError:
+                messages.add_message(request, level=40, message="Nie udało się dodać głosowań")
+                return redirect(reverse('panel:create_voting_event'))
+            messages.success(request, f'Dodano wydarzenie o ID: {voting_event.id}')
             redirect_to = request.POST.get('redirect_to', 'list')
             URL_MAP = {
-                'list':reverse('panel:samorzad_index'),
-                'add_new':reverse('panel:samorzad_add_empty_voting'),
-                'edit':reverse('panel:update_voting', kwargs={'voting_id':voting.id})
+                'list': reverse('panel:list_voting_events'),
+                'add_new': reverse('panel:create_voting_event'),
+                'edit': reverse('panel:update_voting_event', kwargs={'voting_event_id': voting_event.id})
+            }
+            return redirect(URL_MAP.get(redirect_to, 'list'))
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.add_message(request, level=40, message=error)
+            return redirect(reverse('panel:create_voting_event'))
+
+
+@require_http_methods(['GET', 'POST'])
+@login_required(login_url='office_auth:microsoft_login')
+@opiekun_required()
+def update_voting_event(request:HttpRequest, voting_event_id:int):
+    """Widok do edycji za jednym zamachem wydarzenia głosowania oraz nominacji i głosowania finałowego"""
+    REQUIREMENTS_TIPS = [
+        'Zawiera nominacje: Ustawia czy wydarzenie zawiera nominacje. Uwaga pola nie można edytować',
+        'Pola z datami muszą wskazywać na przyszłe daty',
+        "Jeśli wydarzenie zawiera nominację to musi ona skończyć się przed rozpoczęciem rundy finałowej",
+        "Liczba zwycięzców: Liczba nauczycieli którzy przechodzą do rundy finałowej dla danego oscara. W finale wygrywa tylko 1 nauczyciel na oscara"
+    ]
+    voting_event = get_object_or_404(VotingEvent, pk=voting_event_id)
+    voting_final = VotingRound.objects.filter(round_type=VotingRound.VotingRoundType.FINAL, voting_event=voting_event).first()
+    if request.method == 'GET':
+        initial = {
+            'with_nominations': voting_event.with_nominations,
+            'l_round_start': voting_final.localize_dt(voting_final.planned_start).strftime('%Y-%m-%d %H:%M'),
+            'l_round_end': voting_final.localize_dt(voting_final.planned_end).strftime('%Y-%m-%d %H:%M'),
+        }
+        if voting_event.with_nominations:
+            voting_nomination = VotingRound.objects.filter(round_type=VotingRound.VotingRoundType.NOMINATION,
+                                                           voting_event=voting_event).first()
+            initial.update({
+                'f_round_start': voting_nomination.localize_dt(voting_nomination.planned_start).strftime('%Y-%m-%d %H:%M'),
+                'f_round_end': voting_nomination.localize_dt(voting_nomination.planned_end).strftime('%Y-%m-%d %H:%M'),
+                'f_round_t_count': voting_nomination.max_tearchers_for_end,
+            })
+        form = OscaryAddWholeVotingEventForm(initial=initial)
+        return render(request, 'panel/oscary/add_voting.html', context={
+            'form':form,
+            'voting_event_id':voting_event.id,
+            'tips':REQUIREMENTS_TIPS
+        })
+    if request.method == 'POST':
+        form = OscaryAddWholeVotingEventForm(request.POST)
+        if form.is_valid():
+            try:
+                voting_nomination_id = VotingRound.objects.filter(round_type=VotingRound.VotingRoundType.NOMINATION, voting_event=voting_event).first().id
+            except AttributeError:
+                voting_nomination_id = None
+            voting_final_id = VotingRound.objects.filter(round_type=VotingRound.VotingRoundType.FINAL,
+                                                              voting_event=voting_event).first().id
+            try:
+                with transaction.atomic():
+                    update_event_voting_db_helper(form.cleaned_data, voting_event_id, voting_nomination_id, voting_final_id, with_nominations=voting_event.with_nominations)
+            except Exception as Ex:
+                messages.error(request, message=f'Wystąpił problem z aktualizacją')
+                return redirect(reverse('panel:update_voting_event', kwargs={'voting_event_id':voting_event_id}))
+            messages.success(request, f'Zaktualizowano dane głosowania o ID: {voting_event_id}')
+            redirect_to = request.POST.get('redirect_to', 'list')
+            URL_MAP = {
+                'list':reverse('panel:list_voting_events'),
+                'add_new':reverse('panel:create_voting_event'),
+                'edit':reverse('panel:update_voting_event', kwargs={'voting_event_id':voting_event_id})
             }
             return redirect(URL_MAP[redirect_to])
         else:
             for field, errors in form.errors.items():
                 for error in errors:
                     messages.add_message(request, level=40, message=error)
-            return redirect(reverse('panel:samorzad_add_empty_voting'))
-        return render(request, 'panel/samorzad/samorzad_add_empty_voting.html', context={
-            'form':form
-        })
+            return redirect(reverse('panel:update_voting', kwargs={'voting_id':voting_event_id}))
+
+
+@require_http_methods(['POST'])
+@login_required(login_url='office_auth:microsoft_login')
+@opiekun_required()
+def delete_voting_event(request:HttpRequest):
+    """Widok usuwania wydarzenia głosowania. Działa zarówno dla statycznych formularzy jak i dynamicznych zapoytań HTMX"""
+    voting_event_id = request.POST.get('voting_event_id')
+    htmx = request.headers.get('HX-Request')
+    if not voting_event_id or not voting_event_id.isdigit():
+        return build_delete_feedback_response(request, type=ERROR, message="Nieprawidłowe ID wydarzenia", redirect_url=reverse('panel:list_voting_events'))
+    voting_event = VotingEvent.objects.filter(id=voting_event_id).first()
+    if voting_event:
+        try:
+            voting_event.delete()
+            return build_delete_feedback_response(request, type=SUCCESS, message='Pomyślnie usunięto wydarzenie', redirect_url=reverse('panel:list_voting_events'), alert_template=None)
+        except Exception as Ex:
+            return build_delete_feedback_response(request, type=ERROR,
+                                                  message='Wystąpił błąd podczas próby usunięcia głosowania',
+                                                  redirect_url=reverse('panel:update_voting_event',
+                                                                       kwargs={'voting_event_id': voting_event_id}))
+    else:
+        return build_delete_feedback_response(request, type=ERROR, message='Wystąpił błąd podczas próby usunięcia głosowania', redirect_url=reverse('panel:update_voting_event', kwargs={'voting_event_id':voting_event_id}))
+
+
+@require_http_methods(['GET'])
+@login_required(login_url='office_auth:microsoft_login')
+@opiekun_required()
+def list_voting_events(request:HttpRequest):
+    form = OscaryListVotingsForm()
+    status_list = ['Zakończone', "Aktywne", 'Zaplanowane']
+    nominations_choices = form.fields['nominations'].choices
+    return render(request, 'panel/oscary/votings_list.html', context={
+        'status_list': status_list,
+        'nominations_choices':nominations_choices,
+        'form':form
+    })
+
+@require_http_methods(['GET'])
+@login_required(login_url='office_auth:microsoft_login')
+@opiekun_required()
+def partial_list_voting_events(request:HttpRequest):
+    SORT_MAP = {
+        'nomination_start':['first_round_start'],
+        'final_start': ['last_round_start'],
+        'creation':['created_at'],
+        'update':['updated_at'],
+        'id':['id']
+    }
+    FILTER_MAP = {
+        'nominations': {
+            'field': 'with_nominations',
+        },
+    }
+    form = OscaryListVotingsForm(request.GET)
+    form.is_valid()
+    sort_data = build_sort_list(SORT_MAP, form.cleaned_data)
+    print(sort_data)
+    filter_data = build_filter_kwargs(FILTER_MAP, form.cleaned_data)
+    try:
+        page_number = int(request.GET.get('page', 1))
+    except ValueError:
+        page_number = 1
+    now = timezone.now()
+    voting_events = VotingEvent.objects.prefetch_related('voting_rounds')
+    first_round_start = VotingRound.objects.filter(
+        voting_event=OuterRef('pk')
+    ).order_by('planned_start').values('planned_start')[:1]
+    first_round_end = VotingRound.objects.filter(
+        voting_event=OuterRef('pk')
+    ).order_by('planned_end').values('planned_end')[:1]
+    last_round_start = VotingRound.objects.filter(
+        voting_event=OuterRef('pk')
+    ).order_by('-planned_start').values('planned_start')[:1]
+    last_round_end = VotingRound.objects.filter(
+        voting_event=OuterRef('pk')
+    ).order_by('-planned_end').values('planned_end')[:1]
+    teachers_per_end = VotingRound.objects.filter(voting_event=OuterRef('pk')).order_by('planned_start').values('max_tearchers_for_end')[:1]
+    voting_events = VotingEvent.objects.annotate(
+        first_round_start=Case(
+            When(with_nominations=True, then=Subquery(first_round_start, output_field=DateTimeField())),
+            default=Value(None),
+            output_field=DateTimeField(),
+        ),
+        first_round_end=Case(
+            When(with_nominations=True, then=Subquery(first_round_end, output_field=DateTimeField())),
+            default=Value(None),
+            output_field=DateTimeField(),
+        ),
+        last_round_start=Subquery(last_round_start, output_field=DateTimeField(), ),
+        last_round_end=Subquery(last_round_end, output_field=DateTimeField(), ),
+    ).annotate(teachers_per_end=Subquery(teachers_per_end, output_field=IntegerField(), ))
+    voting_events = voting_events.order_by(*sort_data['sort_fields'])
+    if len(filter_data) != 0:
+        voting_events = voting_events.filter(**filter_data)
+    events = list(voting_events)
+    if statuses := form.cleaned_data.get('event_status'):
+        events = [e for e in events if e.get_event_status(now) in statuses]
+    paginator = Paginator(events, 25)
+    if page_number > paginator.num_pages:
+        page_number = paginator.num_pages
+    page_obj = paginator.get_page(page_number)
+    if form.cleaned_data.get('event_status') is not None:
+        paginator.object_list = filter(lambda item:item.get_event_status in form.cleaned_data.get('event_status'),  paginator.object_list)
+    params = request.GET.copy()
+    params.pop('page', None)
+    querystring = params.urlencode()
+    return render(request, 'panel/oscary/partials/voting_list.html', context={
+        'page_obj':page_obj,
+        'querystring':querystring,
+    })
+
+
 
 @require_http_methods(['GET', 'POST'])
 @login_required(login_url='office_auth:microsoft_login')
 @opiekun_required()
-def samorzad_add_candidate(request:HttpRequest):
+def create_teacher(request:HttpRequest):
     if request.method == 'GET':
         form = SamorzadAddCandidateForm()
         return render(request, 'panel/samorzad/samorzad_add_candidate.html', context={
@@ -110,7 +290,7 @@ def samorzad_add_candidate(request:HttpRequest):
 @require_http_methods(["GET", 'POST'])
 @login_required(login_url='office_auth:microsoft_login')
 @opiekun_required()
-def samorzad_add_candidature(request:HttpRequest):
+def create_candidature(request:HttpRequest):
     if request.method == 'GET':
         candidature_form = CandidateRegistrationForm()
         electoral_form = ElectoralProgramForm()
@@ -191,7 +371,7 @@ def partial_candidates_search(request:HttpRequest):
 @require_http_methods(['GET'])
 @login_required(login_url='office_auth:microsoft_login')
 @opiekun_required()
-def samorzad_index(request:HttpRequest):
+def read_voting_event_list(request:HttpRequest):
     status_list = ['Aktywne', 'Zaplanowane', 'Zakończone']
     return render(request, 'panel/samorzad/samorzad_index.html', context={
         'status_list': status_list,
@@ -200,7 +380,7 @@ def samorzad_index(request:HttpRequest):
 @require_http_methods(['GET'])
 @login_required(login_url='office_auth:microsoft_login')
 @opiekun_required()
-def partial_read_voting_list(request:HttpRequest):
+def partial_read_voting_list_event(request:HttpRequest):
     SORT_MAP = {
         'planned_start':['planned_start'],
         'planned_end':['planned_end'],
@@ -247,14 +427,14 @@ def partial_read_voting_list(request:HttpRequest):
 @login_required(login_url='office_auth:microsoft_login')
 @require_http_methods(['GET'])
 @opiekun_required()
-def list_candidates(request:HttpRequest):
+def read_teacher_list(request:HttpRequest):
     return render(request, 'panel/samorzad/candidates_list.html', context={
     })
 
 @login_required(login_url='office_auth:microsoft_login')
 @require_http_methods(['GET'])
 @opiekun_required()
-def partial_list_candidates(request:HttpRequest):
+def partial_list_teachers(request:HttpRequest):
     SORT_MAP = {
         'name': ['first_name', 'second_name', 'last_name'],
         'created_at': ['created_at'],
@@ -489,34 +669,6 @@ def update_candidature(request:HttpRequest, candidature_id:int):
 
 
 # DELETE views
-
-@require_http_methods(['POST'])
-@login_required(login_url='office_auth:microsoft_login')
-@opiekun_required()
-def delete_voting(request:HttpRequest):
-    voting_id = request.POST.get('voting_id')
-    if not voting_id or not voting_id.isdigit():
-        return render(request, 'alert.html',context={
-            'type': 'danger',
-            'message': 'Nieprawidłowe ID głosowania.'
-        })
-    voting = Voting.objects.filter(id=voting_id).first()
-    if voting:
-        with transaction.atomic():
-            voting.delete()
-            ActionLog.objects.create(
-                user=request.user,
-                action_type=ActionLog.ActionType.DELETE,
-                altered_fields={},
-                content_type=ContentType.objects.get_for_model(Voting),
-                object_id=voting_id,
-            )
-        return HttpResponse(content='', status=200)
-    else:
-        return render(request, 'alert.html', context={
-            'type': 'danger',
-            'message': 'Wystąpił błąd podczas próby usunięcia głosowania.'
-        })
 
 @require_http_methods(['POST'])
 @login_required(login_url='office_auth:microsoft_login')

@@ -3,11 +3,13 @@
         <div class="table-responsive table-container">
             <table class="table table-dark table-striped table-hover mb-0 table-fixed">
                 <colgroup>
+                    <col style="width: 10%;">
+                    <col style="width: 10%;">
                     <col style="width: 12%;">
                     <col style="width: 12%;">
                     <col style="width: 12%;">
                     <col style="width: 12%;">
-                    <col style="width: 12%;">
+                    <col style="width: 5%;">
                     <col style="width: 12%;">
                     <col style="width: 12%;">
                     <col style="width: 16%;">
@@ -16,11 +18,13 @@
                     <tr>
                         <th scope="col" class="text-center align-middle">ID</th>
                         <th scope="col" class="text-center align-middle">Status</th>
-                        <th scope="col" class="text-center align-middle">Okres głosowania</th>
-                        <th scope="col" class="text-center align-middle">Utworzono</th>
-                        <th scope="col" class="text-center align-middle">Edytowano</th>
-                        <th scope="col" class="text-center align-middle">Głosy/użytkownik</th>
-                        <th scope="col" class="text-center align-middle">Kandydaci</th>
+                        <th scope="col" class="text-center align-middle">Start nominacji</th>
+                        <th scope="col" class="text-center align-middle">Koniec nominacji</th>
+                        <th scope="col" class="text-center align-middle">Start finału</th>
+                        <th scope="col" class="text-center align-middle">Koniec finału</th>
+                        <th scope="col" class="text-center align-middle">Nominacje/kategorie</th>
+                        <th scope="col" class="text-center align-middle">Data utworzenia</th>
+                        <th scope="col" class="text-center align-middle">Data edycji</th>
                         <th scope="col" class="text-center align-middle">Akcje</th>
                     </tr>
                 </thead>
@@ -32,35 +36,46 @@
                             <span>{{ v.id }}</span>
                         </td>
                         <td class="text-center align-middle">
-                            {{ v.status }}
+                            {{ v.get_event_status(now()) }}
                         </td>
                         <td class="text-center align-middle">
-                            <div class="small">
-                                <strong>Od:</strong> {{ v.parse_planned_start().strftime('%d.%m.%Y %H:%M') }}<br>
-                                <strong>Do:</strong> {{ v.parse_planned_end().strftime('%d.%m.%Y %H:%M') }}
-                            </div>
+                            {% if v.first_round_start is none %}
+                            -
+                            {% else %}
+                            <span class="small">{{ v.localize_dt(v.first_round_start).strftime('%Y-%m-%d %H:%M') }}</span>
+                            {% endif %}
                         </td>
                         <td class="text-center align-middle">
-                            <span class="small">{{ v.parse_created_at().strftime('%d.%m.%Y') }}</span>
+                            {% if v.first_round_end is none %}
+                            -
+                            {% else %}
+                            <span class="small">{{ v.localize_dt(v.first_round_end).strftime('%Y-%m-%d %H:%M') }}</span>
+                            {% endif %}
                         </td>
                         <td class="text-center align-middle">
-                            <span class="small">
-                                {% if v.created_at != v.updated_at%}
-                                {{ v.parse_updated_at().strftime('%d.%m.%Y') }}
-                                {% else %}
-                                -
-                                {% endif %}
-                            </span>
+                            <span class="small">{{ v.localize_dt(v.last_round_start).strftime('%Y-%m-%d %H:%M') }}</span>
                         </td>
                         <td class="text-center align-middle">
-                            <span class="">{{ v.votes_per_user }}</span>
+                            <span class="small">{{ v.localize_dt(v.last_round_end).strftime('%Y-%m-%d %H:%M') }}</span>
                         </td>
                         <td class="text-center align-middle">
-                            <span class="">{{ v.candidate_registrations.count() }}</span>
+                            {% if v.teachers_per_end == 1 %}
+                            -
+                            {% else %}
+                            {{ v.teachers_per_end }}
+                            {% endif %}
                         </td>
                         <td class="text-center align-middle">
-                            <a href="{{ url('samorzad:get_voting_details', kwargs={'voting_id':v.pk}) }}" class="btn btn-sm btn-outline-eco-light-cyan">Podgląd</a>
-                            <a href="{{ url('panel:update_voting', kwargs={'voting_id':v.pk}) }}"
+                            <span class="small">{{ v.localize_dt(v.created_at).strftime('%Y-%m-%d %H:%M:%S') }}</span>
+                        </td>
+                        <td class="text-center align-middle">
+                            <span class="small">{{ v.localize_dt(v.updated_at).strftime('%Y-%m-%d %H:%M:%S') }}</span>
+                        </td>
+                        <td class="text-center align-middle">
+                            <!-- TODO: Podgląd dodać dopiero po utworzeniu widoków dla userów -->
+                            <a href="{{ url('samorzad:get_voting_details', kwargs={'voting_id':v.pk}) }}"
+                                class="btn btn-sm btn-outline-eco-light-cyan">Podgląd</a>
+                            <a href="{{ url('panel:update_voting_event', kwargs={'voting_event_id':v.pk}) }}"
                                 class="btn btn-sm btn-outline-eco-light-cyan">Edytuj</a>
                             <button btn-type="delete" btn-data="{{ v.pk }}" btn-row="{{ loop.index0 }}"
                                 class="btn btn-sm btn-outline-danger">Usuń</button>
@@ -69,9 +84,9 @@
                     {% endfor %}
                     {% else %}
                     <tr>
-                        <td colspan="8" class="text-center text-muted py-4">
+                        <td colspan="10" class="text-center text-muted py-4">
                             <i class="fas fa-inbox fa-2x mb-2"></i><br>
-                            Brak głosowań o podanych kryteriach 
+                            Brak wydarzeń o podanych kryteriach
                         </td>
                     </tr>
                     {% endif %}
@@ -86,9 +101,11 @@
     <ul class="pagination justify-content-center">
         {% if page_obj.has_previous() %}
         <li class="page-item"><a class="page-link"
-                hx-get="{{ url('panel:partial_read_voting_list') }}?page=1&{{ querystring }}" href="">&laquo;&laquo; </a></li>
+                hx-get="{{ url('panel:partial_read_voting_list') }}?page=1&{{ querystring }}" href="">&laquo;&laquo;
+            </a></li>
         <li class="page-item"><a class="page-link"
-                hx-get="{{ url('panel:partial_read_voting_list') }}?page={{ page_obj.previous_page_number() }}&{{ querystring }}" href="">&laquo;</a>
+                hx-get="{{ url('panel:partial_read_voting_list') }}?page={{ page_obj.previous_page_number() }}&{{ querystring }}"
+                href="">&laquo;</a>
         </li>
         {% else %}
         <li class="page-item disabled"><a class="page-link" href="">&laquo;&laquo; </a></li>
@@ -99,10 +116,12 @@
         </li>
         {% if page_obj.has_next() %}
         <li class="page-item"><a class="page-link"
-                hx-get="{{ url('panel:partial_read_voting_list') }}?page={{ page_obj.next_page_number() }}&{{ querystring }}" href="">&raquo;</a>
+                hx-get="{{ url('panel:partial_read_voting_list') }}?page={{ page_obj.next_page_number() }}&{{ querystring }}"
+                href="">&raquo;</a>
         </li>
         <li class="page-item"><a class="page-link"
-                hx-get="{{ url('panel:partial_read_voting_list') }}?page={{ page_obj.paginator.num_pages }}&{{querystring}}" href="">&raquo;&raquo;</a>
+                hx-get="{{ url('panel:partial_read_voting_list') }}?page={{ page_obj.paginator.num_pages }}&{{querystring}}"
+                href="">&raquo;&raquo;</a>
         </li>
         {% else %}
         <li class="page-item disabled"><a class="page-link" href="">&raquo;</a></li>
