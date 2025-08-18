@@ -46,11 +46,9 @@
     <div id="alertContainer">
       {% if messages %}
       {% for message in messages %}
-      <div class="alert alert-{{ message.tags|default('info') }} alert-dismissible fade show mb-2" role="alert"
-        data-auto-dismiss="3000" style="border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
-        {{ message }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-      </div>
+      {% with tag = message.extra_tags %}
+        {% include "alert.html" %}
+      {% endwith %}
       {% endfor %}
       {% endif %}
     </div>
@@ -142,4 +140,35 @@
     {% endif %}
   </li>
 </ul>
+{% endmacro %}
+
+{% macro render_delete_modal(warning_message, id_field_name, target_url, is_htmx, csrf_token) %}
+<div class="modal fade" id="warningModal" tabindex="-1" aria-labelledby="warningModalLabel" aria-hidden="true" {% if is_htmx %} htmx {% endif %}>
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5 text-danger" id="warningModalLabel">Uwaga</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                {{ warning_message }}
+                <br>
+                <span class="text-danger fw-bold text-decoration-underline">
+                    Operacji nie można cofnąć.
+                </span>
+            </div>
+            <div class="modal-footer">
+                {% if is_htmx %}
+                <form hx-post="{{ target_url }}">
+                {% else %}
+                <form action="{{ target_url }}" method="post">
+                {% endif %}
+                    <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+                    <button type="submit" class="btn btn-danger">Usuń</button>
+                    <input type="number" id="modalIdFieldName" hidden name="{{ id_field_name }}">
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 {% endmacro %}

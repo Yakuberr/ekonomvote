@@ -60,9 +60,9 @@ def create_voting_event(request:HttpRequest):
             try:
                 voting_event = create_event_voting_db_helper(cleaned_data, request=request)
             except ValidationError:
-                messages.add_message(request, level=40, message="Nie udało się dodać głosowań")
+                messages.add_message(request, level=40, message="Nie udało się dodać głosowań", extra_tags='danger')
                 return redirect(reverse('panel:create_voting_event'))
-            messages.success(request, f'Dodano wydarzenie o ID: {voting_event.id}')
+            messages.success(request, f'Dodano wydarzenie o ID: {voting_event.id}', extra_tags='success')
             redirect_to = request.POST.get('redirect_to', 'list')
             URL_MAP = {
                 'list': reverse('panel:list_voting_events'),
@@ -73,7 +73,7 @@ def create_voting_event(request:HttpRequest):
         else:
             for field, errors in form.errors.items():
                 for error in errors:
-                    messages.add_message(request, level=40, message=error)
+                    messages.add_message(request, level=40, message=error, extra_tags='danger')
             return redirect(reverse('panel:create_voting_event'))
 
 
@@ -123,9 +123,9 @@ def update_voting_event(request:HttpRequest, voting_event_id:int):
                 with transaction.atomic():
                     update_event_voting_db_helper(form.cleaned_data, voting_event_id, voting_nomination_id, voting_final_id, with_nominations=voting_event.with_nominations)
             except Exception as Ex:
-                messages.error(request, message=f'Wystąpił problem z aktualizacją')
+                messages.error(request, message=f'Wystąpił problem z aktualizacją', extra_tags='danger')
                 return redirect(reverse('panel:update_voting_event', kwargs={'voting_event_id':voting_event_id}))
-            messages.success(request, f'Zaktualizowano dane głosowania o ID: {voting_event_id}')
+            messages.success(request, f'Zaktualizowano dane głosowania o ID: {voting_event_id}', extra_tags='success')
             redirect_to = request.POST.get('redirect_to', 'list')
             URL_MAP = {
                 'list':reverse('panel:list_voting_events'),
@@ -136,7 +136,7 @@ def update_voting_event(request:HttpRequest, voting_event_id:int):
         else:
             for field, errors in form.errors.items():
                 for error in errors:
-                    messages.add_message(request, level=40, message=error)
+                    messages.add_message(request, level=40, message=error, extra_tags='danger')
             return redirect(reverse('panel:update_voting', kwargs={'voting_id':voting_event_id}))
 
 

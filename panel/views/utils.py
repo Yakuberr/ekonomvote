@@ -78,7 +78,7 @@ def build_delete_feedback_response(request: HttpRequest, type: int, message: str
     elif htmx and alert_template is None:
         return HttpResponse(content='', status=200)
     else:
-        messages.add_message(request, level=type, message=message)
+        messages.add_message(request, level=type, message=message, extra_tags=ALERT_TYPE_MAP.get(type, 'info'))
         return redirect(redirect_url)
 
 
