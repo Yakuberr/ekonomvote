@@ -60,11 +60,25 @@ class Teacher(models.Model):
 
 
 class Candidature (models.Model):
+    # TODO: Kandydatury powinny być tworzone automatycznie dla danego wydarzenia
     """Model reprezentujący pojedyńczą rywalizację w kontekście: nauczyciel-oscar-nominacja"""
-    oscar = models.ForeignKey(Oscar, on_delete=models.CASCADE, related_name='candidatures')
-    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='candidatures')
-    voting_round = models.ForeignKey('VotingRound', on_delete=models.CASCADE, related_name='candidatures')
+    oscar = models.ForeignKey(Oscar, on_delete=models.CASCADE, related_name='candidatures', error_messages={
+        'invalid_choice':"Nieprawidłowa wartość dla pola oscarów",
+        'null':"Pole oscarów nie może być puste",
+        "blank":"Pole oscarów jest wymagane"
+    })
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='candidatures', error_messages={
+        'invalid_choice':"Nieprawidłowa wartość dla pola nauczycieli",
+        'null':"Pole nauczycieli nie może być puste",
+        "blank":"Pole nauczycieli jest wymagane"
+    })
+    voting_round = models.ForeignKey('VotingRound', on_delete=models.CASCADE, related_name='candidatures', error_messages={
+        'invalid_choice':"Nieprawidłowa wartość dla pola rund",
+        'null':"Pole rund nie może być puste",
+        "blank":"Pole rund jest wymagane"
+    })
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
 
     class Meta:
@@ -72,7 +86,8 @@ class Candidature (models.Model):
             models.UniqueConstraint(
                 fields=['teacher', 'oscar', 'voting_round'],
                 name='unique_comp_per_teacher_per_oscar_per_round',
-                violation_error_message="Nauczyciel w ramach pojedyńczej rywalizacji może istnieć tylko raz w ramach całego kontekstu rundy głosowania"
+                violation_error_message="Nauczyciel w ramach pojedyńczej rywalizacji może istnieć tylko raz w ramach całego kontekstu rundy głosowania",
+                violation_error_code='constraint_violation'
             )
         ]
         verbose_name = "Kandydatura"
@@ -124,6 +139,18 @@ class VotingEvent(models.Model):
         if self.last_round_start <= now <= self.last_round_end:
             return "Aktywne"
         return "Zakończone"
+
+    def populate_first_round(self, first_round):
+        if first_round.candidatures.count() > 0:
+            raise Exception(f"Nie można wypełnić pierwszej rundy danymi (id: {first_round.id}), ponieważ już zawiera kandydatury")
+        for o in Oscar.objects.all():
+            for t in Teacher.objects.all():
+                Candidature.objects.create(
+                    teacher=t,
+                    oscar=o,
+                    voting_round=first_round
+                )
+
 
     def __str__(self):
         return f'VotingEvent(created_at={self.localize_dt(self.created_at).strftime('%Y.%m.%d %H:%M:%S')}, with_nominations={self.with_nominations})'
