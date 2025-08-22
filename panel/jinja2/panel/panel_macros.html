@@ -12,7 +12,7 @@
     <div class="collapse navbar-collapse" id="navbarToggler">
       <ul class="navbar-nav me-auto mb-2 mb-lg-0">
         <li class="nav-item">
-          <a class="nav-link {% if current_page == 'oscary' %}active{% endif %}" href="#">Oscary</a>
+          <a class="nav-link {% if current_page == 'oscary' %}active{% endif %}" href="{{ url('panel:list_voting_events') }}">Oscary</a>
         </li>
         <li class="nav-item">
           <a class="nav-link {% if current_page == 'samorząd' %}active{% endif %}"
@@ -171,4 +171,37 @@
         </div>
     </div>
 </div>
+{% endmacro %}
+
+{% macro render_creation_model_form(form, action_url, csrf_token, main_legend_text, tips_legend_text, tips=[]) %}
+    <form class="add-object-form normal-sized-form" action="{{ action_url }}" method="post" enctype="multipart/form-data">
+        <div class="form-secondary-buttons">
+            {% if form.instance.pk %}
+            <button type="button" btn-type="delete" btn-data="{{ form.instance.id }}"
+                class="form-secondary-button btn btn-sm"><i class="fa-solid fa-trash"></i></button>
+            {% endif %}
+            {% if tips %}
+            <a tabindex="0" class="form-secondary-button btn btn-sm" role="button" data-bs-toggle="popover"
+                data-bs-trigger="focus" data-bs-placement="bottom" data-bs-html="true"
+                data-bs-title="{{ tips_legend_text }}" data-bs-content="<ul style='margin:0;padding-left:1rem;'>
+                {% for t in tips %}
+               <li>{{ t }}</li>
+               {% endfor %}
+            </ul>">
+                <i class="fa-solid fa-circle-info"></i>
+            </a>
+            {% endif %}
+        </div>
+        <legend class="mb-3 text-eco-light-cyan">{{ main_legend_text }}</legend>
+        
+        {{ caller() }}
+
+        <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+                <div class="d-flex flex-lg-row flex-column gap-1 gap-lg-none">
+            <div class="col-12 col-lg-10 d-flex flex-lg-row flex-column justify-content-lg-start gap-lg-3 gap-1">
+                <button type="submit" class="btn btn-outline-eco-light-cyan" name="redirect_to" value="list">Zapisz</button>
+                <button type="submit" class="btn btn-outline-eco-light-cyan" name="redirect_to" value="add_new">Zapisz i dodaj nowe</button>
+                <button type="submit" class="btn btn-outline-eco-light-cyan" name="redirect_to" value="edit">Zapisz i kontynuuj edycję</button>
+            </div>
+        </div>    </form>
 {% endmacro %}

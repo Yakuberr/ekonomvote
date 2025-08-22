@@ -10,7 +10,7 @@ import re
 import bleach
 
 from samorzad.models import Voting, Candidate, CandidateRegistration, ElectoralProgram
-from oscary.models import VotingEvent
+from oscary.models import VotingEvent, Oscar, Teacher
 from .bleach_config import ALLOWED_TAGS, ALLOWED_ATTRIBUTES, css_sanitizer
 
 MAX_IMAGE_SIZE_MB = 2
@@ -237,6 +237,65 @@ class OscaryListVotingsForm(forms.Form):
             except KeyError:
                 value = None
         return value
+
+class OscaryCreateOscarForm(forms.ModelForm):
+    class Meta:
+        model = Oscar
+        fields = ['name', 'info']
+
+class OscaryListOscarsForm(forms.Form):
+    sort_by = forms.ChoiceField(choices=[
+        ('id', 'ID'),
+        ('name', 'Nazwa'),
+        ('creation', 'Data utworzenia'),
+        ('update', 'Data aktualizacji')
+    ], initial='id', required=False)
+
+    sort_order = forms.ChoiceField(choices=[
+        ('asc', 'Rosnąco'),
+        ('desc', 'Malejąco')
+    ], initial='asc', required=False)
+
+    search = forms.CharField(max_length=2048 ,error_messages={
+        'max_length':'Można podać maksymalnie 2048 znaków'
+    }, required=False)
+
+class OscaryCreateTeacher(forms.ModelForm):
+    class Meta:
+        model = Teacher
+        fields = ['first_name', 'second_name', 'last_name', 'info', 'image']
+
+    def clean_image(self):
+        image = self.cleaned_data.get('image')
+        if image:
+            if image.size > MAX_IMAGE_SIZE_MB * 1024 * 1024:
+                raise ValidationError(f"Zdjęcie nie może być większe niż {MAX_IMAGE_SIZE_MB}MB.")
+            try:
+                img = Image.open(image)
+                if img.size != (400, 400):
+                    raise ValidationError("Zdjęcie musi mieć dokładnie 400x400 pikseli.")
+            except Exception:
+                raise ValidationError("Nie udało się przetworzyć obrazu. Upewnij się, że to poprawny plik graficzny.")
+        return image
+
+class OscaryListTeachersForm(forms.Form):
+    sort_by = forms.ChoiceField(choices=[
+        ('id', 'ID'),
+        ('name', 'Nazwa'),
+        ('creation', 'Data utworzenia'),
+        ('update', 'Data aktualizacji')
+    ], initial='id', required=False)
+
+    sort_order = forms.ChoiceField(choices=[
+        ('asc', 'Rosnąco'),
+        ('desc', 'Malejąco')
+    ], initial='asc', required=False)
+
+    search = forms.CharField(max_length=2048 ,error_messages={
+        'max_length':'Można podać maksymalnie 2048 znaków'
+    }, required=False)
+
+
 
 
 

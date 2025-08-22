@@ -165,31 +165,15 @@
     </div>
 </main>
 <!-- Modal -->
-<div class="modal fade" id="warningModal" tabindex="-1" aria-labelledby="warningModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h1 class="modal-title fs-5 text-danger" id="warningModalLabel">Uwaga</h1>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                Usunięcie głosowania sprawi trwałe usunięcie głosowania z systemu łącznie ze wszystkimi statystykami.
-                <br>
-                <span class="text-danger fw-bold text-decoration-underline">
-                    Operacji nie można cofnąć.
-                </span>
-            </div>
-            <div class="modal-footer">
-                <form action="{{ url('panel:delete_voting_event') }}" method="post">
-                    <input hidden type="number" name="voting_event_id" id="votingIdInput">
-                    <input hidden type="text" name="red">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-danger">Usuń</button>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
+{% with modal_csrf_token = csrf_token %}
+    {{ render_delete_modal(
+        warning_message = "Usunięcie wydarzenia sprawi trwałe usunięcie wydarzenia z systemu łącznie ze wszystkimi statystykami i powiązanymi obiektami (rundy głosowań, kandydatury, głosy)",
+        id_field_name = "voting_event_id",
+        target_url = url('panel:delete_voting_event'),
+        is_htmx = False,
+        csrf_token = modal_csrf_token
+    ) }}
+{% endwith %}
 <script>
     function renderRequiredLabelStar(parent) {
         parent.querySelectorAll('label + input[required]').forEach(input => {
@@ -203,16 +187,6 @@
         parent.querySelectorAll('span.required-label-star').forEach(e => e.remove())
     }
     renderRequiredLabelStar(document)
-</script>
-<script>
-    const warningModal = new bootstrap.Modal(document.getElementById('warningModal'))
-    const votingIdInput = document.getElementById('votingIdInput')
-    document.querySelectorAll('button[btn-type="delete"]').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            warningModal.show()
-            votingIdInput.value = Number(e.currentTarget.getAttribute('btn-data'))
-        })
-    })
 </script>
 {% if voting_event_id %}
 <script>

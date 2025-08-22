@@ -27,6 +27,16 @@ from .views.oscary import (
     delete_voting_event,
     list_voting_events,
     partial_list_voting_events,
+    create_oscar,
+    update_oscar,
+    delete_oscar,
+    list_oscars,
+    partial_list_oscars,
+    create_teacher,
+    update_teacher,
+    delete_teacher,
+    list_teachers,
+    partial_list_teachers
 )
 
 
@@ -61,7 +71,17 @@ urlpatterns = [
     path('oscary/edytuj/glosowanie/<int:voting_event_id>', update_voting_event, name='update_voting_event'),
     path('oscary/usun/glosowanie', delete_voting_event, name='delete_voting_event'),
     path('oscary/lista/glosowania', list_voting_events, name='list_voting_events'),
-    path('oscary/partials/lista/glosowania', partial_list_voting_events, name='partial_list_voting_events')
+    path('oscary/partials/lista/glosowania', partial_list_voting_events, name='partial_list_voting_events'),
+    path('oscary/dodaj/oscara', create_oscar, name="create_oscar"),
+    path('oscary/edytuj/oscara/<int:oscar_id>', update_oscar, name="update_oscar"),
+    path('oscary/usun/oscara', delete_oscar, name="delete_oscar"),
+    path('oscary/lista/oscary', list_oscars, name="list_oscars"),
+    path('oscary/partials/lista/oscary', partial_list_oscars, name="partial_list_oscars"),
+    path('oscary/dodaj/nauczyciela', create_teacher, name="create_teacher"),
+    path('oscary/edytuj/nauczyciela/<int:teacher_id>', update_teacher, name="update_teacher"),
+    path('oscary/usun/nauczyciela', delete_teacher, name="delete_teacher"),
+    path('oscary/lista/nauczyciele', list_teachers, name="list_teachers"),
+    path('oscary/partials/lista/nauczyciele', partial_list_teachers, name="partial_list_teachers"),
     # path('oscary/dodaj-nauczyciela', create_teacher, name="create_teacher"),
     # path('oscary/dodaj-kandydature', create_candidature, name='create_candidature'),
     # path('oscary/', read_voting_event_list, name='read_voting_event_list'),

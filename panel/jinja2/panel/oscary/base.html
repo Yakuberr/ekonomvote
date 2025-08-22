@@ -1,4 +1,4 @@
-{% from 'panel/panel_macros.html' import render_navbar, render_messages, render_samorzad_sidebar %}
+{% from 'panel/panel_macros.html' import render_navbar, render_messages, render_samorzad_sidebar, render_delete_modal, render_creation_model_form %}
 <!DOCTYPE html>
 <html lang="pl" data-bs-theme="dark">
 <head>
@@ -45,7 +45,7 @@
         border-color: var(--bs-eco-light-cyan);
         color: var(--bs-dark);
         }
-
+/* 
         input.form-control:focus, select.form-select:focus{
             border-color: var(--bs-eco-light-cyan);
             box-shadow: none;
@@ -57,7 +57,7 @@
         input[type=checkbox]:checked{
             background-color: var(--bs-eco-light-cyan);
             border-color: var(--bs-eco-light-cyan);
-        }
+        } */
         .sidebar-link{
             color: rgb(190, 190, 190);
         }

@@ -1,0 +1,124 @@
+{% extends "panel/oscary/base.html" %}
+{% block title %}
+{% if form.instance %}
+Edytuj oscara {{ form.instance.id }}
+{% else %}
+Utwórz oscara
+{% endif %}
+{% endblock title %}
+{% block body_navbar %}
+{{ render_navbar(current_page='oscary') }}
+{% endblock %}
+{% block body_content %}
+<main class="container-fluid">
+    <div class="row">
+        <div class="col-12 col-lg-2 border-4 border-eco-light-cyan">
+            {{ render_samorzad_sidebar(current_page='add_voting') }}
+        </div>
+        <div
+            class="col-12 col-lg-10 bg-dark scrollable-column d-flex justify-content-center align-items-center mt-5 mb-5">
+            {% if form.instance.id %}
+            <form class="add-object-form normal-sized-form" action="{{ url('panel:update_oscar', kwargs={'oscar_id':form.instance.id}) }}" method="post">
+                <div class="form-secondary-buttons">
+                    <button type="button" btn-type="delete" btn-data="{{ form.instance.id }}"
+                        class="form-secondary-button btn btn-sm"><i class="fa-solid fa-trash"></i></button>
+                    <a tabindex="0" class="form-secondary-button btn btn-sm" role="button" data-bs-toggle="popover"
+                        data-bs-trigger="focus" data-bs-placement="bottom" data-bs-html="true"
+                        data-bs-title="Reguły dodawania głosowania" data-bs-content="<ul style='margin:0;padding-left:1rem;'>
+                        {% for t in tips %}
+                       <li>{{ t }}</li>
+                       {% endfor %}
+                    </ul>">
+                        <i class="fa-solid fa-circle-info"></i>
+                    </a>
+                </div>
+                <legend class="mb-3 text-eco-light-cyan">Edytuj oscara nr {{ form.instance.id }}</legend>
+                <div class="mb-3">
+                    <label for="votingPlannedStart" class="form-label">Nazwa</label>
+                    <input name="name" type="text" class="text-based-input-form form-control" id="oscarName" value="{{ form.instance.name }}" required>
+                </div>
+                <div class="mb-4">
+                    <label for="floatingTextarea2" class="form-label">Opis</label>
+                    <textarea class="form-control text-based-input-form" id="floatingTextarea2" style="height: 100px"
+                        name="info" required>{{ form.instance.info }}</textarea>
+                </div>
+                {% csrf_token %}
+                <div class="d-flex flex-lg-row flex-column gap-1 gap-lg-none">
+                    <div
+                        class="col-12 col-lg-10 d-flex flex-lg-row flex-column justify-content-lg-start gap-lg-3 gap-1">
+                        <button type="submit" class="btn btn-outline-eco-light-cyan" name="redirect_to"
+                            value="list">Zapisz</button>
+                        <button type="submit" class="btn btn-outline-eco-light-cyan" name="redirect_to"
+                            value="add_new">Zapisz i dodaj nowe</button>
+                        <button type="submit" class="btn btn-outline-eco-light-cyan" name="redirect_to"
+                            value="edit">Zapisz i kontynuuj edycję</button>
+                    </div>
+                </div>
+            </form>
+            {% else %}
+            <form class="add-object-form normal-sized-form" action="{{ url('panel:create_oscar') }}" method="post">
+                <div class="form-secondary-buttons">
+                    <a tabindex="0" class="form-secondary-button btn btn-sm" role="button" data-bs-toggle="popover"
+                        data-bs-trigger="focus" data-bs-placement="bottom" data-bs-html="true"
+                        data-bs-title="Reguły dodawania głosowania" data-bs-content="<ul style='margin:0;padding-left:1rem;'>
+                        {% for t in tips %}
+                       <li>{{ t }}</li>
+                       {% endfor %}
+                    </ul>">
+                        <i class="fa-solid fa-circle-info"></i>
+                    </a>
+                </div>
+                <legend class="mb-3 text-eco-light-cyan">Dodaj oscara</legend>
+                <div class="mb-3">
+                    <label for="votingPlannedStart" class="form-label">Nazwa</label>
+                    <input name="name" type="text" class="text-based-input-form form-control" id="oscarName" required>
+                </div>
+                <div class="mb-4">
+                    <label for="floatingTextarea2" class="form-label">Opis</label>
+                    <textarea class="form-control text-based-input-form" id="floatingTextarea2" style="height: 100px"
+                        name="info" required></textarea>
+                </div>
+                {% csrf_token %}
+                <div class="d-flex flex-lg-row flex-column gap-1 gap-lg-none">
+                    <div
+                        class="col-12 col-lg-10 d-flex flex-lg-row flex-column justify-content-lg-start gap-lg-3 gap-1">
+                        <button type="submit" class="btn btn-outline-eco-light-cyan" name="redirect_to"
+                            value="list">Zapisz</button>
+                        <button type="submit" class="btn btn-outline-eco-light-cyan" name="redirect_to"
+                            value="add_new">Zapisz i dodaj nowe</button>
+                        <button type="submit" class="btn btn-outline-eco-light-cyan" name="redirect_to"
+                            value="edit">Zapisz i kontynuuj edycję</button>
+                    </div>
+                </div>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+</main>
+<!-- Modal -->
+{% with modal_csrf_token = csrf_token %}
+{{ render_delete_modal(
+warning_message = "Usunięcie oscara sprawi trwałe usunięcie oscara z systemu łącznie ze wszystkimi statystykami
+i powiązanymi obiektami (kandydatury).",
+id_field_name = "oscar_id",
+target_url = url('panel:delete_oscar'),
+is_htmx = False,
+csrf_token = modal_csrf_token
+) }}
+{% endwith %}
+<script>
+    function renderRequiredLabelStar(parent) {
+        parent.querySelectorAll('label + [required]').forEach(input => {
+            const label = input.previousElementSibling;
+            if (label && label.tagName.toLowerCase() === "label") {
+                label.innerHTML += ' <span class="required-label-star" style="color: rgb(213, 13, 13)">*</span>';
+            }
+        });
+    }
+    function destroyRequiredLabelStar(parent) {
+        parent.querySelectorAll('span.required-label-star').forEach(e => e.remove())
+    }
+    renderRequiredLabelStar(document)
+</script>
+
+{% endblock body_content %}

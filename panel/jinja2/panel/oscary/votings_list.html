@@ -1,11 +1,11 @@
 {% extends "panel/oscary/base.html" %}
 {% block title %}
-Samorząd - lista głosowań
+Oscary - lista wydarzeń
 {% endblock title %}
 {% block head_css_internal %}
 {% endblock %}
 {% block body_navbar %}
-{{ render_navbar(current_page='samorząd') }}
+{{ render_navbar(current_page='oscary') }}
 {% endblock %}
 {% block body_content %}
 <main class="container-fluid overflow-hidden">
@@ -98,29 +98,16 @@ Samorząd - lista głosowań
     </div>
 </main>
 <!-- Modal -->
-<div class="modal fade" id="warningModal" tabindex="-1" aria-labelledby="warningModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h1 class="modal-title fs-5 text-danger" id="warningModalLabel">Uwaga</h1>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                Usunięcie głosowania sprawi trwałe usunięcie głosowania z systemu łącznie ze wszystkimi statystykami.
-                <br>
-                <span class="text-danger fw-bold text-decoration-underline">
-                    Operacji nie można cofnąć.
-                </span>
-            </div>
-            <div class="modal-footer">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-danger">Usuń</button>
-                <input type="number" id="votingIdInput" hidden name="voting_id">
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
+{% with modal_csrf_token = csrf_token %}
+{{ render_delete_modal(
+warning_message = "Usunięcie wydarzenia sprawi trwałe usunięcie wydarzenia z systemu łącznie ze wszystkimi statystykami
+i powiązanymi obiektami (rundy głosowań, kandydatury, głosy).",
+id_field_name = "voting_event_id",
+target_url = url('panel:delete_voting_event'),
+is_htmx = True,
+csrf_token = modal_csrf_token
+) }}
+{% endwith %}
 <script>
     let statusFilterCounter = 0
     const statusBadge = document.getElementById('statusFiltrBadge')
@@ -154,7 +141,7 @@ Samorząd - lista głosowań
             if (event.target.classList.contains('active')) {
                 nominationsBadge.style.display = 'none'
                 nominationsInput.value = ''
-            }else{
+            } else {
                 nominationsBadge.style.display = 'inline-block'
                 nominationsInput.value = event.target.value
             }
@@ -169,30 +156,6 @@ Samorząd - lista głosowań
                 btn.classList.add('active');
             }
         });
-    });
-</script>
-<script>
-    const modalEl = document.getElementById('warningModal')
-    const warningModal = new bootstrap.Modal(document.getElementById('warningModal'))
-    const modalForm = modalEl.querySelector('form')
-    document.addEventListener('click', (e) => {
-        const btn = e.target.closest('button[btn-type="delete"]')
-        if (btn) {
-            const votingIdInput = document.getElementById('votingIdInput')
-            if (modalEl && votingIdInput) {
-                warningModal.show()
-                votingIdInput.value = Number(btn.getAttribute('btn-data'))
-                modalForm.setAttribute('hx-target', `#tableRow${btn.getAttribute('btn-row')}`)
-            }
-        }
-    })
-</script>
-<script>
-    document.body.addEventListener('htmx:afterRequest', function (event) {
-        const modal = bootstrap.Modal.getInstance(document.getElementById('warningModal'));
-        if (modal) {
-            modal.hide();
-        }
     });
 </script>
 {% endblock body_content %}

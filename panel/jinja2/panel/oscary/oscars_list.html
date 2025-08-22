@@ -1,0 +1,93 @@
+{% extends "panel/oscary/base.html" %}
+{% block title %}
+Oscary - lista oscarów
+{% endblock title %}
+{% block head_css_internal %}
+{% endblock %}
+{% block body_navbar %}
+{{ render_navbar(current_page='oscary') }}
+{% endblock %}
+{% block body_content %}
+<main class="container-fluid overflow-hidden">
+    <div class="row overflow-hidden">
+        <div class="col-12 col-lg-2 border-4 border-eco-light-cyan independent-scroll">
+            {{ render_samorzad_sidebar(current_page='index') }}
+        </div>
+        <div class="col-12 col-lg-10 bg-dark scrollable-column independent-scroll">
+            <div class="card mt-3 mt-lg-4 bg-black bg-opacity-25 border-gray shadow-lg">
+                <div class="card-body">
+                    <form method="get" class="row g-3" id="filterForm"
+                        hx-get="{{ url('panel:partial_list_oscars') }}" hx-target="#table-container"
+                        hx-trigger="change, keyup delay:300ms from:input, click from:.form-dropdown-item, click from:.form-dropdown-toggle-item, submit"
+                        hx-push-url="false" hx-indicator="#tableSpinner">
+                        <div class="col-12 col-sm-6">
+                            <label for="candidatesSearch" class="form-label text-light text-break">Wyszukaj po
+                                nazwie:</label>
+                            <div class="input-group">
+                                <span class="input-group-text " id="basic-addon1">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                        class="bi bi-search" viewBox="0 0 16 16">
+                                        <path
+                                            d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0">
+                                        </path>
+                                    </svg>
+                                </span>
+                                <input class="form-control text-based-input-form" id="candidatesSearch"
+                                    placeholder="Wyszukaj po nazwie..." name="search" value="">
+                            </div>
+                        </div>
+                        <div class="col-6 col-sm-3">
+                            <label for="sort" class="form-label text-light">Sortuj według:</label>
+                            <select name="sort_by" id="sort" class="form-select">
+                                {% for sort_option in form.fields['sort_by'].choices %}
+                                <option value="{{ sort_option[0] }}">{{ sort_option[1] }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-6 col-sm-3">
+                            <label for="order" class="form-label text-light">Kolejność:</label>
+                            <select name="sort_order" id="order" class="form-select">
+                                <option value="asc">↑ Rosnąco</option>
+                                <option value="desc">↓ Malejąco</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <!-- Tabela głosowań -->
+            <div class="col-12 d-flex justify-content-center pt-3">
+                <div class="spinner-border htmx-indicator" role="status" id="tableSpinner">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+            <div id="table-container"
+                hx-get="{{ url('panel:partial_list_oscars') }}?{{ request.GET.urlencode() }}" hx-trigger="load"
+                hx-target="#table-container" hx-swap="innerHTML" hx-indicator="#tableSpinner">
+
+            </div>
+        </div>
+    </div>
+</main>
+<!-- Modal -->
+{% with modal_csrf_token = csrf_token %}
+{{ render_delete_modal(
+warning_message = "Usunięcie oscara sprawi trwałe usunięcie oscara z systemu łącznie ze wszystkimi statystykami.
+i powiązanymi obiektami (kandydatury).",
+id_field_name = "oscar_id",
+target_url = url('panel:delete_oscar'),
+is_htmx = True,
+csrf_token = modal_csrf_token
+) }}
+{% endwith %}
+<script>
+    document.querySelectorAll('.form-dropdown-toggle-item').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const isActive = btn.classList.contains('active');
+            document.querySelectorAll('.form-dropdown-toggle-item').forEach(b => b.classList.remove('active'));
+            if (!isActive) {
+                btn.classList.add('active');
+            }
+        });
+    });
+</script>
+{% endblock body_content %}

@@ -1,0 +1,118 @@
+{% extends "panel/oscary/base.html" %}
+{% block title %}
+Oscary - dodaj nauczyciela
+{% endblock title %}
+{% block body_navbar %}
+{{ render_navbar(current_page='oscary') }}
+{% endblock %}
+{% block body_content %}
+<main class="container-fluid">
+    <div class="row">
+        <div class="col-12 col-lg-2 border-4 border-eco-light-cyan">
+            {{ render_samorzad_sidebar(current_page='add_candidate') }}
+        </div>
+        <div class="mt-5 col-12 col-lg-10 bg-dark scrollable-column d-flex align-items-center flex-column">
+            {% if form.instance.pk %}
+                        {% call render_creation_model_form(
+            form = form,
+            action_url = url('panel:update_teacher', kwargs={'teacher_id':form.instance.id}),
+            csrf_token = csrf_token,
+            main_legend_text = 'Edytuj nauczyciela nr ' ~  form.instance.id ,
+            tips_legend_text = 'Reguły dodawania nauczyciela',
+            tips = tips
+            ) %}
+            <div class="mb-3">
+                <label for="firstName" class="form-label">Imię</label>
+                <input name="first_name" type="text" class="text-based-input-form form-control" id="firstName" value="{{ form.instance.first_name }}" required>
+            </div>
+            <div class="mb-3">
+                <label for="secondName" class="form-label">Drugie imię</label>
+                <input name="second_name" type="text" class="text-based-input-form form-control" id="secondName" value="{{ form.instance.second_name }}">
+            </div>
+            <div class="mb-3">
+                <label for="lastName" class="form-label">Nazwisko</label>
+                <input name="last_name" type="text" class="text-based-input-form form-control" id="lastName"
+                    value="{{ form.instance.last_name }}" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="imageInput">Zdjęcie kandydata: 400x400, max 2MB</label>
+                <input name="image" accept="image" type="file" class="form-control text-based-input-form"
+                    id="imageInput" onchange="loadFile(event)">
+                <img id="imagePreviewPlaceholder"
+                    src="{% if form.instance.image %} {{ form.instance.image.url }} {% endif %}" alt="Aktualny obraz"
+                    class="img-thumbnail my-2" style="max-height: 200px;" hidden>
+            </div>
+            <div class="mb-4">
+                <label for="teacherInfo" class="form-label">Opis</label>
+                <textarea name="info" id="teacherInfo" class="form-control text-based-input-form" required>{{ form.instance.info }}</textarea>
+            </div>
+            {% endcall %}
+            {% else %}
+            {% call render_creation_model_form(
+            form = form,
+            action_url = url('panel:create_teacher'),
+            csrf_token = csrf_token,
+            main_legend_text = 'Dodaj nauczyciela',
+            tips_legend_text = 'Reguły dodawania nauczyciela',
+            tips = tips
+            ) %}
+            <div class="mb-3">
+                <label for="firstName" class="form-label">Imię</label>
+                <input name="first_name" type="text" class="text-based-input-form form-control" id="firstName" required>
+            </div>
+            <div class="mb-3">
+                <label for="secondName" class="form-label">Drugie imię</label>
+                <input name="second_name" type="text" class="text-based-input-form form-control" id="secondName">
+            </div>
+            <div class="mb-3">
+                <label for="lastName" class="form-label">Nazwisko</label>
+                <input name="last_name" type="text" class="text-based-input-form form-control" id="lastName"
+                    required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="imageInput">Zdjęcie kandydata: 400x400, max 2MB</label>
+                <input name="image" accept="image" type="file" class="form-control text-based-input-form"
+                    id="imageInput" onchange="loadFile(event)">
+                <img id="imagePreviewPlaceholder"
+                    src="" alt="Aktualny obraz"
+                    class="img-thumbnail my-2" style="max-height: 200px;" hidden>
+            </div>
+            <div class="mb-4">
+                <label for="teacherInfo" class="form-label">Opis</label>
+                <textarea name="info" id="teacherInfo" class="form-control text-based-input-form" required></textarea>
+            </div>
+            {% endcall %}
+            {% endif %}
+        </div>
+    </div>
+</main>
+<!-- Modal -->
+{% with modal_csrf_token = csrf_token %}
+{{ render_delete_modal(
+warning_message = "Usunięcie nauczyciela sprawi trwałe usunięcie oscara z systemu łącznie ze wszystkimi statystykami
+i powiązanymi obiektami (Kandydatury, głosy).",
+id_field_name = "teacher_id",
+target_url = url('panel:delete_teacher'),
+is_htmx = False,
+csrf_token = modal_csrf_token
+) }}
+{% endwith %}
+<script>
+    document.querySelectorAll("label + [required]").forEach(input => {
+        const label = input.previousElementSibling;
+        if (label && label.tagName.toLowerCase() === "label") {
+            label.innerHTML += ' <span style="color: rgb(213, 13, 13)">*</span>';
+        }
+    });
+</script>
+<script>
+    var loadFile = function (event) {
+        var output = document.getElementById('imagePreviewPlaceholder');
+        output.src = URL.createObjectURL(event.target.files[0]);
+        output.removeAttribute('hidden')
+        output.onload = function () {
+            URL.revokeObjectURL(output.src) // free memory
+        }
+    };
+</script>
+{% endblock body_content %}
