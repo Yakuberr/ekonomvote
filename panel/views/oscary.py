@@ -11,7 +11,8 @@ from django.contrib.postgres.search import SearchRank, SearchQuery, SearchVector
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
-from django.db.models import Case, When, Value, CharField, OuterRef, Subquery, DateTimeField, IntegerField
+from django.db.models import Case, When, Value, CharField, OuterRef, Subquery, DateTimeField, IntegerField, \
+    BigIntegerField
 from django.template.loader import render_to_string
 from django.contrib.messages.constants import ERROR, SUCCESS, WARNING, INFO
 
@@ -27,7 +28,8 @@ from panel.forms import (OscaryAddWholeVotingEventForm,
                          OscaryCreateOscarForm,
                          OscaryListOscarsForm,
                          OscaryCreateTeacher,
-                         OscaryListTeachersForm)
+                         OscaryListTeachersForm,
+                         OscaryCreateCandidatureForm, OscaryListCandidaturesForm)
 from office_auth.auth_utils import opiekun_required
 from office_auth.models import ActionLog
 from .utils import get_changed_fields, build_sort_list, build_filter_kwargs, build_delete_feedback_response
@@ -53,7 +55,8 @@ def create_voting_event(request:HttpRequest):
         'Zawiera nominacje: Ustawia czy wydarzenie zawiera nominacje. Uwaga pola nie można edytować',
         'Pola z datami muszą wskazywać na przyszłe daty',
         "Jeśli wydarzenie zawiera nominację to musi ona skończyć się przed rozpoczęciem rundy finałowej",
-        "Liczba zwycięzców: Liczba nauczycieli którzy przechodzą do rundy finałowej dla danego oscara. W finale wygrywa tylko 1 nauczyciel na oscara"
+        "Liczba zwycięzców: Liczba nauczycieli którzy przechodzą do rundy finałowej dla danego oscara. W finale wygrywa tylko 1 nauczyciel na oscara",
+        "UWAGA podczas tworzenia wydarzenia, kandydatury zostaną dodane automatycznie dodane do systemu. Może to zająć kilka sekund"
     ]
     if request.method == 'GET':
         form = OscaryAddWholeVotingEventForm()
@@ -418,7 +421,6 @@ def create_teacher(request:HttpRequest):
         else:
             for field, errors in form.errors.items():
                 for error in errors:
-                    print(field, error)
                     messages.add_message(request, level=40, message=error, extra_tags='danger')
             return redirect(reverse('panel:create_teacher'))
 
@@ -459,7 +461,6 @@ def update_teacher(request:HttpRequest, teacher_id:int):
         else:
             for field, errors in form.errors.items():
                 for error in errors:
-                    print(field, error)
                     messages.add_message(request, level=40, message=error, extra_tags='danger')
             return redirect(reverse('panel:update_teacher', kwargs={'teacher_id':teacher_id}))
 
@@ -537,5 +538,205 @@ def partial_list_teachers(request:HttpRequest):
         'page_obj':page_obj,
         'querystring':querystring,
     })
+
+
+@require_http_methods(['GET', 'POST'])
+@login_required(login_url='office_auth:microsoft_login')
+@opiekun_required()
+def create_candidature(request:HttpRequest):
+    if request.method == 'GET':
+        REQUIREMENTS_TIPS = [
+            'Nauczyciel nie może 2 razy kandydowac na oscara w jednej rundzie.',
+        ]
+        form = OscaryCreateCandidatureForm()
+        oscars = Oscar.objects.all().order_by('name')
+        first_round_pk = Subquery(VotingRound.objects.filter(
+            voting_event=OuterRef('pk')
+        ).order_by('planned_start').values('pk')[:1],
+        output_field=BigIntegerField())
+        first_round_start = Subquery(VotingRound.objects.filter(
+            voting_event=OuterRef('pk')
+        ).order_by('planned_start').values('planned_start')[:1],
+        output_field=DateTimeField())
+        events = VotingEvent.objects.prefetch_related('voting_rounds').annotate(first_round_start=first_round_start, first_round_pk=first_round_pk).filter(first_round_start__gt=timezone.now())
+        teachers = Teacher.objects.all().order_by('first_name', 'second_name', 'last_name')
+        return render(request, 'panel/oscary/add_candidature.html', context={
+            'form':form,
+            'tips':REQUIREMENTS_TIPS,
+            'oscars':oscars,
+            'events':events,
+            'teachers':teachers
+        })
+    if request.method == 'POST':
+        form = OscaryCreateCandidatureForm(request.POST)
+        if form.is_valid():
+            try:
+                candidature = form.save()
+            except ValidationError as Ex:
+                messages.error(request, message=Ex.message, extra_tags='danger')
+                return redirect(reverse('panel:create_candidature'))
+            except Exception as Ex:
+                messages.error(request, message="Nie udało się dodać kandydatury", extra_tags='danger')
+                return redirect(reverse('panel:create_candidature'))
+            messages.success(request, f'Dodano pomyślnie kandydaturę, id: {candidature.id}', extra_tags='success')
+            redirect_to = request.POST.get('redirect_to', 'list')
+            URL_MAP = {
+                'list':reverse('panel:list_candidatures'),
+                'add_new':reverse('panel:create_candidature'),
+                'edit':reverse('panel:update_candidature', kwargs={'candidature_id':candidature.id})
+            }
+            return redirect(URL_MAP.get(redirect_to, 'list'))
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.add_message(request, level=40, message=error, extra_tags='danger')
+            return redirect(reverse('panel:create_candidature'))
+
+
+@require_http_methods(['GET', 'POST'])
+@login_required(login_url='office_auth:microsoft_login')
+@opiekun_required()
+def update_candidature(request:HttpRequest, candidature_id:int):
+    candidature = get_object_or_404(Candidature.objects.select_related('teacher', 'oscar', 'voting_round'), id=candidature_id)
+    if request.method == 'GET':
+        REQUIREMENTS_TIPS = [
+            'Nauczyciel nie może 2 razy kandydowac na oscara w jednej rundzie.',
+        ]
+        form = OscaryCreateCandidatureForm(instance=candidature)
+        oscars = Oscar.objects.all().order_by('name').exclude(id=candidature.oscar.id)
+        first_round_pk = Subquery(VotingRound.objects.filter(
+            voting_event=OuterRef('pk')
+        ).order_by('planned_start').values('pk')[:1],
+        output_field=BigIntegerField())
+        first_round_start = Subquery(VotingRound.objects.filter(
+            voting_event=OuterRef('pk')
+        ).order_by('planned_start').values('planned_start')[:1],
+        output_field=DateTimeField())
+        events = VotingEvent.objects.prefetch_related('voting_rounds').annotate(first_round_start=first_round_start, first_round_pk=first_round_pk).filter(first_round_start__gt=timezone.now())
+        teachers = Teacher.objects.all().order_by('first_name', 'second_name', 'last_name').exclude(id=candidature.teacher.id)
+        selected_event = candidature.voting_round.voting_event
+        events = events.exclude(id=selected_event.id)
+        return render(request, 'panel/oscary/add_candidature.html', context={
+            'form':form,
+            'tips':REQUIREMENTS_TIPS,
+            'oscars':oscars,
+            'events':events,
+            'teachers':teachers,
+            'selected_event':selected_event
+        })
+    if request.method == 'POST':
+        form = OscaryCreateCandidatureForm(request.POST, instance=candidature)
+        if form.is_valid():
+            try:
+                candidature = form.save()
+            except ValidationError as Ex:
+                messages.error(request, message=Ex.message, extra_tags='danger')
+                return redirect(reverse('panel:update_candidature', kwargs={'candidature_id':candidature_id}))
+            except Exception as Ex:
+                messages.error(request, message="Nie udało się edytować kandydatury", extra_tags='danger')
+                return redirect(reverse('panel:create_candidature'))
+            messages.success(request, f'Edytowano kandydaturę, id: {candidature.id}', extra_tags='success')
+            redirect_to = request.POST.get('redirect_to', 'list')
+            URL_MAP = {
+                'list':reverse('panel:list_candidatures'),
+                'add_new':reverse('panel:create_candidature'),
+                'edit':reverse('panel:update_candidature', kwargs={'candidature_id':candidature_id})
+            }
+            return redirect(URL_MAP.get(redirect_to, 'list'))
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.add_message(request, level=40, message=error, extra_tags='danger')
+            return redirect(reverse('panel:update_candidature', kwargs={'candidature_id':candidature_id}))
+
+
+@require_http_methods(['GET'])
+@login_required(login_url='office_auth:microsoft_login')
+@opiekun_required()
+def list_candidatures(request:HttpRequest):
+    form = OscaryListCandidaturesForm()
+    oscars = Oscar.objects.all().order_by('name')
+    events = VotingEvent.objects.all().order_by('id')
+    return render(request, 'panel/oscary/candidatures_list.html', context={
+        'form':form,
+        'oscars':oscars,
+        'events':events
+    })
+
+@require_http_methods(['GET'])
+@login_required(login_url='office_auth:microsoft_login')
+@opiekun_required()
+def partial_list_candidatures(request:HttpRequest):
+    SORT_MAP = {
+        'name':['teacher__first_name', 'teacher__second_name', 'teacher__last_name'],
+        'creation':['created_at'],
+        'update':['updated_at'],
+        'id':['id']
+    }
+    FILTER_MAP = {
+        'oscars':{
+            'field':'oscar__id'
+        },
+        'events':{
+            'field':'voting_round__voting_event__id'
+        },
+        'round_type':{
+            'field':'voting_round__round_type'
+        }
+    }
+    form = OscaryListCandidaturesForm(request.GET)
+    form.is_valid()
+    sort_data = build_sort_list(SORT_MAP, form.cleaned_data)
+    filter_data = build_filter_kwargs(FILTER_MAP, form.cleaned_data)
+    try:
+        page_number = int(request.GET.get('page', 1))
+    except ValueError:
+        page_number = 1
+    now = timezone.now()
+    candidatures = Candidature.objects.select_related('oscar', 'teacher', 'voting_round', 'voting_round__voting_event')
+    if form.cleaned_data.get('teacher_search', '') != '':
+        vector = SearchVector('teacher__first_name', 'teacher__second_name', 'teacher__last_name')
+        query = SearchQuery(form.cleaned_data['teacher_search'], search_type='websearch')
+        candidatures = candidatures.annotate(rank=SearchRank(vector=vector, query=query)).filter(rank__gt=0, **filter_data).order_by('-rank', *sort_data['sort_fields'])
+    else:
+        candidatures = candidatures.filter(**filter_data).order_by(*sort_data['sort_fields'])
+    paginator = Paginator(candidatures, 25)
+    if page_number > paginator.num_pages:
+        page_number = paginator.num_pages
+    page_obj = paginator.get_page(page_number)
+    params = request.GET.copy()
+    params.pop('page', None)
+    querystring = params.urlencode()
+    return render(request, 'panel/oscary/partials/candidatures_list.html', context={
+        'page_obj':page_obj,
+        'querystring':querystring,
+    })
+
+@require_http_methods(['POST'])
+@login_required(login_url='office_auth:microsoft_login')
+@opiekun_required()
+def delete_candidature(request:HttpRequest):
+    """Widok usuwania wydarzenia głosowania. Działa zarówno dla statycznych formularzy jak i dynamicznych zapoytań HTMX"""
+    candidature_id = request.POST.get('candidature_id')
+    htmx = request.headers.get('HX-Request')
+    if not candidature_id or not candidature_id.isdigit():
+        return build_delete_feedback_response(request, type=ERROR, message="Nieprawidłowe ID kandydatury", redirect_url=reverse('panel:list_candidatures'))
+    candidature = Candidature.objects.filter(id=candidature_id).first()
+    if candidature:
+        try:
+            candidature.delete()
+            return build_delete_feedback_response(request, type=SUCCESS, message='Pomyślnie usunięto kandydature', redirect_url=reverse('panel:list_candidatures'), alert_template=None)
+        except ValidationError as Ex:
+            return build_delete_feedback_response(request, type=ERROR,
+                                                  message=Ex,
+                                                  redirect_url=reverse('panel:update_candidature',
+                                                                       kwargs={'candidature_id': candidature_id}))
+        except Exception as Ex:
+            return build_delete_feedback_response(request, type=ERROR,
+                                                  message='Wystąpił błąd podczas próby usunięcia kandydatury',
+                                                  redirect_url=reverse('panel:update_teacher',
+                                                                       kwargs={'candidature_id': candidature_id}))
+    else:
+        return build_delete_feedback_response(request, type=ERROR, message='Wystąpił błąd podczas próby usunięcia kandydatury', redirect_url=reverse('panel:update_candidature', kwargs={'candidature_id':candidature_id}))
 
 

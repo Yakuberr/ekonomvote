@@ -36,7 +36,12 @@ from .views.oscary import (
     update_teacher,
     delete_teacher,
     list_teachers,
-    partial_list_teachers
+    partial_list_teachers,
+    create_candidature,
+    update_candidature,
+    list_candidatures,
+    partial_list_candidatures,
+    delete_candidature
 )
 
 
@@ -82,6 +87,11 @@ urlpatterns = [
     path('oscary/usun/nauczyciela', delete_teacher, name="delete_teacher"),
     path('oscary/lista/nauczyciele', list_teachers, name="list_teachers"),
     path('oscary/partials/lista/nauczyciele', partial_list_teachers, name="partial_list_teachers"),
+    path('oscary/dodaj/kandydature', create_candidature, name="create_candidature"),
+    path('oscary/edytuj/kandydature/<int:candidature_id>', update_candidature, name="update_candidature"),
+    path('oscary/lista/kandydatury', list_candidatures, name="list_candidatures"),
+    path('oscary/partials/lista/kandydatury', partial_list_candidatures, name="partial_list_candidatures"),
+    path('oscary/usun/kandydatura', delete_candidature, name="delete_candidature"),
     # path('oscary/dodaj-nauczyciela', create_teacher, name="create_teacher"),
     # path('oscary/dodaj-kandydature', create_candidature, name='create_candidature'),
     # path('oscary/', read_voting_event_list, name='read_voting_event_list'),

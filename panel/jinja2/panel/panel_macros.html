@@ -12,7 +12,8 @@
     <div class="collapse navbar-collapse" id="navbarToggler">
       <ul class="navbar-nav me-auto mb-2 mb-lg-0">
         <li class="nav-item">
-          <a class="nav-link {% if current_page == 'oscary' %}active{% endif %}" href="{{ url('panel:list_voting_events') }}">Oscary</a>
+          <a class="nav-link {% if current_page == 'oscary' %}active{% endif %}"
+            href="{{ url('panel:list_voting_events') }}">Oscary</a>
         </li>
         <li class="nav-item">
           <a class="nav-link {% if current_page == 'samorząd' %}active{% endif %}"
@@ -47,7 +48,7 @@
       {% if messages %}
       {% for message in messages %}
       {% with tag = message.extra_tags %}
-        {% include "alert.html" %}
+      {% include "alert.html" %}
       {% endwith %}
       {% endfor %}
       {% endif %}
@@ -142,66 +143,172 @@
 </ul>
 {% endmacro %}
 
+{% macro render_oscary_sidebar(current_page=None) %}
+<ul class="nav flex-row flex-lg-column mt-3 mt-lg-4">
+  <li class="nav-item dropdown d-block d-lg-none">
+    {% if current_page == 'events_list' or current_page == 'teachers_list' or current_page == 'candidatures_list' or
+    current_page == 'oscars_list'%}
+    <a class="nav-link link-eco-light-cyan dropdown-toggle" aria-current="page" data-bs-toggle="dropdown" href="#"
+      role="button" aria-expanded="false">Lista</a>
+    {% else %}
+    <a class="nav-link sidebar-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button"
+      aria-expanded="false">Lista</a>
+    {% endif %}
+    <ul class="dropdown-menu">
+      <li><a class="dropdown-item" href="{{ url('panel:list_voting_events') }}">Wydarzeń</a></li>
+      <li><a class="dropdown-item" href="{{ url('panel:list_teachers') }}">Nauczycieli</a></li>
+      <li><a class="dropdown-item" href="{{ url('panel:list_candidatures') }}">Kandydatur</a></li>
+      <li><a class="dropdown-item" href="{{ url('panel:list_oscars') }}">Oscarów</a></li>
+    </ul>
+  </li>
+  <li class="nav-item d-none d-lg-block">
+    {% if current_page == 'events_list' %}
+    <a class="nav-link link-eco-light-cyan" href="{{ url('panel:list_voting_events') }}" aria-current="page">Lista
+      wydarzeń</a>
+    {% else %}
+    <a class="nav-link sidebar-link" href="{{ url('panel:list_voting_events') }}">Lista wydarzeń</a>
+    {% endif %}
+  </li>
+  <li class="nav-item d-none d-lg-block">
+    {% if current_page == 'teachers_list' %}
+    <a class="nav-link link-eco-light-cyan" href="{{ url('panel:list_teachers') }}" aria-current="page">Lista
+      nauczycieli</a>
+    {% else %}
+    <a class="nav-link sidebar-link" href="{{ url('panel:list_teachers') }}">Lista nauczycieli</a>
+    {% endif %}
+  </li>
+  <li class="nav-item d-none d-lg-block">
+    {% if current_page == 'candidatures_list' %}
+    <a class="nav-link link-eco-light-cyan" href="{{ url('panel:list_candidatures') }}" aria-current="page">Lista
+      kandydatur</a>
+    {% else %}
+    <a class="nav-link sidebar-link" href="{{ url('panel:list_candidatures') }}">Lista kandydatur</a>
+    {% endif %}
+  </li>
+  <li class="nav-item d-none d-lg-block">
+    {% if current_page == 'oscars_list' %}
+    <a class="nav-link link-eco-light-cyan" href="{{ url('panel:list_oscars') }}" aria-current="page">Lista
+      oscarów</a>
+    {% else %}
+    <a class="nav-link sidebar-link" href="{{ url('panel:list_oscars') }}">Lista oscarów</a>
+    {% endif %}
+  </li>
+  <hr class="d-none d-lg-block m-2">
+  <li class="nav-item dropdown d-block d-lg-none">
+    {% if current_page == 'create_event' or current_page == 'create_teacher' or current_page == 'create_candidature' or
+    current_page == 'create_oscar'%}
+    <a class="nav-link link-eco-light-cyan dropdown-toggle" aria-current="page" data-bs-toggle="dropdown" href="#"
+      role="button" aria-expanded="false">Dodaj</a>
+    {% else %}
+    <a class="nav-link sidebar-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button"
+      aria-expanded="false">Dodaj</a>
+    {% endif %}
+    <ul class="dropdown-menu">
+      <li><a class="dropdown-item" href="{{ url('panel:create_voting_event') }}">Wydarzenie</a></li>
+      <li><a class="dropdown-item" href="{{ url('panel:create_teacher') }}">Nauczyciela</a></li>
+      <li><a class="dropdown-item" href="{{ url('panel:create_candidature') }}">Kandydature</a></li>
+      <li><a class="dropdown-item" href="{{ url('panel:create_oscar') }}">Oscara</a></li>
+    </ul>
+  </li>
+  <li class="nav-item ">
+    {% if current_page == 'create_event' %}
+    <a class="nav-link link-eco-light-cyan" href="{{ url('panel:create_voting_event') }}" aria-current="page">Dodaj
+      wydarzenie</a>
+    {% else %}
+    <a class="nav-link sidebar-link" href="{{ url('panel:create_voting_event') }}">Dodaj wydarzenie</a>
+    {% endif %}
+  </li>
+  <li class="nav-item d-none d-lg-block">
+    {% if current_page == 'create_teacher' %}
+    <a class="nav-link link-eco-light-cyan" href="{{ url('panel:create_teacher') }}" aria-current="page">Dodaj
+      nauczyciela</a>
+    {% else %}
+    <a class="nav-link sidebar-link" href="{{ url('panel:create_teacher') }}">Dodaj nauczyciela</a>
+    {% endif %}
+  </li>
+  <li class="nav-item d-none d-lg-block">
+    {% if current_page == 'create_candidature' %}
+    <a class="nav-link link-eco-light-cyan" href="{{ url('panel:create_candidature') }}" aria-current="page">Dodaj
+      kandydature</a>
+    {% else %}
+    <a class="nav-link sidebar-link" href="{{ url('panel:create_candidature') }}">Dodaj kandydature</a>
+    {% endif %}
+  </li>
+  <li class="nav-item d-none d-lg-block">
+    {% if current_page == 'create_oscar' %}
+    <a class="nav-link link-eco-light-cyan" href="{{ url('panel:create_oscar') }}" aria-current="page">Dodaj
+      oscara</a>
+    {% else %}
+    <a class="nav-link sidebar-link" href="{{ url('panel:create_oscar') }}">Dodaj oscara</a>
+    {% endif %}
+  </li>
+</ul>
+{% endmacro %}
+
 {% macro render_delete_modal(warning_message, id_field_name, target_url, is_htmx, csrf_token) %}
-<div class="modal fade" id="warningModal" tabindex="-1" aria-labelledby="warningModalLabel" aria-hidden="true" {% if is_htmx %} htmx {% endif %}>
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h1 class="modal-title fs-5 text-danger" id="warningModalLabel">Uwaga</h1>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                {{ warning_message }}
-                <br>
-                <span class="text-danger fw-bold text-decoration-underline">
-                    Operacji nie można cofnąć.
-                </span>
-            </div>
-            <div class="modal-footer">
-                {% if is_htmx %}
-                <form hx-post="{{ target_url }}">
-                {% else %}
-                <form action="{{ target_url }}" method="post">
-                {% endif %}
-                    <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
-                    <button type="submit" class="btn btn-danger">Usuń</button>
-                    <input type="number" id="modalIdFieldName" hidden name="{{ id_field_name }}">
-                </form>
-            </div>
-        </div>
+<div class="modal fade" id="warningModal" tabindex="-1" aria-labelledby="warningModalLabel" aria-hidden="true" {% if
+  is_htmx %} htmx {% endif %}>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5 text-danger" id="warningModalLabel">Uwaga</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        {{ warning_message }}
+        <br>
+        <span class="text-danger fw-bold text-decoration-underline">
+          Operacji nie można cofnąć.
+        </span>
+      </div>
+      <div class="modal-footer">
+        {% if is_htmx %}
+        <form hx-post="{{ target_url }}">
+          {% else %}
+          <form action="{{ target_url }}" method="post">
+            {% endif %}
+            <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+            <button type="submit" class="btn btn-danger">Usuń</button>
+            <input type="number" id="modalIdFieldName" hidden name="{{ id_field_name }}">
+          </form>
+      </div>
     </div>
+  </div>
 </div>
 {% endmacro %}
 
 {% macro render_creation_model_form(form, action_url, csrf_token, main_legend_text, tips_legend_text, tips=[]) %}
-    <form class="add-object-form normal-sized-form" action="{{ action_url }}" method="post" enctype="multipart/form-data">
-        <div class="form-secondary-buttons">
-            {% if form.instance.pk %}
-            <button type="button" btn-type="delete" btn-data="{{ form.instance.id }}"
-                class="form-secondary-button btn btn-sm"><i class="fa-solid fa-trash"></i></button>
-            {% endif %}
-            {% if tips %}
-            <a tabindex="0" class="form-secondary-button btn btn-sm" role="button" data-bs-toggle="popover"
-                data-bs-trigger="focus" data-bs-placement="bottom" data-bs-html="true"
-                data-bs-title="{{ tips_legend_text }}" data-bs-content="<ul style='margin:0;padding-left:1rem;'>
+<form class="add-object-form normal-sized-form" action="{{ action_url }}" method="post" enctype="multipart/form-data">
+  <div class="form-secondary-buttons">
+    {% if form.instance.pk %}
+    <button type="button" btn-type="delete" btn-data="{{ form.instance.id }}"
+      class="form-secondary-button btn btn-sm"><i class="fa-solid fa-trash"></i></button>
+    {% endif %}
+    {% if tips %}
+    <a tabindex="0" class="form-secondary-button btn btn-sm" role="button" data-bs-toggle="popover"
+      data-bs-trigger="focus" data-bs-placement="bottom" data-bs-html="true" data-bs-title="{{ tips_legend_text }}"
+      data-bs-content="<ul style='margin:0;padding-left:1rem;'>
                 {% for t in tips %}
                <li>{{ t }}</li>
                {% endfor %}
             </ul>">
-                <i class="fa-solid fa-circle-info"></i>
-            </a>
-            {% endif %}
-        </div>
-        <legend class="mb-3 text-eco-light-cyan">{{ main_legend_text }}</legend>
-        
-        {{ caller() }}
+      <i class="fa-solid fa-circle-info"></i>
+    </a>
+    {% endif %}
+  </div>
+  <legend class="mb-3 text-eco-light-cyan">{{ main_legend_text }}</legend>
 
-        <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
-                <div class="d-flex flex-lg-row flex-column gap-1 gap-lg-none">
-            <div class="col-12 col-lg-10 d-flex flex-lg-row flex-column justify-content-lg-start gap-lg-3 gap-1">
-                <button type="submit" class="btn btn-outline-eco-light-cyan" name="redirect_to" value="list">Zapisz</button>
-                <button type="submit" class="btn btn-outline-eco-light-cyan" name="redirect_to" value="add_new">Zapisz i dodaj nowe</button>
-                <button type="submit" class="btn btn-outline-eco-light-cyan" name="redirect_to" value="edit">Zapisz i kontynuuj edycję</button>
-            </div>
-        </div>    </form>
+  {{ caller() }}
+
+  <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+  <div class="d-flex flex-lg-row flex-column gap-1 gap-lg-none">
+    <div class="col-12 col-lg-10 d-flex flex-lg-row flex-column justify-content-lg-start gap-lg-3 gap-1">
+      <button type="submit" class="btn btn-outline-eco-light-cyan" name="redirect_to" value="list">Zapisz</button>
+      <button type="submit" class="btn btn-outline-eco-light-cyan" name="redirect_to" value="add_new">Zapisz i dodaj
+        nowe</button>
+      <button type="submit" class="btn btn-outline-eco-light-cyan" name="redirect_to" value="edit">Zapisz i kontynuuj
+        edycję</button>
+    </div>
+  </div>
+</form>
 {% endmacro %}

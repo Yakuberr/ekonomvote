@@ -19,25 +19,11 @@ class OscarHelpers:
             voting_event = VotingEvent.objects.create(
                 with_nominations=with_nominations
             )
-            ActionLog.objects.create(
-                user=request.user,
-                action_type=ActionLog.ActionType.CREATE,
-                altered_fields={},
-                content_type=ContentType.objects.get_for_model(VotingEvent),
-                object_id=voting_event.id,
-            )
             final_round = VotingRound.objects.create(
                 planned_start=cleaned_data.get('l_round_start'),
                 planned_end=cleaned_data.get('l_round_end'),
                 voting_event=voting_event,
                 round_type=VotingRound.VotingRoundType.FINAL
-            )
-            ActionLog.objects.create(
-                user=request.user,
-                action_type=ActionLog.ActionType.CREATE,
-                altered_fields={},
-                content_type=ContentType.objects.get_for_model(VotingRound),
-                object_id=final_round.id,
             )
             if with_nominations:
                 nomination_round = VotingRound.objects.create(
@@ -47,13 +33,8 @@ class OscarHelpers:
                     round_type=VotingRound.VotingRoundType.NOMINATION,
                     max_tearchers_for_end=cleaned_data.get('f_round_t_count')
                 )
-                ActionLog.objects.create(
-                    user=request.user,
-                    action_type=ActionLog.ActionType.CREATE,
-                    altered_fields={},
-                    content_type=ContentType.objects.get_for_model(VotingRound),
-                    object_id=nomination_round.id,
-                )
+        first_round = nomination_round if with_nominations else final_round
+        voting_event.populate_first_round(first_round=first_round)
         return voting_event
 
     @staticmethod

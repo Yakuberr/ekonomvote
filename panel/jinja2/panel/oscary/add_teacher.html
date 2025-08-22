@@ -1,6 +1,10 @@
 {% extends "panel/oscary/base.html" %}
 {% block title %}
+{% if form.instance.pk %}
+Oscary - edytuj nauczyciela nr {{ form.instance.pk }}
+{% else %}
 Oscary - dodaj nauczyciela
+{% endif %}
 {% endblock title %}
 {% block body_navbar %}
 {{ render_navbar(current_page='oscary') }}
@@ -9,7 +13,7 @@ Oscary - dodaj nauczyciela
 <main class="container-fluid">
     <div class="row">
         <div class="col-12 col-lg-2 border-4 border-eco-light-cyan">
-            {{ render_samorzad_sidebar(current_page='add_candidate') }}
+            {{ render_oscary_sidebar(current_page='create_teacher') }}
         </div>
         <div class="mt-5 col-12 col-lg-10 bg-dark scrollable-column d-flex align-items-center flex-column">
             {% if form.instance.pk %}

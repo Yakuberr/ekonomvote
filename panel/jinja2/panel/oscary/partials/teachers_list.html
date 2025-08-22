@@ -3,13 +3,13 @@
         <div class="table-responsive table-container">
             <table class="table table-dark table-striped table-hover mb-0 table-fixed">
                 <colgroup>
-                    <col style="width: 4%;">
-                    <col style="width: 8%;">
-                    <col style="width: 8%;">
-                    <col style="width: 8%;">
-                    <col style="width: 8%;">
-                    <col style="width: 12%;">
-                    <col style="width: 12%;">
+                    <col style="width: 13%;">
+                    <col style="width: 13%;">
+                    <col style="width: 13%;">
+                    <col style="width: 13%;">
+                    <col style="width: 13%;">
+                    <col style="width: 13%;">
+                    <col style="width: 22%;">
                 </colgroup>
                 <thead class="table-dark">
                     <tr>
@@ -73,10 +73,10 @@
     <ul class="pagination justify-content-center">
         {% if page_obj.has_previous() %}
         <li class="page-item"><a class="page-link"
-                hx-get="{{ url('panel:partial_list_oscars') }}?page=1&{{ querystring }}" href="">&laquo;&laquo;
+                hx-get="{{ url('panel:partial_list_teachers') }}?page=1&{{ querystring }}" href="">&laquo;&laquo;
             </a></li>
         <li class="page-item"><a class="page-link"
-                hx-get="{{ url('panel:partial_list_oscars') }}?page={{ page_obj.previous_page_number() }}&{{ querystring }}"
+                hx-get="{{ url('panel:partial_list_teachers') }}?page={{ page_obj.previous_page_number() }}&{{ querystring }}"
                 href="">&laquo;</a>
         </li>
         {% else %}
@@ -88,11 +88,11 @@
         </li>
         {% if page_obj.has_next() %}
         <li class="page-item"><a class="page-link"
-                hx-get="{{ url('panel:partial_list_oscars') }}?page={{ page_obj.next_page_number() }}&{{ querystring }}"
+                hx-get="{{ url('panel:partial_list_teachers') }}?page={{ page_obj.next_page_number() }}&{{ querystring }}"
                 href="">&raquo;</a>
         </li>
         <li class="page-item"><a class="page-link"
-                hx-get="{{ url('panel:partial_list_oscars') }}?page={{ page_obj.paginator.num_pages }}&{{querystring}}"
+                hx-get="{{ url('panel:partial_list_teachers') }}?page={{ page_obj.paginator.num_pages }}&{{querystring}}"
                 href="">&raquo;&raquo;</a>
         </li>
         {% else %}

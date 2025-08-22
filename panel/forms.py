@@ -10,7 +10,7 @@ import re
 import bleach
 
 from samorzad.models import Voting, Candidate, CandidateRegistration, ElectoralProgram
-from oscary.models import VotingEvent, Oscar, Teacher
+from oscary.models import VotingEvent, Oscar, Teacher, Candidature, VotingRound
 from .bleach_config import ALLOWED_TAGS, ALLOWED_ATTRIBUTES, css_sanitizer
 
 MAX_IMAGE_SIZE_MB = 2
@@ -294,6 +294,47 @@ class OscaryListTeachersForm(forms.Form):
     search = forms.CharField(max_length=2048 ,error_messages={
         'max_length':'Można podać maksymalnie 2048 znaków'
     }, required=False)
+
+class OscaryCreateCandidatureForm(forms.ModelForm):
+    class Meta:
+        model = Candidature
+        fields = ['oscar', 'teacher', 'voting_round']
+
+class OscaryListCandidaturesForm(forms.Form):
+    teacher_search = forms.CharField(max_length=2048, required=False, error_messages={
+        'max_length':"Do wyszukiwarki można wprowadzić maksymalnie 2048 znaków"
+    })
+
+    sort_order = forms.ChoiceField(choices=[
+        ('asc', 'Rosnąco'),
+        ('desc', 'Malejąco')
+    ], initial='asc', required=False)
+
+    sort_by = forms.ChoiceField(choices=[
+        ('id', 'ID'),
+        ('name', 'Imionach'),
+        ('creation', 'Data utworzenia'),
+        ('update', 'Data aktualizacji')
+    ], initial='id', required=False)
+
+    round_type = forms.ChoiceField(choices=(
+        (VotingRound.VotingRoundType.NOMINATION, VotingRound.VotingRoundType.NOMINATION.label),
+        (VotingRound.VotingRoundType.FINAL, VotingRound.VotingRoundType.FINAL.label),
+    ), required=False, error_messages={
+        'invalid':"Podaj prawidłową wartość filtra rund"
+    }, initial=None)
+
+    oscars = forms.IntegerField(required=False, error_messages={
+        'invalid':"Podaj prawidłową wartość filtra oscarów"
+    })
+    events = forms.IntegerField(required=False, error_messages={
+        'invalid':"Podaj prawidłową wartość filtra wydarzeń"
+    })
+
+    def clean_round_type(self):
+        value = self.cleaned_data.get('round_type')
+        if value == '': return None
+        return value
 
 
 

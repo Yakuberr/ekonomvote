@@ -1,0 +1,119 @@
+{% extends "panel/oscary/base.html" %}
+{% block title %}
+{% if form.instance.pk %}
+Oscary - edytuj kandydature nr {{ form.instance.pk }}
+{% else %}
+Oscary - dodaj kandydature
+{% endif %}
+{% endblock title %}
+{% block body_navbar %}
+{{ render_navbar(current_page='oscary') }}
+{% endblock %}
+{% block body_content %}
+<style>
+</style>
+<main class="container-fluid overflow-hidden">
+    <div class="row overflow-hidden">
+        <div class="col-12 col-lg-2 border-4 border-eco-light-cyan independent-scroll">
+            {{ render_oscary_sidebar(current_page='create_candidature') }}
+        </div>
+        <div class="mt-5 col-12 col-lg-10 scrollable-column d-flex justify-content-center">
+            {% if form.instance.pk %}
+            {% call render_creation_model_form(
+            form = form,
+            action_url = url('panel:update_candidature', kwargs={'candidature_id':form.instance.id}),
+            csrf_token = csrf_token,
+            main_legend_text = 'Edytuj kandydature nr ' ~ form.instance.id ,
+            tips_legend_text = 'Reguły dodawania kandydatury',
+            tips = tips
+            ) %}
+            <div class="mb-3">
+                <select name="teacher" class="form-select" aria-label="selektor nauczycieli" id="teacherSelector" required>
+                    <option value="{{ form.instance.teacher.id }}" selected>
+                        {{ form.instance.teacher.first_name }} {{ form.instance.teacher.second_name }} {{ form.instance.teacher.last_name }}
+                    </option>
+                    {% for obj in teachers %}
+                    <option value="{{ obj.pk }}">{{obj.first_name}} {{obj.second_name}}  {{obj.last_name}}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="mb-3">
+                <select name="voting_round" class="form-select" aria-label="selektor wydarzeń" id="eventSelector" required>
+                    <option value="{{ form.instance.voting_round.pk }}" selected>
+                        Wydarzenie rozpoczynające się o: {{ form.instance.voting_round.localize_dt(form.instance.voting_round.planned_start).strftime('%d.%m.%Y') }} (ID: {{ selected_event.id }})
+                    </option>
+                    {% for obj in events %}
+                    <option value="{{ obj.first_round_pk }}">Wydarzenie rozpoczynające się o: {{ obj.localize_dt(obj.first_round_start).strftime('%d.%m.%Y') }} (ID: {{ obj.id }})</option>
+                    {% endfor %}
+                </select>
+                <div id="eventSelector" class="form-text">Możesz wybrać tylko przyszłe wydarzenia</div>
+            </div>
+            <div class="mb-4">
+                <select name="oscar" class="form-select" aria-label="selektor oscarów" id="oscarSelector" required>
+                    <option value="{{ form.instance.oscar.pk }}" selected >{{ form.instance.oscar.name }}</option>
+                    {% for obj in oscars %}
+                    <option value="{{ obj.pk }}">{{ obj.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endcall %}
+            {% else %}
+            {% call render_creation_model_form(
+            form = form,
+            action_url = url('panel:create_candidature'),
+            csrf_token = csrf_token,
+            main_legend_text = 'Dodaj kandydature',
+            tips_legend_text = 'Reguły dodawania kandydatury',
+            tips = tips
+            ) %}
+            <div class="mb-3">
+                <select name="teacher" class="form-select" aria-label="selektor nauczycieli" id="teacherSelector" required>
+                    <option value="" selected disabled hidden>Wybierz nauczyciela</option>
+                    {% for obj in teachers %}
+                    <option value="{{ obj.pk }}">{{obj.first_name}} {{obj.second_name}}  {{obj.last_name}}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="mb-3">
+                <select name="voting_round" class="form-select" aria-label="selektor wydarzeń" id="eventSelector" required>
+                    <option value="" selected disabled hidden>Wybierz wydarzenie</option>
+                    {% for obj in events %}
+                    <option value="{{ obj.first_round_pk }}">Wydarzenie rozpoczynające się o: {{ obj.localize_dt(obj.first_round_start).strftime('%d.%m.%Y') }} (ID: {{ obj.id }})</option>
+                    {% endfor %}
+                </select>
+                <div id="eventSelector" class="form-text">Możesz wybrać tylko przyszłe wydarzenia</div>
+            </div>
+            <div class="mb-4">
+                <select name="oscar" class="form-select" aria-label="selektor oscarów" id="oscarSelector" required>
+                    <option value="" selected disabled hidden>Wybierz oscara</option>
+                    {% for obj in oscars %}
+                    <option value="{{ obj.pk }}">{{ obj.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endcall %}
+            {% endif %}
+            <div class="my-3 my-md-0"></div>
+            <div class="my-5"></div>
+        </div>
+    </div>
+</main>
+<!-- Modal -->
+{% with modal_csrf_token = csrf_token %}
+{{ render_delete_modal(
+warning_message = "Usunięcie kandydatury sprawi trwałe usunięcie kandydatury z systemu łącznie ze wszystkimi statystykami.",
+id_field_name = "candidature_id",
+target_url = url('panel:delete_candidature'),
+is_htmx = False,
+csrf_token = modal_csrf_token
+) }}
+{% endwith %}
+<script>
+    document.querySelectorAll("label + [required]").forEach(input => {
+        const label = input.previousElementSibling;
+        if (label && label.tagName.toLowerCase() === "label") {
+            label.innerHTML += ' <span style="color: rgb(213, 13, 13)">*</span>';
+        }
+    });
+</script>
+{% endblock body_content %}
