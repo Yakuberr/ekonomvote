@@ -21,9 +21,6 @@ from urllib.parse import urlencode
 
 from oscary.models import VotingEvent,VotingRound, Vote, Candidature, Oscar, Teacher
 from panel.forms import (OscaryAddWholeVotingEventForm,
-                         SamorzadAddCandidateForm,
-                         CandidateRegistrationForm,
-                         ElectoralProgramForm,
                          OscaryListVotingsForm,
                          OscaryCreateOscarForm,
                          OscaryListOscarsForm,
@@ -31,8 +28,7 @@ from panel.forms import (OscaryAddWholeVotingEventForm,
                          OscaryListTeachersForm,
                          OscaryCreateCandidatureForm, OscaryListCandidaturesForm)
 from office_auth.auth_utils import opiekun_required
-from office_auth.models import ActionLog
-from .utils import get_changed_fields, build_sort_list, build_filter_kwargs, build_delete_feedback_response
+from .utils import build_sort_list, build_filter_kwargs, build_delete_feedback_response
 from .helpers import OscarHelpers
 
 def _create_voting_status(voting:VotingRound):
@@ -92,7 +88,7 @@ def create_voting_event(request:HttpRequest):
 @login_required(login_url='office_auth:microsoft_login')
 @opiekun_required()
 def update_voting_event(request:HttpRequest, voting_event_id:int):
-    """Widok do edycji za jednym zamachem wydarzenia głosowania oraz nominacji i głosowania finałowego"""
+    """Widok do edycji za jednym zamachem wydarzenia głosowania oraz nominacji i głosowania finałowego. Oparty na widoku tworzenia"""
     REQUIREMENTS_TIPS = [
         'Zawiera nominacje: Ustawia czy wydarzenie zawiera nominacje. Uwaga pola nie można edytować',
         'Pola z datami muszą wskazywać na przyszłe daty',
@@ -178,6 +174,7 @@ def delete_voting_event(request:HttpRequest):
 @login_required(login_url='office_auth:microsoft_login')
 @opiekun_required()
 def list_voting_events(request:HttpRequest):
+    """Widok renderujący główny szablon listy wydarzeń"""
     form = OscaryListVotingsForm()
     status_list = ['Zakończone', "Aktywne", 'Zaplanowane']
     nominations_choices = form.fields['nominations'].choices
@@ -191,6 +188,7 @@ def list_voting_events(request:HttpRequest):
 @login_required(login_url='office_auth:microsoft_login')
 @opiekun_required()
 def partial_list_voting_events(request:HttpRequest):
+    """Widok renderujący listę wydarzeń"""
     SORT_MAP = {
         'nomination_start':['first_round_start'],
         'final_start': ['last_round_start'],
@@ -239,6 +237,7 @@ def partial_list_voting_events(request:HttpRequest):
 @login_required(login_url='office_auth:microsoft_login')
 @opiekun_required()
 def create_oscar(request:HttpRequest):
+    """Widok tworzenia oscara"""
     if request.method == 'GET':
         REQUIREMENTS_TIPS = [
             'Nazwa oscara musi być unikalna',
@@ -277,6 +276,7 @@ def create_oscar(request:HttpRequest):
 @login_required(login_url='office_auth:microsoft_login')
 @opiekun_required()
 def update_oscar(request:HttpRequest, oscar_id:int):
+    """Widok edycji oscara. Oparty na widoku tworzenia"""
     oscar = get_object_or_404(Oscar, id=oscar_id)
     if request.method == 'GET':
         REQUIREMENTS_TIPS = [
@@ -344,6 +344,7 @@ def delete_oscar(request:HttpRequest):
 @login_required(login_url='office_auth:microsoft_login')
 @opiekun_required()
 def list_oscars(request:HttpRequest):
+    """Widok głównego szablonu listy oscarów"""
     form = OscaryListOscarsForm()
     return render(request, 'panel/oscary/oscars_list.html', context={
         'form':form
@@ -353,6 +354,7 @@ def list_oscars(request:HttpRequest):
 @login_required(login_url='office_auth:microsoft_login')
 @opiekun_required()
 def partial_list_oscars(request:HttpRequest):
+    """Widok renderujący listę oscarów"""
     SORT_MAP = {
         'name':['name'],
         'creation':['created_at'],
@@ -390,6 +392,7 @@ def partial_list_oscars(request:HttpRequest):
 @login_required(login_url='office_auth:microsoft_login')
 @opiekun_required()
 def create_teacher(request:HttpRequest):
+    """Widok tworzenia nauczyciela"""
     if request.method == 'GET':
         REQUIREMENTS_TIPS = [
             'Zdjęcie musi mieć rozmiar 400x400 pixeli i ważyć nie więcej niż 2 MB',
@@ -429,6 +432,7 @@ def create_teacher(request:HttpRequest):
 @login_required(login_url='office_auth:microsoft_login')
 @opiekun_required()
 def update_teacher(request:HttpRequest, teacher_id:int):
+    """Widok edycji nauczyciela. Oparty o widok tworzenia"""
     teacher = get_object_or_404(Teacher, pk=teacher_id)
     if request.method == 'GET':
         REQUIREMENTS_TIPS = [
@@ -469,7 +473,7 @@ def update_teacher(request:HttpRequest, teacher_id:int):
 @login_required(login_url='office_auth:microsoft_login')
 @opiekun_required()
 def delete_teacher(request:HttpRequest):
-    """Widok usuwania wydarzenia głosowania. Działa zarówno dla statycznych formularzy jak i dynamicznych zapoytań HTMX"""
+    """Widok usuwania nauczyciela. Działa zarówno dla statycznych formularzy jak i dynamicznych zapoytań HTMX"""
     teacher_id = request.POST.get('teacher_id')
     htmx = request.headers.get('HX-Request')
     if not teacher_id or not teacher_id.isdigit():
@@ -497,6 +501,7 @@ def delete_teacher(request:HttpRequest):
 @login_required(login_url='office_auth:microsoft_login')
 @opiekun_required()
 def list_teachers(request:HttpRequest):
+    """Widok renderowania głównego szablonu listy_nauczycieli"""
     form = OscaryListTeachersForm()
     return render(request, 'panel/oscary/teachers_list.html', context={
         'form':form
@@ -507,6 +512,7 @@ def list_teachers(request:HttpRequest):
 @login_required(login_url='office_auth:microsoft_login')
 @opiekun_required()
 def partial_list_teachers(request:HttpRequest):
+    """Widok odpowiedzialny za renderowanie tablicy nauczycieli z danymi"""
     SORT_MAP = {
         'name':['first_name', 'second_name', 'last_name'],
         'creation':['created_at'],
@@ -544,6 +550,7 @@ def partial_list_teachers(request:HttpRequest):
 @login_required(login_url='office_auth:microsoft_login')
 @opiekun_required()
 def create_candidature(request:HttpRequest):
+    """Widok tworzenia kandydatury"""
     if request.method == 'GET':
         REQUIREMENTS_TIPS = [
             'Nauczyciel nie może 2 razy kandydowac na oscara w jednej rundzie.',
@@ -597,6 +604,7 @@ def create_candidature(request:HttpRequest):
 @login_required(login_url='office_auth:microsoft_login')
 @opiekun_required()
 def update_candidature(request:HttpRequest, candidature_id:int):
+    """Widok edycji kandydatury. Na bazie widoku tworzenia"""
     candidature = get_object_or_404(Candidature.objects.select_related('teacher', 'oscar', 'voting_round'), id=candidature_id)
     if request.method == 'GET':
         REQUIREMENTS_TIPS = [
@@ -654,6 +662,7 @@ def update_candidature(request:HttpRequest, candidature_id:int):
 @login_required(login_url='office_auth:microsoft_login')
 @opiekun_required()
 def list_candidatures(request:HttpRequest):
+    """Główny widok templatki listy kandydatur"""
     form = OscaryListCandidaturesForm()
     oscars = Oscar.objects.all().order_by('name')
     events = VotingEvent.objects.all().order_by('id')
@@ -667,6 +676,7 @@ def list_candidatures(request:HttpRequest):
 @login_required(login_url='office_auth:microsoft_login')
 @opiekun_required()
 def partial_list_candidatures(request:HttpRequest):
+    """Widok odpowiedzialny za renderowanie tablicy kandydatur z danymi"""
     SORT_MAP = {
         'name':['teacher__first_name', 'teacher__second_name', 'teacher__last_name'],
         'creation':['created_at'],
@@ -716,7 +726,7 @@ def partial_list_candidatures(request:HttpRequest):
 @login_required(login_url='office_auth:microsoft_login')
 @opiekun_required()
 def delete_candidature(request:HttpRequest):
-    """Widok usuwania wydarzenia głosowania. Działa zarówno dla statycznych formularzy jak i dynamicznych zapoytań HTMX"""
+    """Widok usuwania kandydatury. Działa zarówno dla statycznych formularzy jak i dynamicznych zapytań HTMX"""
     candidature_id = request.POST.get('candidature_id')
     htmx = request.headers.get('HX-Request')
     if not candidature_id or not candidature_id.isdigit():
