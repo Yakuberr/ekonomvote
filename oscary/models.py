@@ -18,18 +18,18 @@ class Oscar(models.Model):
         'null':"Nazwa oscara nie może być pusta",
         'blank':"Nazwa oscara jest wymagana",
         'unique':"Ta nazwa oscara już istnieje"
-    })
+    }, verbose_name='Nazwa')
     info = models.CharField(max_length=12000, null=False, error_messages={
         'max_length':"Opis oscara nie może przekraczać 12000 znaków",
         'null':"Opis oscara nie może być pusty",
         'blank':"Opis oscara jest wymagany"
-    })
+    }, verbose_name='Opis')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        verbose_name = 'Oskar'
-        verbose_name_plural = 'Oskary'
+        verbose_name = 'Oscar'
+        verbose_name_plural = 'Oscary'
 
     @staticmethod
     def localize_dt(dt:datetime):
@@ -39,11 +39,11 @@ class Oscar(models.Model):
         return f'Oscar(name={self.name})'
 
 class Teacher(models.Model):
-    first_name = models.CharField(null=False, max_length=150)
-    second_name = models.CharField(default='', max_length=150, blank=True)
-    last_name = models.CharField(null=False, max_length=150)
-    image = models.ImageField(upload_to='uploads/oscary/', null=True, blank=True, unique=False)
-    info = models.TextField(null=False)
+    first_name = models.CharField(null=False, max_length=150, verbose_name='Imię')
+    second_name = models.CharField(default='', max_length=150, blank=True, verbose_name='Drugie imię')
+    last_name = models.CharField(null=False, max_length=150, verbose_name='Nazwisko')
+    image = models.ImageField(upload_to='uploads/oscary/', null=True, blank=True, unique=False, verbose_name='Zdjęcie')
+    info = models.TextField(null=False, verbose_name='Opis')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -66,17 +66,17 @@ class Candidature (models.Model):
         'invalid_choice':"Nieprawidłowa wartość dla pola oscarów",
         'null':"Pole oscarów nie może być puste",
         "blank":"Pole oscarów jest wymagane"
-    })
+    }, verbose_name='Oscar')
     teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='candidatures', error_messages={
         'invalid_choice':"Nieprawidłowa wartość dla pola nauczycieli",
         'null':"Pole nauczycieli nie może być puste",
         "blank":"Pole nauczycieli jest wymagane"
-    })
+    }, verbose_name='Nauczyciel')
     voting_round = models.ForeignKey('VotingRound', on_delete=models.CASCADE, related_name='candidatures', error_messages={
         'invalid_choice':"Nieprawidłowa wartość dla pola rund",
         'null':"Pole rund nie może być puste",
         "blank":"Pole rund jest wymagane"
-    })
+    }, verbose_name="Runda głosowania")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -104,11 +104,11 @@ class VotingEvent(models.Model):
     """Uwaga: finał musi być stworzony przed nominacją"""
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    with_nominations = models.BooleanField(default=False)
+    with_nominations = models.BooleanField(default=False, verbose_name="Zawiera nominacje")
 
     class Meta:
-        verbose_name = 'Głosowanie'
-        verbose_name_plural = 'Głosowania'
+        verbose_name = 'Wydarzenie głosowanie'
+        verbose_name_plural = 'Wydarzenia głosowań'
 
     @staticmethod
     def localize_dt(dt:datetime):
@@ -163,16 +163,17 @@ class VotingRound(models.Model):
         NOMINATION = 'N', _('Nominacja')
         FINAL = 'F', _('Finał')
 
-    voting_event = models.ForeignKey(VotingEvent, on_delete=models.CASCADE, related_name='voting_rounds')
+    voting_event = models.ForeignKey(VotingEvent, on_delete=models.CASCADE, related_name='voting_rounds', verbose_name="Wydarzenie głosowania")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    planned_start = models.DateTimeField(null=False)
-    planned_end = models.DateTimeField(null=False)
+    planned_start = models.DateTimeField(null=False, verbose_name='Start rundy')
+    planned_end = models.DateTimeField(null=False, verbose_name="Koniec rundy")
     max_tearchers_for_end = models.PositiveSmallIntegerField(
         default=1,
-        validators=[MinValueValidator(1, 'Wartość musi być większa od 0')]
+        validators=[MinValueValidator(1, 'Wartość musi być większa od 0')],
+        verbose_name="Ilość nominacji/oscara"
     )
-    round_type = models.CharField(choices=VotingRoundType.choices, default=VotingRoundType.FINAL)
+    round_type = models.CharField(choices=VotingRoundType.choices, default=VotingRoundType.FINAL, verbose_name="Rodzaj rundy")
 
     class Meta:
         constraints = [
@@ -217,8 +218,8 @@ class VotingRound(models.Model):
 
 
 class Vote(models.Model):
-    candidature = models.ForeignKey(Candidature, on_delete=models.CASCADE, related_name='votes', null=True)
-    microsoft_user = models.ForeignKey(AzureUser, on_delete=models.CASCADE, related_name='oscar_votes')
+    candidature = models.ForeignKey(Candidature, on_delete=models.CASCADE, related_name='votes', null=True, verbose_name="Kandydatura")
+    microsoft_user = models.ForeignKey(AzureUser, on_delete=models.CASCADE, related_name='oscar_votes', verbose_name="Użytkownik")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
