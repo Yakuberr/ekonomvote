@@ -1,4 +1,4 @@
-{% from 'panel/panel_macros.html' import render_navbar, render_messages, render_samorzad_sidebar %}
+{% from 'panel/panel_macros.html' import render_navbar, render_messages, render_samorzad_sidebar, render_creation_model_form, render_delete_modal %}
 <!DOCTYPE html>
 <html lang="pl" data-bs-theme="dark">
 <head>
@@ -13,6 +13,7 @@
     {% endblock %}
     {% block head_icon %}
     <link rel="shortcut icon" type="image/png" href="{{ static('logo.ico') }}" >
+    <link rel="stylesheet" href="{{ static('css/components.css') }}">
     {% endblock %}
     <style>
         .nav .nav-link.active {
@@ -77,6 +78,7 @@
     {% block body_js %}
     <script src="{{ static('bootstrap/bootstrap.bundle.min.js') }}"></script>
     <script src="{{ static('htmx/htmx.min.js') }}"></script>
+    <script src="{{ static('js/corss_app_scripts.js') }}"></script>
     {% endblock %}
     {% block body_messages %}
     {{ render_messages(request) }}

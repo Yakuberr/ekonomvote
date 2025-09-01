@@ -9,7 +9,7 @@
                         <th scope="col" class="text-center align-middle">Zdjęcie</th>
                         <th scope="col" class="text-center align-middle">Imię i nazwisko</th>
                         <th scope="col" class="text-center align-middle">Klasa</th>
-                        <th scope="col" class="text-center align-middle">Głosowanie na dzień</th>
+                        <th scope="col" class="text-center align-middle">ID głosowania</th>
                         <th scope="col" class="text-center align-middle">Kandydatura dopuszczona</th>
                         <th scope="col" class="text-center align-middle">Data utworzenia</th>
                         <th scope="col" class="text-center align-middle">Data edycji</th>
@@ -43,7 +43,7 @@
                         <td class="text-center align-middle">
                             <a href="{{ url('panel:update_voting', kwargs={'voting_id':c.voting.id}) }}"
                                 class="link-light">
-                                <span class="small">{{ c.voting.parse_planned_start().strftime('%d.%m.%Y') }}</span>
+                                <span>{{ c.voting.id }}</span>
                             </a>
                         </td>
                         <td class="text-center align-middle">
@@ -58,17 +58,13 @@
                         </td>
                         <td class="text-center align-middle">
                             <span class="small">
-                                {% if c.created_at != c.updated_at%}
                                 {{ c.parse_updated_at().strftime('%d.%m.%Y') }}
-                                {% else %}
-                                -
-                                {% endif %}
                             </span>
                         </td>
                         <td class="text-center align-middle">
                             <a href="{{ url('samorzad:get_voting_details', kwargs={'voting_id':c.voting.id}) }}"
                                 class="btn btn-sm btn-outline-eco-light-cyan">Podgląd</a>
-                            <a href="{{ url('panel:update_candidature', kwargs={'candidature_id':c.pk}) }}"
+                            <a href="{{ url('panel:update_registration', kwargs={'candidature_id':c.pk}) }}"
                                 class="btn btn-sm btn-outline-eco-light-cyan">Edytuj</a>
                             <button btn-type="delete" btn-data="{{ c.pk }}" table-row="{{ loop.index0 }}"
                                 class="btn btn-sm btn-outline-danger">Usuń</button>
@@ -93,9 +89,9 @@
 <nav aria-label="pagination" class="mt-5 mb-3">
     <ul class="pagination justify-content-center">
         {% if page_obj.has_previous() %}
-        <li class="page-item"><a class="page-link" hx-get="{{ url('panel:partial_list_candidatures') }}?page=1&{{ querystring }}" href="">&laquo;&laquo; </a></li>
+        <li class="page-item"><a class="page-link" hx-get="{{ url('panel:samorzad_partial_list_candidatures') }}?page=1&{{ querystring }}" href="">&laquo;&laquo; </a></li>
         <li class="page-item"><a class="page-link"
-                hx-get="{{ url('panel:partial_list_candidatures') }}?page={{ page_obj.previous_page_number() }}&{{ querystring }}" href="">&laquo;</a></li>
+                hx-get="{{ url('panel:samorzad_partial_list_candidatures') }}?page={{ page_obj.previous_page_number() }}&{{ querystring }}" href="">&laquo;</a></li>
         {% else %}
         <li class="page-item disabled"><a class="page-link" href="">&laquo;&laquo; </a></li>
         <li class="page-item disabled"><a class="page-link" href="">&laquo;</a></li>
@@ -105,9 +101,9 @@
         </li>
         {% if page_obj.has_next() %}
         <li class="page-item"><a class="page-link"
-                hx-get="{{ url('panel:partial_list_candidatures') }}?page={{ page_obj.next_page_number() }}&{{ querystring }}" href="">&raquo;</a></li>
+                hx-get="{{ url('panel:samorzad_partial_list_candidatures') }}?page={{ page_obj.next_page_number() }}&{{ querystring }}" href="">&raquo;</a></li>
         <li class="page-item"><a class="page-link"
-                hx-get="{{ url('panel:partial_list_candidatures') }}?page={{ page_obj.paginator.num_pages }}&{{ querystring }}" href="">&raquo;&raquo;</a></li>
+                hx-get="{{ url('panel:samorzad_partial_list_candidatures') }}?page={{ page_obj.paginator.num_pages }}&{{ querystring }}" href="">&raquo;&raquo;</a></li>
         {% else %}
         <li class="page-item disabled"><a class="page-link" href="">&raquo;</a></li>
         <li class="page-item disabled"><a class="page-link" href="">&raquo;&raquo;</a></li>

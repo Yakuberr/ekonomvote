@@ -69,7 +69,7 @@
                                         class="form-control" 
                                         id="candidatesSearch" 
                                         placeholder="Poszukaj kandydatów..."
-                                        name="search"
+                                        name="candidate_search"
                                         value=""
                                     >
                                 </div>
@@ -86,23 +86,22 @@
                                         class="form-control" 
                                         id="candidatesSearch" 
                                         placeholder="Wyszukaj po klasie..."
-                                        name="search_class"
+                                        name="class_search"
                                         value=""
                                     >
                                 </div>
                             </div>
                             <div class="col-lg-3 col-6">
                                 <label for="sort" class="form-label text-light">Sortuj według:</label>
-                                <select name="sort" id="sort" class="form-select">
-                                    <option selected value="name">Imienia</option>
-                                    <option value="created_at">Data utworzenia</option>
-                                    <option value="updated_at">Data edycji</option>
-                                    <option value="id">ID</option>
+                                <select name="sort_by" id="sort" class="form-select">
+                                    {% for choice in form.fields['sort_by'].choices %}
+                                    <option value="{{ choice[0] }}">{{ choice[1] }}</option>
+                                    {% endfor %}
                                 </select>
                             </div>
                             <div class="col-lg-3 col-6">
                                 <label for="order" class="form-label text-light">Kolejność:</label>
-                                <select name="order" id="order" class="form-select">
+                                <select name="sort_order" id="order" class="form-select">
                                     <option value="asc">↑ Rosnąco</option>
                                     <option value="desc">↓ Malejąco</option>
                                 </select>
@@ -127,41 +126,14 @@
         </div>
     </main>
         <!-- Modal -->
-    <div class="modal fade" id="warningModal" tabindex="-1" aria-labelledby="warningModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-            <div class="modal-header">
-                <h1 class="modal-title fs-5 text-danger" id="warningModalLabel">Uwaga</h1>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                Usunięcie kandydata sprawi trwałe usunięcie kandydata z systemu łącznie ze wszystkimi jego statystykami. <br>
-                <span class="text-danger fw-bold text-decoration-underline">
-                    Operacji nie można cofnąć.
-                </span>
-            </div>
-            <div class="modal-footer">
-                <form action="{{ url('panel:delete_candidate') }}" method="post">
-                    <input hidden type="number" name="candidate_id" id="candidateIdInput">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-danger">Usuń</button>
-                </form>
-            </div>
-            </div>
-        </div>
-    </div>
-    <script>
-        const modalEl = document.getElementById('warningModal')
-        const warningModal = new bootstrap.Modal(document.getElementById('warningModal'))
-        document.addEventListener('click', (e) => {
-            const btn = e.target.closest('button[btn-type="delete"]')
-            if (btn) {
-                const candidateIdInput = document.getElementById('candidateIdInput')
-                if (modalEl && candidateIdInput) {
-                    warningModal.show()
-                    candidateIdInput.value = Number(btn.getAttribute('btn-data'))
-                }
-            }
-        })
-    </script>
+    {% with modal_csrf_token = csrf_token %}
+    {{ render_delete_modal(
+    warning_message = "Usunięcie kandydata sprawi trwałe usunięcie kandydata z systemu łącznie ze wszystkimi statystykami
+    i powiązanymi obiektami (kandydatury, głosy).",
+    id_field_name = "candidate_id",
+    target_url = url('panel:delete_candidate'),
+    is_htmx = True,
+    csrf_token = modal_csrf_token
+    ) }}
+    {% endwith %}
 {% endblock body_content %}

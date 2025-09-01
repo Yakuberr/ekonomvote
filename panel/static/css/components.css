@@ -22,6 +22,14 @@ form.add-object-form {
     flex-direction: row;
 }
 
+.form-secondary-buttons-special {
+    position: relative;
+    left: calc(100% - 1.5rem - 8px);
+    display: flex;
+    flex-direction: row;
+    margin-bottom: -1.5rem;
+}
+
 .form-secondary-button {
     border-color: transparent !important;
 }
@@ -40,6 +48,22 @@ form.add-object-form {
 
 form.add-object-form input[type="number"] {
     width: 80px;
+}
+
+.text-based-input-form:focus,
+select.form-select:focus {
+    border-color: var(--bs-eco-light-cyan);
+    box-shadow: none;
+}
+
+input.form-check-input:focus {
+    box-shadow: none;
+    border-color: var(--bs-border-color);
+}
+
+input[type=checkbox]:checked {
+    background-color: var(--bs-eco-light-cyan);
+    border-color: var(--bs-eco-light-cyan);
 }
 
 /* Tabela danych */
@@ -89,7 +113,7 @@ form.add-object-form input[type="number"] {
 }
 
 /* filter form */
-.filter-form-button-group{
+.filter-form-button-group {
     display: flex;
     flex-direction: row;
 }

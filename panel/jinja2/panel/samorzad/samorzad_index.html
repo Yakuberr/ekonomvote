@@ -3,48 +3,6 @@
 Samorząd - lista głosowań
 {% endblock title %}
 {% block head_css_internal %}
-<style>
-    .table-fixed {
-        table-layout: fixed;
-        width: 100%;
-    }
-
-    .table-fixed th,
-    .table-fixed td {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    .table-fixed .period-column {
-        white-space: normal;
-    }
-
-    .number-column {
-        font-family: 'Courier New', monospace;
-        font-weight: bold;
-    }
-
-    .table-container {
-        flex-grow: 1;
-        overflow-y: auto;
-        max-height: calc(100vh - 200px);
-    }
-
-    .dropdown-item.active {
-        background-color: #ffffff00;
-        color: var(--bs-eco-light-cyan);
-        text-decoration: underline;
-    }
-
-    .dropdown-item:active {
-        background-color: var(--bs-dark);
-    }
-
-    .dropdown-menu {
-        min-width: 100%;
-    }
-</style>
 {% endblock %}
 {% block body_navbar %}
 {{ render_navbar(current_page='samorząd') }}
@@ -64,17 +22,15 @@ Samorząd - lista głosowań
                         hx-push-url="false" hx-indicator="#tableSpinner">
                         <div class="col-6 col-sm-4">
                             <label for="sort" class="form-label text-light">Sortuj według:</label>
-                            <select name="sort" id="sort" class="form-select">
-                                <option value="id">ID</option>
-                                <option selected value="planned_start">Data rozpoczęcia</option>
-                                <option value="planned_end">Data zakończenia</option>
-                                <option value="created_at">Data utworzenia</option>
-                                <option value="updated_at">Data edycji</option>
+                            <select name="sort_by" id="sort" class="form-select">
+                                {% for ch in form.fields['sort_by'].choices %}
+                                <option value="{{ ch[0] }}">{{ ch[1] }}</option>
+                                {% endfor %}
                             </select>
                         </div>
                         <div class="col-6 col-sm-4">
                             <label for="order" class="form-label text-light">Kolejność:</label>
-                            <select name="order" id="order" class="form-select">
+                            <select name="sort_order" id="order" class="form-select">
                                 <option value="asc">↑ Rosnąco</option>
                                 <option value="desc">↓ Malejąco</option>
                             </select>
@@ -93,13 +49,13 @@ Samorząd - lista głosowań
                                     </span>
                                 </button>
                                 <ul class="dropdown-menu">
-                                    {% for element in status_list %}
+                                    {% for ch in form.fields['voting_status'].choices %}
                                     <li><button class="dropdown-item form-dropdown-item" type="button"
-                                            data-bs-toggle="button" btn-data="{{ element }}" value="{{ element }}">{{
-                                            element }}</button></li>
+                                            data-bs-toggle="button" btn-data="{{ ch[0] }}" value="{{ ch[0] }}">{{
+                                            ch[1] }}</button></li>
                                     {% endfor %}
                                 </ul>
-                                <input type="text" hidden id="statusInput" name="f_status" value="">
+                                <input type="text" hidden id="statusInput" name="voting_status" value="">
                             </div>
                         </div>
                     </form>
@@ -119,29 +75,16 @@ Samorząd - lista głosowań
     </div>
 </main>
 <!-- Modal -->
-<div class="modal fade" id="warningModal" tabindex="-1" aria-labelledby="warningModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h1 class="modal-title fs-5 text-danger" id="warningModalLabel">Uwaga</h1>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                Usunięcie głosowania sprawi trwałe usunięcie głosowania z systemu łącznie ze wszystkimi statystykami.
-                <br>
-                <span class="text-danger fw-bold text-decoration-underline">
-                    Operacji nie można cofnąć.
-                </span>
-            </div>
-            <div class="modal-footer">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-danger">Usuń</button>
-                    <input type="number" id="votingIdInput" hidden name="voting_id">
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
+{% with modal_csrf_token = csrf_token %}
+{{ render_delete_modal(
+warning_message = "Usunięcie głosowania sprawi trwałe usunięcie głosowania z systemu łącznie ze wszystkimi statystykami
+i powiązanymi obiektami (kandydatury, głosy).",
+id_field_name = "voting_id",
+target_url = url('panel:delete_voting'),
+is_htmx = True,
+csrf_token = modal_csrf_token
+) }}
+{% endwith %}
 <script>
     let statusFilterCounter = 0
     const statusBadge = document.getElementById('statusFiltrBadge')
@@ -166,29 +109,5 @@ Samorząd - lista głosowań
             }
         })
     })
-</script>
-<script>
-    const modalEl = document.getElementById('warningModal')
-    const warningModal = new bootstrap.Modal(document.getElementById('warningModal'))
-    const modalForm = modalEl.querySelector('form')
-    document.addEventListener('click', (e) => {
-        const btn = e.target.closest('button[btn-type="delete"]')
-        if (btn) {
-            const votingIdInput = document.getElementById('votingIdInput')
-            if (modalEl && votingIdInput) {
-                warningModal.show()
-                votingIdInput.value = Number(btn.getAttribute('btn-data'))
-                modalForm.setAttribute('hx-target', `#tableRow${btn.getAttribute('btn-row')}`)
-            }
-        }
-    })
-</script>
-<script>
-    document.body.addEventListener('htmx:afterRequest', function (event) {
-        const modal = bootstrap.Modal.getInstance(document.getElementById('warningModal'));
-        if (modal) {
-            modal.hide();
-        }
-    });
 </script>
 {% endblock body_content %}

@@ -1,9 +1,9 @@
 {% extends "panel/oscary/base.html" %}
 {% block title %}
-{% if form.instance %}
+{% if form.instance.pk %}
 Edytuj oscara {{ form.instance.id }}
 {% else %}
-Utwórz oscara
+Oscary - dodaj oscara
 {% endif %}
 {% endblock title %}
 {% block body_navbar %}

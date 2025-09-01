@@ -1,6 +1,10 @@
 {% extends "panel/samorzad/samorzad_base.html" %}
 {% block title %}
-Samorząd - lista głosowań
+{% if form.instance.pk %}
+Samorząd - edytuj kandydata nr {{ form.instance.id }}
+{% else %}
+Samorząd - dodaj kandydata
+{% endif %}
 {% endblock title %}
 {% block body_navbar %}
 {{ render_navbar(current_page='samorząd') }}
@@ -12,128 +16,94 @@ Samorząd - lista głosowań
             {{ render_samorzad_sidebar(current_page='add_candidate') }}
         </div>
         <div class="mt-5 col-12 col-lg-10 bg-dark scrollable-column d-flex align-items-center flex-column">
-            {% if form.instance.pk %}
-            <form class="p-4 bg-black bg-opacity-25 border rounded shadow-lg w-100" style="max-width: 750px;"
-                action="{{ url('panel:update_candidate', kwargs={'candidate_id':form.instance.pk}) }}" method="post"
-                enctype="multipart/form-data">
-                <legend class="mb-3 text-eco-light-cyan">Edytuj dane kandydata</legend>
-                <div class="mb-3">
-                    <label for="firstName" class="form-label">Imię</label>
-                    <input name="first_name" type="text" class="form-control bg-black bg-opacity-25" id="firstName"
-                        required value="{{ form.instance.first_name }}">
-                </div>
-                <div class="mb-3">
-                    <label for="secondName" class="form-label">Drugie imię</label>
-                    <input name="second_name" type="text" class="form-control bg-black bg-opacity-25" id="secondName"
-                        value="{{ form.instance.second_name }}">
-                </div>
-                <div class="mb-3">
-                    <label for="lastName" class="form-label">Nazwisko</label>
-                    <input name="last_name" type="text" class="form-control bg-black bg-opacity-25" id="lastName"
-                        required value="{{ form.instance.last_name }}">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label" for="imageInput">Zdjęcie kandydata: 400x400, max 2MB</label>
-                    <input name="image" accept="image" type="file" class="form-control bg-black bg-opacity-25"
-                        id="imageInput" onchange="loadFile(event)">
-                    <img id="imagePreviewPlaceholder"
-                        src="{% if form.instance.image %} {{ form.instance.image.url }} {% endif %}"
-                        alt="Aktualny obraz" class="img-thumbnail my-2" style="max-height: 200px;" hidden>
-                </div>
-                <div class="mb-4">
-                    <label for="schoolClass" class="form-label">Klasa (np: 5 TE)</label>
-                    <input name="school_class" type="text" class="form-control bg-black bg-opacity-25 w-25"
-                        id="schoolClass" required value="{{ form.instance.school_class }}">
-                </div>
-                {% csrf_token %}
-                <div class="d-flex flex-lg-row flex-column gap-1 gap-lg-none">
-                    <div
-                        class="col-12 col-lg-10 d-flex flex-lg-row flex-column justify-content-lg-start gap-lg-3 gap-1">
-                        <button type="submit" class="btn btn-outline-eco-light-cyan" name="redirect_to"
-                            value="list">Zapisz</button>
-                        <button type="submit" class="btn btn-outline-eco-light-cyan" name="redirect_to"
-                            value="add_new">Zapisz i dodaj nowego</button>
-                        <button type="submit" class="btn btn-outline-eco-light-cyan" name="redirect_to"
-                            value="edit">Zapisz i kontynuuj edycję</button>
-                    </div>
-                    <div class="col-12 col-lg-2 d-flex flex-lg-row flex-column justify-content-end">
-                        <button type="button" btn-type="delete" btn-data="{{ form.instance.pk }}"
-                            class="btn btn-sm btn-outline-danger">Usuń</button>
-                    </div>
-                </div>
-            </form>
+            {% if form.instance.id %}
+            {% call render_creation_model_form(
+            form = form,
+            action_url = url('panel:update_candidate', kwargs={'candidate_id':form.instance.id}),
+            csrf_token = csrf_token,
+            main_legend_text = 'Edytuj kandydata ' ~ form.instance.id ,
+            tips_legend_text = 'Reguły dodawania kandydata',
+            tips = tips
+            ) %}
+            <div class="mb-3">
+                <label for="firstName" class="form-label">Imię</label>
+                <input name="first_name" type="text" class="form-control text-based-input-form" id="firstName" required
+                    value="{{ form.instance.first_name }}">
+            </div>
+            <div class="mb-3">
+                <label for="secondName" class="form-label">Drugie imię</label>
+                <input name="second_name" type="text" class="form-control text-based-input-form" id="secondName"
+                    value="{{ form.instance.second_name }}">
+            </div>
+            <div class="mb-3">
+                <label for="lastName" class="form-label">Nazwisko</label>
+                <input name="last_name" type="text" class="form-control text-based-input-form" id="lastName" required
+                    value="{{ form.instance.last_name }}">
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="imageInput">Zdjęcie kandydata: 400x400, max 2MB</label>
+                <input name="image" accept="image" type="file" class="form-control text-based-input-form
+                    id="imageInput" onchange="loadFile(event)">
+                <img id="imagePreviewPlaceholder"
+                    src="{% if form.instance.image %} {{ form.instance.image.url }} {% endif %}" alt="Aktualny obraz"
+                    class="img-thumbnail my-2" style="max-height: 200px;" hidden>
+            </div>
+            <div class="mb-4">
+                <label for="schoolClass" class="form-label">Klasa (np: 5 TE)</label>
+                <input name="school_class" type="text" class="form-control text-based-input-form" id="schoolClass"
+                    required value="{{ form.instance.school_class }}">
+            </div>
+            {% endcall %}
             {% else %}
-            <form class="p-4 bg-black bg-opacity-25 border rounded shadow-lg w-100" style="max-width: 750px;"
-                action="{{ url('panel:samorzad_add_candidate') }}" method="post" enctype="multipart/form-data">
-                <legend class="mb-3 text-eco-light-cyan">Dodaj kandydata</legend>
-                <div class="mb-3">
-                    <label for="firstName" class="form-label">Imię</label>
-                    <input name="first_name" type="text" class="form-control bg-black bg-opacity-25" id="firstName"
-                        required>
-                </div>
-                <div class="mb-3">
-                    <label for="secondName" class="form-label">Drugie imię</label>
-                    <input name="second_name" type="text" class="form-control bg-black bg-opacity-25" id="secondName">
-                </div>
-                <div class="mb-3">
-                    <label for="lastName" class="form-label">Nazwisko</label>
-                    <input name="last_name" type="text" class="form-control bg-black bg-opacity-25" id="lastName"
-                        required>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label" for="imageInput">Zdjęcie kandydata: 400x400, max 2MB</label>
-                    <input name="image" accept="image" type="file" class="form-control bg-black bg-opacity-25"
-                        id="imageInput" onchange="loadFile(event)">
-                    <img id="imagePreviewPlaceholder" src="" alt="Aktualny obraz" class="img-thumbnail my-2"
-                        style="max-height: 200px;" hidden>
-                </div>
-                <div class="mb-4">
-                    <label for="schoolClass" class="form-label">Klasa (np: 5 TE)</label>
-                    <input name="school_class" type="text" class="form-control bg-black bg-opacity-25 w-25"
-                        id="schoolClass" required>
-                </div>
-                {% csrf_token %}
-                <div class="d-flex flex-lg-row flex-column gap-1 gap-lg-none">
-                    <div
-                        class="col-12 col-lg-10 d-flex flex-lg-row flex-column justify-content-lg-start gap-lg-3 gap-1">
-                        <button type="submit" class="btn btn-outline-eco-light-cyan" name="redirect_to"
-                            value="list">Zapisz</button>
-                        <button type="submit" class="btn btn-outline-eco-light-cyan" name="redirect_to"
-                            value="add_new">Zapisz i dodaj nowego</button>
-                        <button type="submit" class="btn btn-outline-eco-light-cyan" name="redirect_to"
-                            value="edit">Zapisz i kontynuuj edycję</button>
-                    </div>
-                </div>
-            </form>
+            {% call render_creation_model_form(
+            form = form,
+            action_url = url('panel:samorzad_add_candidate'),
+            csrf_token = csrf_token,
+            main_legend_text = 'Dodaj kandydata',
+            tips_legend_text = 'Reguły dodawania kandydata',
+            tips = tips
+            ) %}
+            <div class="mb-3">
+                <label for="firstName" class="form-label">Imię</label>
+                <input name="first_name" type="text" class="form-control text-based-input-form" id="firstName"
+                    required>
+            </div>
+            <div class="mb-3">
+                <label for="secondName" class="form-label">Drugie imię</label>
+                <input name="second_name" type="text" class="form-control text-based-input-form" id="secondName">
+            </div>
+            <div class="mb-3">
+                <label for="lastName" class="form-label">Nazwisko</label>
+                <input name="last_name" type="text" class="form-control text-based-input-form" id="lastName" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="imageInput">Zdjęcie kandydata: 400x400, max 2MB</label>
+                <input name="image" accept="image" type="file" class="form-control text-based-input-form"
+                    id="imageInput" onchange="loadFile(event)">
+                <img id="imagePreviewPlaceholder" src="" alt="Aktualny obraz" class="img-thumbnail my-2"
+                    style="max-height: 200px;" hidden>
+            </div>
+            <div class="mb-4">
+                <label for="schoolClass" class="form-label">Klasa (np: 5 TE)</label>
+                <input name="school_class" type="text" class="form-control text-based-input-form" id="schoolClass"
+                    required>
+            </div>
+            {% endcall %}
             {% endif %}
         </div>
     </div>
 </main>
 <!-- Modal -->
-<div class="modal fade" id="warningModal" tabindex="-1" aria-labelledby="warningModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h1 class="modal-title fs-5 text-danger" id="warningModalLabel">Uwaga</h1>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                Usunięcie kandydata sprawi trwałe usunięcie kandydata z systemu łącznie ze wszystkimi jego statystykami.
-                <br>
-                <span class="text-danger fw-bold text-decoration-underline">
-                    Operacji nie można cofnąć.
-                </span>
-            </div>
-            <div class="modal-footer">
-                <form action="{{ url('panel:delete_candidate') }}" method="post">
-                    <input hidden type="number" name="candidate_id" id="votingIdInput">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-danger">Usuń</button>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
+{% with modal_csrf_token = csrf_token %}
+{{ render_delete_modal(
+warning_message = "Usunięcie kandydata sprawi trwałe usunięcie kandydata z systemu łącznie ze wszystkimi statystykami
+i powiązanymi obiektami (kandydatury, głosy).",
+id_field_name = "candidate_id",
+target_url = url('panel:delete_candidate'),
+is_htmx = False,
+csrf_token = modal_csrf_token
+) }}
+{% endwith %}
 <script>
     document.querySelectorAll("label + input[required]").forEach(input => {
         const label = input.previousElementSibling;
@@ -141,16 +111,6 @@ Samorząd - lista głosowań
             label.innerHTML += ' <span style="color: rgb(213, 13, 13)">*</span>';
         }
     });
-</script>
-<script>
-    const warningModal = new bootstrap.Modal(document.getElementById('warningModal'))
-    const votingIdInput = document.getElementById('votingIdInput')
-    document.querySelectorAll('button[btn-type="delete"]').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            warningModal.show()
-            votingIdInput.value = Number(e.currentTarget.getAttribute('btn-data'))
-        })
-    })
 </script>
 <script>
     var loadFile = function (event) {

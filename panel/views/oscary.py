@@ -40,7 +40,6 @@ def _create_voting_status(voting:VotingRound):
 
 
 # CREATE views
-# TODO: Walidcja czy id danego obiektu w bazie danych istnieje
 
 @require_http_methods(['GET', 'POST'])
 @login_required(login_url='office_auth:microsoft_login')

@@ -1,3 +1,5 @@
+from random import choices
+
 from django import forms
 from django.forms import inlineformset_factory
 from django.core.exceptions import ValidationError
@@ -14,6 +16,18 @@ from oscary.models import VotingEvent, Oscar, Teacher, Candidature, VotingRound
 from .bleach_config import ALLOWED_TAGS, ALLOWED_ATTRIBUTES, css_sanitizer
 
 MAX_IMAGE_SIZE_MB = 2
+
+class GenericSortForm(forms.Form):
+    sort_by = forms.ChoiceField(error_messages={
+        'invalid':"Nieprawidłowa wartość dla pola sortowania"
+    }, required=False)
+    sort_order = forms.ChoiceField(choices=[
+        ('asc', 'rosnąco'),
+        ('desc', 'malejąco')
+    ], required=False,
+    initial='asc', error_messages={
+            'invalid':'Nieprawidłowa wartość dla kolejności sortowania'
+        })
 
 def _convert_tz(value):
     if value is not None:
@@ -58,6 +72,116 @@ class SamorzadAddEmptyVotingForm(forms.ModelForm):
     def clean_planned_end(self):
         value = self.cleaned_data.get('planned_end')
         return _convert_tz(value)
+
+class ListVotingsForm(forms.Form):
+    sort_by = forms.ChoiceField(choices=[
+        ('start', 'Data startu'),
+        ('end', 'Data końca'),
+        ('creation', 'Data utworzenia'),
+        ('update', 'Data edycji'),
+        ('id', 'ID'),
+    ], required=False, initial='id', error_messages={
+        'invalid':"Nieprawidłowa wartość pola sortującego"
+    })
+
+    sort_order = forms.ChoiceField(choices=[
+        ('asc', 'Rosnąco'),
+        ('desc', 'Malejąco')
+    ], initial='asc', required=False, error_messages={
+        'invalid':"Nieprawidłowa wartość kolejności głosowania"
+    })
+
+    voting_status = forms.MultipleChoiceField(
+        choices=[
+            ('Zaplanowane', "Zaplanowane"),
+            ("Aktywne", "Aktywne"),
+            ('Zakończone', 'Zakończone')
+        ],
+        required=False,
+        error_messages={
+            'invalid':"Nieprawidłowa wartość pola statusu głosowań"
+        }
+    )
+
+class ListCandidatesForm(forms.Form):
+    sort_by = forms.ChoiceField(choices=[
+        ('id', 'ID'),
+        ('creation', 'Data utworzenia'),
+        ('update', 'Data edycji'),
+    ], required=False, initial='id', error_messages={
+        'invalid':"Nieprawidłowa wartość pola sortującego"
+    })
+
+    sort_order = forms.ChoiceField(choices=[
+        ('asc', 'Rosnąco'),
+        ('desc', 'Malejąco')
+    ], initial='asc', required=False, error_messages={
+        'invalid':"Nieprawidłowa wartość kolejności głosowania"
+    })
+
+    candidate_search = forms.CharField(max_length=2048, required=False, error_messages={
+        'max_length':"Wartość wyszukiwania kandydata po jego nazwie musi zawierać max 2048 znaków"
+    })
+
+    class_search = forms.CharField(max_length=2048, required=False, error_messages={
+        'max_length':"Wartość wyszukiwania kandydata po klasie musi zawierać max 2048 znaków"
+    })
+
+    def clean(self):
+        cleaned = super().clean()
+        statuses = self.data.get('voting_status')
+        if statuses and ',' in statuses:
+            cleaned['voting_status'] = statuses.split(',')
+        return cleaned
+
+
+    def clean_voting_status(self):
+        value = self.cleaned_data.get('voting_status')
+        if isinstance(value, str):
+            return value.split(',')
+        return value
+
+
+class ListCandidaturesForm(GenericSortForm):
+    is_eligible = forms.ChoiceField(
+        choices=[
+            ('yes', 'Tak'),
+            ('no', 'Nie'),
+        ],
+        required=False,
+        error_messages={
+            'invalid': "Nieprawidłowy wybór pola filtru"
+        }
+    )
+
+    candidate_search = forms.CharField(max_length=2048, required=False, error_messages={
+        'max_length':"Wartość można podać maksymalnie 2048 znaków w wyszukiwarce kandydatów"
+    })
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['sort_by'].choices = [
+            ('name', 'Imię i nazwisko kandydata'),
+            ('creation', 'Data utworzenia kandydatury'),
+            ('update', 'Data edycji kandydatury'),
+            ('id', 'ID kandydatury'),
+            ('voting_id', 'ID głosowania')
+        ]
+        self.fields['sort_by'].initial = 'id'
+
+    def clean_is_eligible(self):
+        CONVERT_MAP = {
+            'yes':True,
+            'no':False
+        }
+        value = self.cleaned_data.get('is_eligible')
+        return CONVERT_MAP.get(value)
+
+    def clean_candidate_search(self):
+        if self.cleaned_data.get('candidate_search') == '':
+            return None
+        return self.cleaned_data.get('candidate_search')
+
 
 
 class SamorzadAddCandidateForm(forms.ModelForm):
@@ -104,6 +228,13 @@ class ElectoralProgramForm(forms.ModelForm):
     class Meta:
         model = ElectoralProgram
         fields = ['info']
+        error_messages = {
+            'info':{
+                'required':"Zawartość programu wyborczego jest wymagana",
+                'null': "Zawartość programu wyborczego jest wymagana",
+                'blank': "Zawartość programu wyborczego jest wymagana"
+            }
+        }
 
     def clean_info(self):
         value = self.cleaned_data.get('info')
@@ -116,6 +247,26 @@ class ElectoralProgramForm(forms.ModelForm):
         )
         cleaned = bleach.linkify(cleaned)
         return cleaned
+
+class VotingListFilterForm(forms.Form):
+
+    sort_by = forms.ChoiceField(choices=[
+        ('id', 'ID'),
+        ('start_date', 'Data rozpoczęcia'),
+        ('end_date', 'Data zakończenia'),
+        ('creation', 'Data utworzenia'),
+        ('update', 'Data edycji')
+    ], error_messages={
+        'invalid':"Podaj prawidłową wartość sortowań"
+    }, initial='id', required=False)
+
+    voting_status = forms.ChoiceField(choices=[
+        ('Aktywne', 'Aktywne'),
+        ('Zaplanowane', 'Zaplanowane'),
+        ("Zakończone", 'Zakończone')
+    ], error_messages={
+        'invalid': "Podaj prawidłową wartość filtra głosowań"
+    }, required=False)
 
 # Oscary
 

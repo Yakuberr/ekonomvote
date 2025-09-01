@@ -19,17 +19,9 @@ def build_filter_kwargs(filter_map:dict, cleaned_data:dict):
     filter_kwargs = {}
     for form_field_name in cleaned_data.keys():
         if form_field_name not in filter_map.keys(): continue
-        if cleaned_data[form_field_name] is None: continue
+        if cleaned_data[form_field_name] is None or (type(cleaned_data[form_field_name]) is list and len(cleaned_data[form_field_name]) == 0): continue
         filter_map_key = filter_map[form_field_name]
         filter_kwargs[filter_map_key['field']] = cleaned_data[form_field_name]
-    return filter_kwargs
-
-    for filter_param in filter(lambda k: k.startswith('f_'), cleaned_data.keys()):
-        field = filter_map.get(filter_param)
-        if field is None: continue
-        f_value = cleaned_data[filter_param].split(',')
-        if len(list(filter(lambda val:val in field['allowed_values'], f_value))) != len(f_value):continue
-        filter_kwargs[field['field']] = cleaned_data[filter_param].split(',')
     return filter_kwargs
 
 

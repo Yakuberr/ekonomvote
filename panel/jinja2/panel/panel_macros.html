@@ -75,7 +75,7 @@
     <ul class="dropdown-menu">
       <li><a class="dropdown-item" href="{{ url('panel:samorzad_index') }}">Głosowań</a></li>
       <li><a class="dropdown-item" href="{{ url('panel:list_candidates') }}">Kandydatów</a></li>
-      <li><a class="dropdown-item" href="{{ url('panel:list_candidatures') }}">Kandydatur</a></li>
+      <li><a class="dropdown-item" href="{{ url('panel:samorzad_list_candidatures') }}">Kandydatur</a></li>
     </ul>
   </li>
   <li class="nav-item d-none d-lg-block">
@@ -96,10 +96,10 @@
   </li>
   <li class="nav-item d-none d-lg-block">
     {% if current_page == 'candidatures_list' %}
-    <a class="nav-link link-eco-light-cyan" href="{{ url('panel:list_candidatures') }}" aria-current="page">Lista
+    <a class="nav-link link-eco-light-cyan" href="{{ url('panel:samorzad_list_candidatures') }}" aria-current="page">Lista
       kandydatur</a>
     {% else %}
-    <a class="nav-link sidebar-link" href="{{ url('panel:list_candidatures') }}">Lista kandydatur</a>
+    <a class="nav-link sidebar-link" href="{{ url('panel:samorzad_list_candidatures') }}">Lista kandydatur</a>
     {% endif %}
   </li>
   <hr class="d-none d-lg-block m-2">
