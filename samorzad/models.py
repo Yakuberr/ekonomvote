@@ -4,6 +4,8 @@ from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.core.exceptions import ObjectDoesNotExist
 from office_auth.models import AzureUser
+
+from auditlog.registry import auditlog
 import pytz
 
 class Voting(models.Model):
@@ -57,6 +59,8 @@ class Voting(models.Model):
     def __str__(self):
         return f'Voting(start={self.parse_planned_start()}, end={self.parse_planned_end()})'
 
+auditlog.register(Voting)
+
 class Candidate(models.Model):
     """Model reprezentujący kandydata na wybory do samorządu, pola:
 
@@ -89,6 +93,8 @@ class Candidate(models.Model):
     def __str__(self):
         return f'Candiate(first_name={self.first_name}, last_name={self.last_name})'
 
+auditlog.register(Candidate)
+
 class ElectoralProgram(models.Model):
     """
     Model reprezentujący program wyborczy kandydata w wyborach. Każdy kandydat może mieć różne programy wyborcze w różnych głosowaniach
@@ -101,7 +107,11 @@ class ElectoralProgram(models.Model):
     - updated_at: Czas aktualizacji obiektu (strefa UTC)
     """
     candidature = models.OneToOneField('CandidateRegistration', on_delete=models.CASCADE, related_name='electoral_program', verbose_name='kandydatura')
-    info = models.TextField(null=False, verbose_name='program wyborczy')
+    info = models.TextField(null=False, verbose_name='program wyborczy',error_messages={
+        'blank':"Zawartość programu wyborczego jest wymagana",
+        'null':"Zawartość programu wyborczego nie może być pusta",
+        'required':"Zawartość programu wyborczego jest wymagana",
+    })
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='data utworzenia')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='data aktualizacji')
 
@@ -112,6 +122,8 @@ class ElectoralProgram(models.Model):
 
     def __str__(self):
         return f'ElectoralProgram(candidature={self.candidature.pk})'
+
+auditlog.register(ElectoralProgram)
 
 
 class CandidateRegistration(models.Model):
@@ -162,6 +174,8 @@ class CandidateRegistration(models.Model):
     def save(self, *args, **kwargs):
         self.full_clean()
         super().save(*args, **kwargs)
+
+auditlog.register(CandidateRegistration)
 
 class Vote(models.Model):
     """Model reprezentujący oddany głos w głosowaniu na samorząd, pola

@@ -6,6 +6,7 @@ from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 
+from auditlog.registry import auditlog
 import pytz
 
 from office_auth.models import AzureUser
@@ -38,6 +39,8 @@ class Oscar(models.Model):
     def __str__(self):
         return f'Oscar(name={self.name})'
 
+auditlog.register(Oscar)
+
 class Teacher(models.Model):
     first_name = models.CharField(null=False, max_length=150, verbose_name='Imię')
     second_name = models.CharField(default='', max_length=150, blank=True, verbose_name='Drugie imię')
@@ -57,6 +60,8 @@ class Teacher(models.Model):
 
     def __str__(self):
         return f'Teacher(first_name={self.first_name}, last_name={self.last_name})'
+
+auditlog.register(Teacher)
 
 
 class Candidature (models.Model):
@@ -98,6 +103,8 @@ class Candidature (models.Model):
     @staticmethod
     def localize_dt(dt:datetime):
         return dt.astimezone(tz=WARSAW_TZ)
+
+auditlog.register(Candidature)
 
 class VotingEvent(models.Model):
     """Uwaga: finał musi być stworzony przed nominacją"""
@@ -153,6 +160,8 @@ class VotingEvent(models.Model):
 
     def __str__(self):
         return f'VotingEvent(created_at={self.localize_dt(self.created_at).strftime('%Y.%m.%d %H:%M:%S')}, with_nominations={self.with_nominations})'
+
+auditlog.register(VotingEvent)
 
 
 class VotingRound(models.Model):
@@ -214,6 +223,8 @@ class VotingRound(models.Model):
 
     def __str__(self):
         return f'VotingRound(voting_event={self.voting_event.pk}, start={self.localize_dt(self.planned_start).strftime('%Y.%m.%d %H:%M:%S')}, end={self.localize_dt(self.planned_end).strftime('%Y.%m.%d %H:%M:%S')}, type={self.round_type})'
+
+auditlog.register(VotingRound)
 
 
 class Vote(models.Model):
