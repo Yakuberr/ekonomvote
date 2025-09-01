@@ -60,7 +60,6 @@ class Teacher(models.Model):
 
 
 class Candidature (models.Model):
-    # TODO: Kandydatury powinny być tworzone automatycznie dla danego wydarzenia
     """Model reprezentujący pojedyńczą rywalizację w kontekście: nauczyciel-oscar-nominacja"""
     oscar = models.ForeignKey(Oscar, on_delete=models.CASCADE, related_name='candidatures', error_messages={
         'invalid_choice':"Nieprawidłowa wartość dla pola oscarów",
